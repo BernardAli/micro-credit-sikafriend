@@ -1,0 +1,1642 @@
+{% extends "base.html" %}
+{% load currency %}
+{% load humanize %}
+
+{% block content %}
+
+<style>
+  .dashboard-shell{display:grid;gap:20px}
+
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+
+  .hero-inner{position:relative;z-index:1;padding:28px}
+  .hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap}
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+  .hero-desc{max-width:880px;opacity:.84;line-height:1.72;font-size:13.5px;margin-top:10px}
+  .hero-meta{margin-top:12px;font-size:12px;opacity:.82;display:flex;gap:10px;flex-wrap:wrap}
+  .hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+
+  .btn-hero{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:40px;
+    padding:9px 16px;
+    border-radius:999px;
+    font-weight:700;
+    font-size:12.5px;
+    text-decoration:none;
+    border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.10);
+    color:rgba(255,255,255,.94);
+    backdrop-filter:blur(8px);
+    transition:background .16s,border-color .16s,transform .16s;
+  }
+
+  .btn-hero:hover{
+    background:rgba(255,255,255,.18);
+    border-color:rgba(255,255,255,.26);
+    transform:translateY(-1px);
+    color:#fff;
+  }
+
+  .btn-hero-gold{
+    background:linear-gradient(135deg,color-mix(in srgb,var(--gold) 36%,transparent),color-mix(in srgb,var(--gold) 16%,transparent));
+    border-color:color-mix(in srgb,var(--gold) 32%,transparent);
+    color:#fff;
+  }
+
+  .hero-mini-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:22px}
+  .mini-metric{
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.07);
+    backdrop-filter:blur(10px);
+    border-radius:18px;
+    padding:14px 16px;
+  }
+  .mini-metric .label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;opacity:.76;font-weight:700}
+  .mini-metric .value{margin-top:5px;font-size:20px;font-weight:800;line-height:1.1}
+  .mini-metric .sub{margin-top:5px;font-size:11px;opacity:.76;line-height:1.5}
+
+  .tabs-card{
+    border:1px solid var(--border);
+    border-radius:26px;
+    background:var(--panel);
+    box-shadow:var(--shadow-md);
+    overflow:hidden;
+  }
+
+  .tabs-head{
+    padding:20px 22px 16px;
+    border-bottom:1px solid var(--border-soft);
+    position:relative;
+  }
+
+  .tabs-head::after{
+    content:"";
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    height:1px;
+    background:linear-gradient(90deg,var(--gold),var(--primary),transparent 62%);
+  }
+
+  .tabs-title{margin:0;font-family:var(--font-serif);font-size:19px;font-weight:400;color:var(--text)}
+  .tabs-sub{margin-top:4px;font-size:12.5px;color:var(--muted)}
+  .tab-nav{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+
+  .tab-btn{
+    appearance:none;
+    border:1px solid var(--border);
+    background:var(--bg-soft);
+    color:var(--muted);
+    border-radius:999px;
+    padding:9px 15px;
+    font-size:12.5px;
+    font-weight:700;
+    cursor:pointer;
+    transition:all .16s;
+    font-family:var(--font-body);
+  }
+
+  .tab-btn:hover{
+    transform:translateY(-1px);
+    border-color:var(--border-accent);
+    color:var(--text);
+    background:var(--gold-pale);
+  }
+
+  .tab-btn.active{
+    color:var(--primary);
+    font-weight:800;
+    background:linear-gradient(135deg, rgba(58,90,30,.10), rgba(184,134,32,.06));
+    border-color:var(--border-accent);
+    box-shadow:var(--shadow-xs);
+  }
+
+  .tab-panels{padding:22px}
+  .tab-panel{display:none;animation:tabFade .18s ease}
+  .tab-panel.active{display:block}
+
+  @keyframes tabFade{
+    from{opacity:0;transform:translateY(4px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+
+  .metrics-grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .metrics-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  .metrics-grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .metrics-grid-6{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+  .stack-grid{display:grid;gap:14px}
+
+  .stat-card,
+  .section-card,
+  .category-card{
+    border:1px solid var(--border);
+    background:var(--panel);
+    box-shadow:var(--shadow-sm);
+  }
+
+  .stat-card{
+    border-radius:20px;
+    padding:18px;
+    min-height:130px;
+    position:relative;
+    overflow:hidden;
+    transition:transform .16s,box-shadow .16s,border-color .16s;
+  }
+
+  .stat-card::before{
+    content:"";
+    position:absolute;
+    top:0;
+    right:0;
+    width:80px;
+    height:80px;
+    background:radial-gradient(circle,var(--gold-pale),transparent 70%);
+    pointer-events:none;
+  }
+
+  .stat-card:hover,
+  .category-card:hover,
+  .soft-item:hover{
+    transform:translateY(-2px);
+    box-shadow:var(--shadow-md);
+    border-color:var(--border-accent);
+  }
+
+  .stat-label{
+    font-size:10.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:var(--muted);
+  }
+
+  .stat-value{
+    font-size:25px;
+    line-height:1.1;
+    margin-top:8px;
+    color:var(--text);
+    font-family:var(--font-serif);
+    font-weight:400;
+  }
+
+  .stat-sub{
+    font-size:11.5px;
+    color:var(--muted);
+    margin-top:6px;
+    line-height:1.55;
+  }
+
+  .section-card{border-radius:22px;overflow:hidden}
+  .section-head{padding:18px 20px 0}
+  .section-title{margin:0;font-family:var(--font-serif);font-size:18px;font-weight:400;color:var(--text)}
+  .section-sub{color:var(--muted);font-size:12.5px;margin-top:3px}
+  .section-body{padding:16px 20px 20px}
+
+  .chart-box{
+    width:100%;
+    min-height:320px;
+    border:1px solid var(--border-soft);
+    border-radius:18px;
+    background:linear-gradient(180deg, rgba(255,255,255,.6), rgba(248,250,252,.75));
+  }
+
+  [data-theme="dark"] .chart-box{
+    background:linear-gradient(180deg, rgba(28,40,20,.84), rgba(22,30,16,.92));
+  }
+
+  .soft-item{
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:var(--panel);
+    padding:14px;
+    margin:8px 0;
+    transition:border-color .16s, box-shadow .16s, transform .16s;
+  }
+
+  .row-flex{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+  .entity-wrap{display:flex;gap:12px;align-items:center;min-width:0}
+  .entity-title{font-weight:700;color:var(--text);line-height:1.25}
+  .entity-meta{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.6}
+  .stack-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+
+  .mini-avatar{
+    width:42px;
+    height:42px;
+    border-radius:13px;
+    overflow:hidden;
+    border:1px solid var(--border);
+    background:var(--bg-soft);
+    flex:0 0 auto;
+  }
+
+  .mini-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+
+  .mini-fallback{
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:800;
+    color:var(--muted);
+    font-size:13px;
+    background:linear-gradient(135deg, rgba(58,90,30,.08), rgba(184,134,32,.06));
+  }
+
+  .btn-list{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:36px;
+    padding:8px 14px;
+    border-radius:999px;
+    font-weight:700;
+    font-size:12px;
+    text-decoration:none;
+    border:1px solid var(--border);
+    background:var(--panel);
+    color:var(--text);
+    transition:all .16s;
+    white-space:nowrap;
+  }
+
+  .btn-list:hover{
+    transform:translateY(-1px);
+    border-color:var(--border-accent);
+    box-shadow:var(--shadow-xs);
+    color:var(--text);
+  }
+
+  .btn-list-primary{
+    background:linear-gradient(135deg, var(--primary) 0%, var(--primary-3) 60%, var(--gold) 100%);
+    color:#fff;
+    border-color:transparent;
+  }
+
+  .btn-list-primary:hover{color:#fff}
+
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    font-size:11.5px;
+    font-weight:800;
+    color:var(--text-2);
+  }
+
+  .chip-green{background:rgba(22,163,74,.08);color:var(--success);border-color:rgba(22,163,74,.14)}
+  .chip-gold{background:rgba(184,134,32,.12);color:var(--gold);border-color:rgba(184,134,32,.18)}
+  .chip-red{background:rgba(220,38,38,.08);color:var(--danger);border-color:rgba(220,38,38,.14)}
+  .chip-slate{background:rgba(100,116,139,.08);color:var(--muted);border-color:var(--border)}
+  .chip-violet{background:rgba(124,58,237,.08);color:#8b5cf6;border-color:rgba(124,58,237,.14)}
+  .chip-cyan{background:rgba(6,182,212,.10);color:var(--info);border-color:rgba(6,182,212,.14)}
+  .chip-forest{background:rgba(58,90,30,.10);color:var(--primary-2);border-color:rgba(58,90,30,.16)}
+  .chip-blue{background:rgba(46,92,138,.08);color:var(--info);border-color:rgba(46,92,138,.18)}
+
+  .category-card{
+    border-radius:20px;
+    padding:18px;
+    min-height:164px;
+    transition:transform .16s,border-color .16s;
+  }
+
+  .category-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .category-name{font-size:13.5px;font-weight:700;color:var(--text)}
+  .category-count{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:32px;
+    height:32px;
+    padding:0 9px;
+    border-radius:999px;
+    background:var(--gold-pale);
+    border:1px solid rgba(184,134,32,.18);
+    color:var(--gold);
+    font-weight:800;
+    font-size:12px;
+  }
+
+  .category-metrics{display:grid;gap:7px;margin-top:13px}
+  .category-line{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;font-size:11.5px}
+  .category-line .k{color:var(--muted);font-weight:600}
+  .category-line .v{color:var(--text);font-weight:700;text-align:right}
+
+  .table-wrap{overflow:auto}
+  .report-table{width:100%;border-collapse:collapse;font-size:13px}
+  .report-table thead{background:var(--bg-soft)}
+  .report-table th{
+    padding:11px 12px;
+    text-align:left;
+    font-size:10px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    color:var(--muted);
+    border-bottom:1px solid var(--border);
+    white-space:nowrap;
+  }
+  .report-table td{
+    padding:12px;
+    border-bottom:1px solid var(--border-soft);
+    color:var(--text);
+    vertical-align:top;
+  }
+  .report-table tr:last-child td{border-bottom:none}
+  .report-table tbody tr:hover td{background:rgba(184,134,32,.05)}
+
+  .rank-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .muted{color:var(--muted)}
+
+  @media (max-width:1400px){
+    .metrics-grid-6{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .hero-mini-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  }
+
+  @media (max-width:1100px){
+    .metrics-grid-4,
+    .metrics-grid-3,
+    .metrics-grid-2,
+    .rank-grid{grid-template-columns:1fr 1fr}
+  }
+
+  @media (max-width:900px){
+    .metrics-grid-6{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .metrics-grid-4,
+    .metrics-grid-3,
+    .metrics-grid-2,
+    .rank-grid{grid-template-columns:1fr}
+  }
+
+  @media (max-width:640px){
+    .hero-title{font-size:24px}
+    .hero-mini-grid,
+    .metrics-grid-6{grid-template-columns:1fr}
+    .tab-nav{display:grid;grid-template-columns:1fr 1fr}
+  }
+</style>
+
+<div class="dashboard-shell">
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-top">
+        <div>
+          <div class="hero-kicker">Enterprise Reporting Hub</div>
+          <h1 class="hero-title">{{ title }}</h1>
+          <div class="hero-desc">
+            {% if company and company.description %}{{ company.description }}{% else %}A comprehensive portfolio reporting workspace covering production, collections, risk, segment exposure, field performance, delinquency pressure, and live operational activity.{% endif %}
+          </div>
+          <div class="hero-meta">
+            <span>Generated {{ generated_at|date:"d M Y, H:i" }}</span>
+            <span>Loans: {{ total_loans|intcomma }}</span>
+            <span>Borrowers: {{ borrowers_count|intcomma }}</span>
+            <span>Agents: {{ agents_count|intcomma }}</span>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <a href="{% url 'loans:loan_analytics' %}" class="btn-hero">Loan Analytics</a>
+          <a href="{% url 'loans:borrower_analytics' %}" class="btn-hero">Borrower Analytics</a>
+          <a href="{% url 'loans:loan_monthly_analytics' %}" class="btn-hero">Monthly Analytics</a>
+          <a href="{% url 'loans:business_state_pdf_report' %}" class="btn-hero btn-hero-gold" target="_blank">Business PDF</a>
+        </div>
+      </div>
+
+      <div class="hero-mini-grid">
+        <div class="mini-metric">
+          <div class="label">Total Disbursed</div>
+          <div class="value">{{ hero_total_disbursed|ghs }}</div>
+          <div class="sub">Average loan {{ avg_loan_size|ghs }}</div>
+        </div>
+        <div class="mini-metric">
+          <div class="label">Total Collected</div>
+          <div class="value">{{ hero_total_amount_collected|ghs }}</div>
+          <div class="sub">Collection rate {{ collections_rate }}%</div>
+        </div>
+        <div class="mini-metric">
+          <div class="label">ROIC Collected</div>
+          <div class="value">{{ hero_roic_collected|ghs }}</div>
+          <div class="sub">Return recovered from repayments</div>
+        </div>
+        <div class="mini-metric">
+          <div class="label">Principal Outstanding</div>
+          <div class="value">{{ hero_principal_outstanding|ghs }}</div>
+          <div class="sub">Equity still exposed in market</div>
+        </div>
+        <div class="mini-metric">
+          <div class="label">Default Pressure</div>
+          <div class="value">{{ total_default|ghs }}</div>
+          <div class="sub">{{ default_count }} defaulted loan{{ default_count|pluralize }} · {{ default_rate_count }}%</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tabs-card">
+    <div class="tabs-head">
+      <h3 class="tabs-title">Comprehensive Management Reports</h3>
+      <div class="tabs-sub">Executive, trend, risk, segment, category, field, and operational reports in one dashboard.</div>
+      <div class="tab-nav" role="tablist" aria-label="Dashboard reports">
+        <button class="tab-btn active" type="button" role="tab" aria-selected="true" data-tab-target="tab-overview">Overview</button>
+        <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab-target="tab-trends">Trends</button>
+        <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab-target="tab-risk">Risk</button>
+        <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab-target="tab-segments">Segments</button>
+        <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab-target="tab-categories">Categories</button>
+        <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab-target="tab-field">Field</button>
+        <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab-target="tab-operations">Operations</button>
+      </div>
+    </div>
+
+    <div class="tab-panels">
+      <div class="tab-panel active" id="tab-overview" role="tabpanel">
+        <div class="stack-grid">
+          <section class="metrics-grid-4">
+            <div class="stat-card">
+              <div class="stat-label">Portfolio Disbursed</div>
+              <div class="stat-value">{{ total_disbursed|ghs }}</div>
+              <div class="stat-sub">Active disbursed {{ active_disbursed|ghs }} · last 30 days {{ last_30_disbursed|ghs }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Expected Repayment</div>
+              <div class="stat-value">{{ total_expected|ghs }}</div>
+              <div class="stat-sub">ROIC expected {{ total_roic|ghs }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Amount Collected</div>
+              <div class="stat-value">{{ total_collected|ghs }}</div>
+              <div class="stat-sub">MTD {{ month_collected|ghs }} · last 7 days {{ week_collected|ghs }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Collection Rate</div>
+              <div class="stat-value">{{ collections_rate }}%</div>
+              <div class="stat-sub">Active collection rate {{ active_collection_rate }}%</div>
+            </div>
+          </section>
+
+          <section class="metrics-grid-4">
+            <div class="stat-card">
+              <div class="stat-label">Principal Outstanding</div>
+              <div class="stat-value">{{ total_principal_outstanding|ghs }}</div>
+              <div class="stat-sub">Active principal out {{ active_principal_outstanding|ghs }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">ROIC Outstanding</div>
+              <div class="stat-value">{{ total_roic_outstanding|ghs }}</div>
+              <div class="stat-sub">Active ROIC out {{ active_roic_outstanding|ghs }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Equity Outstanding</div>
+              <div class="stat-value">{{ total_equity_outstanding|ghs }}</div>
+              <div class="stat-sub">Principal exposure net of all collections</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Default Exposure</div>
+              <div class="stat-value">{{ total_default|ghs }}</div>
+              <div class="stat-sub">Principal default {{ principal_default|ghs }} · equity default {{ equity_default|ghs }}</div>
+            </div>
+          </section>
+
+          <section class="metrics-grid-4">
+            <div class="stat-card">
+              <div class="stat-label">Loans</div>
+              <div class="stat-value">{{ total_loans|intcomma }}</div>
+              <div class="stat-sub">Active {{ active_count|intcomma }} · closed {{ closed_count|intcomma }} · default {{ default_count|intcomma }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Borrowers</div>
+              <div class="stat-value">{{ borrowers_count|intcomma }}</div>
+              <div class="stat-sub">Active {{ borrower_active_count|intcomma }} · bad {{ borrower_bad_count|intcomma }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Agents</div>
+              <div class="stat-value">{{ agents_count|intcomma }}</div>
+              <div class="stat-sub">Field portfolio currently supervised</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Payments Posted</div>
+              <div class="stat-value">{{ total_payments_count|intcomma }}</div>
+              <div class="stat-sub">Today {{ today_collected|ghs }} · MTD {{ month_collected|ghs }}</div>
+            </div>
+          </section>
+
+          <section class="metrics-grid-2">
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Monthly Portfolio Trend</h3>
+                <div class="section-sub">Disbursement and collection movement across the last six months</div>
+              </div>
+              <div class="section-body"><div id="monthlyTrendChart" class="chart-box"></div></div>
+            </div>
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Loan Status Mix</h3>
+                <div class="section-sub">Count of active, closed, and defaulted accounts</div>
+              </div>
+              <div class="section-body"><div id="loanStatusChart" class="chart-box"></div></div>
+            </div>
+          </section>
+
+          <section class="metrics-grid-2">
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Borrower Status Mix</h3>
+                <div class="section-sub">Borrower population by active, closed, and bad exposure</div>
+              </div>
+              <div class="section-body"><div id="borrowerStatusChart" class="chart-box"></div></div>
+            </div>
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Outstanding Exposure Split</h3>
+                <div class="section-sub">Principal vs ROIC still sitting in the market</div>
+              </div>
+              <div class="section-body"><div id="outstandingMixChart" class="chart-box"></div></div>
+            </div>
+          </section>
+
+          <section class="section-card">
+            <div class="section-head">
+              <h3 class="section-title">Recovery Windows</h3>
+              <div class="section-sub">Comparable production and collection windows for fast management review</div>
+            </div>
+            <div class="section-body">
+              <div class="table-wrap">
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>Window</th>
+                      <th>Loans</th>
+                      <th>Payments</th>
+                      <th>Disbursed</th>
+                      <th>Collected</th>
+                      <th>Principal</th>
+                      <th>ROIC</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in recovery_windows %}
+                      <tr>
+                        <td><strong>{{ row.label }}</strong></td>
+                        <td>{{ row.loan_count|intcomma }}</td>
+                        <td>{{ row.payment_count|intcomma }}</td>
+                        <td>{{ row.disbursed|ghs }}</td>
+                        <td>{{ row.collected|ghs }}</td>
+                        <td>{{ row.principal_collected|ghs }}</td>
+                        <td>{{ row.roic_collected|ghs }}</td>
+                      </tr>
+                    {% empty %}
+                      <tr><td colspan="7" class="muted">No recovery window data available.</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-trends" role="tabpanel">
+        <div class="stack-grid">
+          <section class="metrics-grid-4">
+            <div class="stat-card">
+              <div class="stat-label">Month Disbursed</div>
+              <div class="stat-value">{{ month_disbursed|ghs }}</div>
+              <div class="stat-sub">New loans this month {{ month_new_loans|intcomma }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Month Collected</div>
+              <div class="stat-value">{{ month_collected|ghs }}</div>
+              <div class="stat-sub">Compared to last 30 days {{ last_30_collected|ghs }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">New Borrowers</div>
+              <div class="stat-value">{{ month_new_borrowers|intcomma }}</div>
+              <div class="stat-sub">Last 30 days {{ last_30_new_borrowers|intcomma }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Average Loan Size</div>
+              <div class="stat-value">{{ avg_loan_size|ghs }}</div>
+              <div class="stat-sub">Portfolio-wide principal average</div>
+            </div>
+          </section>
+
+          <section class="metrics-grid-2">
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Monthly Cashflow</h3>
+                <div class="section-sub">Six-month disbursement and collection comparison</div>
+              </div>
+              <div class="section-body"><div id="monthlyCashflowChart" class="chart-box"></div></div>
+            </div>
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Last 30 Days Activity</h3>
+                <div class="section-sub">Daily disbursement and collection run-rate</div>
+              </div>
+              <div class="section-body"><div id="dailyCashflowChart" class="chart-box"></div></div>
+            </div>
+          </section>
+
+          <section class="metrics-grid-2">
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Volume Trend</h3>
+                <div class="section-sub">Loan creation vs payment posting counts by month</div>
+              </div>
+              <div class="section-body"><div id="volumeTrendChart" class="chart-box"></div></div>
+            </div>
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Portfolio Age Bands</h3>
+                <div class="section-sub">Where book size and aging are concentrated</div>
+              </div>
+              <div class="section-body"><div id="ageBandChart" class="chart-box"></div></div>
+            </div>
+          </section>
+
+          <section class="metrics-grid-2">
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Loan Status Report</h3>
+                <div class="section-sub">Exposure and share by loan status</div>
+              </div>
+              <div class="section-body">
+                <div class="table-wrap">
+                  <table class="report-table">
+                    <thead>
+                      <tr>
+                        <th>Status</th>
+                        <th>Count</th>
+                        <th>Share</th>
+                        <th>Disbursed</th>
+                        <th>Expected</th>
+                        <th>Collected</th>
+                        <th>Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for row in loan_status_board %}
+                        <tr>
+                          <td><span class="chip {% if row.code == 'DEFAULT' %}chip-red{% elif row.code == 'ACTIVE' %}chip-gold{% else %}chip-green{% endif %}">{{ row.label }}</span></td>
+                          <td>{{ row.count|intcomma }}</td>
+                          <td>{{ row.share }}%</td>
+                          <td>{{ row.disbursed|ghs }}</td>
+                          <td>{{ row.expected|ghs }}</td>
+                          <td>{{ row.collected|ghs }}</td>
+                          <td><strong>{{ row.balance|ghs }}</strong></td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Borrower Status Report</h3>
+                <div class="section-sub">Population and balance concentration by borrower state</div>
+              </div>
+              <div class="section-body">
+                <div class="table-wrap">
+                  <table class="report-table">
+                    <thead>
+                      <tr>
+                        <th>Status</th>
+                        <th>Borrowers</th>
+                        <th>Share</th>
+                        <th>Loans</th>
+                        <th>Disbursed</th>
+                        <th>Collected</th>
+                        <th>Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for row in borrower_status_board %}
+                        <tr>
+                          <td><span class="chip {% if row.code == 'BAD' %}chip-red{% elif row.code == 'ACTIVE' %}chip-gold{% else %}chip-green{% endif %}">{{ row.label }}</span></td>
+                          <td>{{ row.count|intcomma }}</td>
+                          <td>{{ row.share }}%</td>
+                          <td>{{ row.loan_count|intcomma }}</td>
+                          <td>{{ row.disbursed|ghs }}</td>
+                          <td>{{ row.collected|ghs }}</td>
+                          <td><strong>{{ row.balance|ghs }}</strong></td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-risk" role="tabpanel">
+        <div class="stack-grid">
+          <section class="metrics-grid-4">
+            <div class="stat-card">
+              <div class="stat-label">PAR Proxy</div>
+              <div class="stat-value">{{ par_rate }}%</div>
+              <div class="stat-sub">PAR amount {{ par_amount|ghs }} across {{ par_count }} seasoned loan{{ par_count|pluralize }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Overdue Watchlist</div>
+              <div class="stat-value">{{ overdue_watch_count|intcomma }}</div>
+              <div class="stat-sub">Exposure {{ overdue_total_amount|ghs }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Critical Overdue</div>
+              <div class="stat-value">{{ critical_overdue_count|intcomma }}</div>
+              <div class="stat-sub">Defaulted or beyond the grace threshold</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Default Rate</div>
+              <div class="stat-value">{{ default_rate_count }}%</div>
+              <div class="stat-sub">Balance ratio {{ default_rate_balance }}%</div>
+            </div>
+          </section>
+
+          <section class="metrics-grid-2">
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Age Band Exposure</h3>
+                <div class="section-sub">Balances sitting in each portfolio-age bucket</div>
+              </div>
+              <div class="section-body"><div id="ageBalanceChart" class="chart-box"></div></div>
+            </div>
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Recovery Mix</h3>
+                <div class="section-sub">Collected principal vs ROIC composition</div>
+              </div>
+              <div class="section-body"><div id="paymentMixChart" class="chart-box"></div></div>
+            </div>
+          </section>
+
+          <section class="section-card">
+            <div class="section-head">
+              <h3 class="section-title">Loan Watchlist</h3>
+              <div class="section-sub">High-balance, overdue, and default-sensitive accounts requiring close follow-up</div>
+            </div>
+            <div class="section-body">
+              {% for row in watchlist_loans %}
+                {% with loan=row.loan %}
+                <div class="soft-item">
+                  <div class="row-flex">
+                    <div>
+                      <div class="entity-title">
+                        <a href="{% url 'loans:loan_detail' loan.id %}" style="color:inherit;">Loan #{{ loan.id }}</a>
+                        — <a href="{% url 'loans:borrower_detail' loan.borrower.id %}" style="color:inherit;">{{ loan.borrower.full_name }}</a>
+                      </div>
+                      <div class="entity-meta">
+                        Agent <a href="{% url 'agent_detail' loan.agent_name.id %}">{{ loan.agent_name.name }}</a>
+                        · {{ loan.borrower.location|default:"Unknown" }}
+                        · {{ loan.borrower.group_name|default:"Ungrouped" }}
+                      </div>
+                      <div class="stack-meta">
+                        <span class="chip {% if row.severity == 'Critical' %}chip-red{% elif row.severity == 'Warning' %}chip-gold{% else %}chip-green{% endif %}">{{ row.severity }}</span>
+                        <span class="chip chip-violet">{{ loan.get_loan_category_display }}</span>
+                        <span class="chip {% if loan.status == 'DEFAULT' %}chip-red{% elif loan.status == 'ACTIVE' %}chip-gold{% else %}chip-green{% endif %}">Loan {{ loan.status }}</span>
+                        <span class="chip {% if loan.borrower.status == 'BAD' %}chip-red{% elif loan.borrower.status == 'ACTIVE' %}chip-gold{% else %}chip-green{% endif %}">Borrower {{ loan.borrower.status }}</span>
+                        <span class="chip chip-slate">Overdue {{ row.overdue_weeks }} week{{ row.overdue_weeks|pluralize }}</span>
+                        <span class="chip chip-cyan">Balance {{ row.balance|ghs }}</span>
+                        <span class="chip chip-slate">Principal Out {{ row.principal_outstanding|ghs }}</span>
+                        <span class="chip chip-slate">ROIC Out {{ row.roic_outstanding|ghs }}</span>
+                      </div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                      <a class="btn-list" href="{% url 'loans:loan_detail' loan.id %}">Open</a>
+                      <a class="btn-list btn-list-primary" href="{% url 'loans:loan_statement' loan.id %}">Statement</a>
+                    </div>
+                  </div>
+                </div>
+                {% endwith %}
+              {% empty %}
+                <p class="muted">No watchlist loans found.</p>
+              {% endfor %}
+            </div>
+          </section>
+
+          <section class="section-card">
+            <div class="section-head">
+              <h3 class="section-title">Top Borrowers Requiring Risk Attention</h3>
+              <div class="section-sub">Bad or default-sensitive borrowers ranked by outstanding exposure</div>
+            </div>
+            <div class="section-body">
+              <div class="table-wrap">
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>Borrower</th>
+                      <th>Status</th>
+                      <th>Loans</th>
+                      <th>Agents</th>
+                      <th>Overdue</th>
+                      <th>Expected</th>
+                      <th>Collected</th>
+                      <th>Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in top_bad_borrowers %}
+                      <tr>
+                        <td>
+                          <strong><a href="{% url 'loans:borrower_detail' row.borrower.id %}">{{ row.borrower.full_name }}</a></strong>
+                          <div class="muted">{{ row.borrower.borrower_id }} · {{ row.borrower.location }} · {{ row.borrower.group_name }}</div>
+                        </td>
+                        <td><span class="chip {% if row.borrower.status == 'BAD' %}chip-red{% elif row.borrower.status == 'ACTIVE' %}chip-gold{% else %}chip-green{% endif %}">{{ row.borrower.status }}</span></td>
+                        <td>{{ row.total_loans }}</td>
+                        <td>{{ row.agent_count }}</td>
+                        <td>{{ row.max_overdue_weeks }} week{{ row.max_overdue_weeks|pluralize }}</td>
+                        <td>{{ row.expected|ghs }}</td>
+                        <td>{{ row.collected|ghs }}</td>
+                        <td><strong>{{ row.total_outstanding|ghs }}</strong></td>
+                      </tr>
+                    {% empty %}
+                      <tr><td colspan="8" class="muted">No high-risk borrowers found.</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-segments" role="tabpanel">
+        <div class="stack-grid">
+          <section class="metrics-grid-2">
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Exposure by Location</h3>
+                <div class="section-sub">Borrower location concentration of outstanding balances</div>
+              </div>
+              <div class="section-body"><div id="locationExposureChart" class="chart-box"></div></div>
+            </div>
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Exposure by Group</h3>
+                <div class="section-sub">Group concentration of outstanding balances</div>
+              </div>
+              <div class="section-body"><div id="groupExposureChart" class="chart-box"></div></div>
+            </div>
+          </section>
+
+          <section class="metrics-grid-2">
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Location Report</h3>
+                <div class="section-sub">Top locations by current outstanding portfolio</div>
+              </div>
+              <div class="section-body">
+                <div class="table-wrap">
+                  <table class="report-table">
+                    <thead>
+                      <tr>
+                        <th>Location</th>
+                        <th>Borrowers</th>
+                        <th>Loans</th>
+                        <th>Default</th>
+                        <th>Disbursed</th>
+                        <th>Collected</th>
+                        <th>Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for row in location_board %}
+                        <tr>
+                          <td><strong>{{ row.name }}</strong></td>
+                          <td>{{ row.borrowers_count|intcomma }}</td>
+                          <td>{{ row.loan_count|intcomma }}</td>
+                          <td>{{ row.default_loans|intcomma }}</td>
+                          <td>{{ row.disbursed|ghs }}</td>
+                          <td>{{ row.collected|ghs }}</td>
+                          <td><strong>{{ row.total_outstanding|ghs }}</strong></td>
+                        </tr>
+                      {% empty %}
+                        <tr><td colspan="7" class="muted">No location report data found.</td></tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Group Report</h3>
+                <div class="section-sub">Top borrower groups by current outstanding portfolio</div>
+              </div>
+              <div class="section-body">
+                <div class="table-wrap">
+                  <table class="report-table">
+                    <thead>
+                      <tr>
+                        <th>Group</th>
+                        <th>Borrowers</th>
+                        <th>Loans</th>
+                        <th>Default</th>
+                        <th>Disbursed</th>
+                        <th>Collected</th>
+                        <th>Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for row in group_board %}
+                        <tr>
+                          <td><strong>{{ row.name }}</strong></td>
+                          <td>{{ row.borrowers_count|intcomma }}</td>
+                          <td>{{ row.loan_count|intcomma }}</td>
+                          <td>{{ row.default_loans|intcomma }}</td>
+                          <td>{{ row.disbursed|ghs }}</td>
+                          <td>{{ row.collected|ghs }}</td>
+                          <td><strong>{{ row.total_outstanding|ghs }}</strong></td>
+                        </tr>
+                      {% empty %}
+                        <tr><td colspan="7" class="muted">No group report data found.</td></tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section-card">
+            <div class="section-head">
+              <h3 class="section-title">Top Borrowers by Outstanding Exposure</h3>
+              <div class="section-sub">Borrowers ranked by total balance for field prioritization</div>
+            </div>
+            <div class="section-body">
+              {% for row in top_borrowers_outstanding %}
+                <div class="soft-item">
+                  <div class="row-flex">
+                    <div>
+                      <div class="entity-title">
+                        <a href="{% url 'loans:borrower_detail' row.borrower.id %}" style="color:inherit;">{{ row.borrower.full_name }}</a>
+                        <span class="muted">· {{ row.borrower.borrower_id }}</span>
+                      </div>
+                      <div class="entity-meta">
+                        {{ row.borrower.location|default:"Unknown" }} · {{ row.borrower.group_name|default:"Ungrouped" }} · {{ row.borrower.preferred_language|default:"-" }}
+                      </div>
+                      <div class="stack-meta">
+                        <span class="chip {% if row.borrower.status == 'BAD' %}chip-red{% elif row.borrower.status == 'ACTIVE' %}chip-gold{% else %}chip-green{% endif %}">{{ row.borrower.status }}</span>
+                        <span class="chip chip-blue">{{ row.total_loans }} loan{{ row.total_loans|pluralize }}</span>
+                        <span class="chip chip-slate">{{ row.agent_count }} agent{{ row.agent_count|pluralize }}</span>
+                        <span class="chip chip-gold">Overdue {{ row.max_overdue_weeks }} week{{ row.max_overdue_weeks|pluralize }}</span>
+                        <span class="chip chip-green">Collected {{ row.collected|ghs }}</span>
+                        <span class="chip chip-cyan">Balance {{ row.total_outstanding|ghs }}</span>
+                      </div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                      <span class="chip chip-forest">{{ row.collection_rate }}%</span>
+                      <a class="btn-list" href="{% url 'loans:borrower_detail' row.borrower.id %}">Open</a>
+                    </div>
+                  </div>
+                </div>
+              {% empty %}
+                <p class="muted">No borrower exposure records found.</p>
+              {% endfor %}
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-categories" role="tabpanel">
+        <div class="stack-grid">
+          <section class="section-card">
+            <div class="section-head">
+              <h3 class="section-title">Category Performance Cards</h3>
+              <div class="section-sub">Count, disbursement, repayment expectations, collections, and balance by loan category</div>
+            </div>
+            <div class="section-body">
+              <div class="metrics-grid-6">
+                {% for row in category_board %}
+                  <div class="category-card">
+                    <div class="category-head">
+                      <div class="category-name">{{ row.label }}</div>
+                      <div class="category-count">{{ row.count|intcomma }}</div>
+                    </div>
+                    <div class="category-metrics">
+                      <div class="category-line"><span class="k">Disbursed</span><span class="v">{{ row.disbursed|ghs }}</span></div>
+                      <div class="category-line"><span class="k">Expected</span><span class="v">{{ row.expected|ghs }}</span></div>
+                      <div class="category-line"><span class="k">ROIC</span><span class="v">{{ row.roic|ghs }}</span></div>
+                      <div class="category-line"><span class="k">Collected</span><span class="v">{{ row.collected|ghs }}</span></div>
+                      <div class="category-line"><span class="k">Balance</span><span class="v">{{ row.balance|ghs }}</span></div>
+                    </div>
+                  </div>
+                {% empty %}
+                  <p class="muted">No category data found.</p>
+                {% endfor %}
+              </div>
+            </div>
+          </section>
+
+          <section class="metrics-grid-2">
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Category Count Mix</h3>
+                <div class="section-sub">How many loans sit in each category tier</div>
+              </div>
+              <div class="section-body"><div id="categoryCountChart" class="chart-box"></div></div>
+            </div>
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Category Exposure</h3>
+                <div class="section-sub">Outstanding balances by category</div>
+              </div>
+              <div class="section-body"><div id="categoryExposureChart" class="chart-box"></div></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-field" role="tabpanel">
+        <div class="stack-grid">
+          <section class="metrics-grid-2">
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Agent Outstanding Exposure</h3>
+                <div class="section-sub">Top field portfolios by balance still outstanding</div>
+              </div>
+              <div class="section-body"><div id="agentOutstandingChart" class="chart-box"></div></div>
+            </div>
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Agent Collection Rates</h3>
+                <div class="section-sub">Relative conversion of expected repayments into receipts</div>
+              </div>
+              <div class="section-body"><div id="agentCollectionRateChart" class="chart-box"></div></div>
+            </div>
+          </section>
+
+          <section class="rank-grid">
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Top Collecting Agents</h3>
+                <div class="section-sub">Best current collection rates among materially active books</div>
+              </div>
+              <div class="section-body">
+                {% for row in top_collecting_agents %}
+                  <div class="soft-item">
+                    <div class="row-flex">
+                      <div>
+                        <div class="entity-title"><a href="{% url 'agent_detail' row.agent_id %}" style="color:inherit;">{{ row.agent_name }}</a></div>
+                        <div class="entity-meta">{{ row.borrowers_count }} borrowers · {{ row.loans_count }} loans · {{ row.payment_count }} payment{{ row.payment_count|pluralize }}</div>
+                        <div class="stack-meta">
+                          <span class="chip chip-green">Collected {{ row.collected|ghs }}</span>
+                          <span class="chip chip-blue">Expected {{ row.expected|ghs }}</span>
+                          <span class="chip chip-slate">Balance {{ row.total_outstanding|ghs }}</span>
+                        </div>
+                      </div>
+                      <span class="chip chip-forest">{{ row.collection_rate }}%</span>
+                    </div>
+                  </div>
+                {% empty %}
+                  <p class="muted">No top collecting agents yet.</p>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Agents Needing Support</h3>
+                <div class="section-sub">Low recovery rates or high default pressure requiring supervision</div>
+              </div>
+              <div class="section-body">
+                {% for row in weak_agents %}
+                  <div class="soft-item">
+                    <div class="row-flex">
+                      <div>
+                        <div class="entity-title"><a href="{% url 'agent_detail' row.agent_id %}" style="color:inherit;">{{ row.agent_name }}</a></div>
+                        <div class="entity-meta">{{ row.borrowers_count }} borrowers · active {{ row.active_loans }} · default {{ row.default_loans }}</div>
+                        <div class="stack-meta">
+                          <span class="chip chip-red">Default {{ row.default_loans }}</span>
+                          <span class="chip chip-cyan">Balance {{ row.total_outstanding|ghs }}</span>
+                          <span class="chip chip-blue">Collected {{ row.collected|ghs }}</span>
+                        </div>
+                      </div>
+                      <span class="chip chip-gold">{{ row.collection_rate }}%</span>
+                    </div>
+                  </div>
+                {% empty %}
+                  <p class="muted">No weak agent books identified.</p>
+                {% endfor %}
+              </div>
+            </div>
+          </section>
+
+          <section class="section-card">
+            <div class="section-head">
+              <h3 class="section-title">Agent Portfolio Table</h3>
+              <div class="section-sub">Comprehensive field-performance report combining production, collections, and exposure</div>
+            </div>
+            <div class="section-body">
+              <div class="table-wrap">
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>Agent</th>
+                      <th>Borrowers</th>
+                      <th>Loans</th>
+                      <th>Disbursed</th>
+                      <th>Expected</th>
+                      <th>Collected</th>
+                      <th>Principal Out</th>
+                      <th>ROIC Out</th>
+                      <th>Total Out</th>
+                      <th>Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in agent_board %}
+                      <tr>
+                        <td>
+                          <strong><a href="{% url 'agent_detail' row.agent_id %}">{{ row.agent_name }}</a></strong>
+                          <div class="muted">Active {{ row.active_loans }} · closed {{ row.closed_loans }} · default {{ row.default_loans }}</div>
+                        </td>
+                        <td>{{ row.borrowers_count|intcomma }}</td>
+                        <td>{{ row.loans_count|intcomma }}</td>
+                        <td>{{ row.disbursed|ghs }}</td>
+                        <td>{{ row.expected|ghs }}</td>
+                        <td>{{ row.collected|ghs }}</td>
+                        <td>{{ row.principal_outstanding|ghs }}</td>
+                        <td>{{ row.roic_outstanding|ghs }}</td>
+                        <td><strong>{{ row.total_outstanding|ghs }}</strong></td>
+                        <td>{{ row.collection_rate }}%</td>
+                      </tr>
+                    {% empty %}
+                      <tr><td colspan="10" class="muted">No agent portfolio data found.</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-operations" role="tabpanel">
+        <div class="stack-grid">
+          <section class="metrics-grid-4">
+            <div class="stat-card">
+              <div class="stat-label">Loans This Month</div>
+              <div class="stat-value">{{ month_new_loans|intcomma }}</div>
+              <div class="stat-sub">Last 30 days {{ last_30_new_loans|intcomma }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Borrowers Added</div>
+              <div class="stat-value">{{ month_new_borrowers|intcomma }}</div>
+              <div class="stat-sub">Last 30 days {{ last_30_new_borrowers|intcomma }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Month Disbursed</div>
+              <div class="stat-value">{{ month_disbursed|ghs }}</div>
+              <div class="stat-sub">Production value of new loans this month</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Month Collected</div>
+              <div class="stat-value">{{ month_collected|ghs }}</div>
+              <div class="stat-sub">Recovery value posted this month</div>
+            </div>
+          </section>
+
+          <section class="metrics-grid-2">
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Recent Loans</h3>
+                <div class="section-sub">Latest loans created in the portfolio</div>
+              </div>
+              <div class="section-body">
+                {% for loan in recent_loans %}
+                  <div class="soft-item">
+                    <div class="row-flex">
+                      <div>
+                        <div class="entity-title">
+                          <a href="{% url 'loans:loan_detail' loan.id %}" style="color:inherit;">Loan #{{ loan.id }}</a>
+                          — <a href="{% url 'loans:borrower_detail' loan.borrower.id %}" style="color:inherit;">{{ loan.borrower.full_name }}</a>
+                        </div>
+                        <div class="entity-meta">
+                          <a href="{% url 'agent_detail' loan.agent_name.id %}">{{ loan.agent_name.name }}</a>
+                          · {{ loan.created_at|date:"d M Y, H:i" }}
+                          · {{ loan.borrower.location|default:"Unknown" }}
+                        </div>
+                        <div class="stack-meta">
+                          <span class="chip chip-violet">{{ loan.get_loan_category_display }}</span>
+                          <span class="chip chip-blue">Principal {{ loan.amount|ghs }}</span>
+                          <span class="chip chip-green">Expected {{ loan.total_expected_amount|ghs }}</span>
+                          <span class="chip chip-slate">Balance {{ loan.balance_amount|ghs }}</span>
+                        </div>
+                      </div>
+                      <a class="btn-list" href="{% url 'loans:loan_detail' loan.id %}">Open</a>
+                    </div>
+                  </div>
+                {% empty %}
+                  <p class="muted">No recent loans found.</p>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="section-card">
+              <div class="section-head">
+                <h3 class="section-title">Recent Payments</h3>
+                <div class="section-sub">Latest posted receipts and allocation split</div>
+              </div>
+              <div class="section-body">
+                {% for payment in recent_payments %}
+                  <div class="soft-item">
+                    <div class="row-flex">
+                      <div>
+                        <div class="entity-title">{{ payment.payment_date|date:"d M Y" }} — {{ payment.amount|ghs }}</div>
+                        <div class="entity-meta">
+                          <a href="{% url 'loans:borrower_detail' payment.loan.borrower.id %}">{{ payment.loan.borrower.full_name }}</a>
+                          · <a href="{% url 'agent_detail' payment.loan.agent_name.id %}">{{ payment.loan.agent_name.name }}</a>
+                          · <a href="{% url 'loans:loan_detail' payment.loan.id %}">Loan #{{ payment.loan.id }}</a>
+                        </div>
+                        <div class="stack-meta">
+                          <span class="chip chip-green">Principal {{ payment.principal_paid|ghs }}</span>
+                          <span class="chip chip-gold">ROIC {{ payment.roic_paid|ghs }}</span>
+                          <span class="chip chip-cyan">Balance {{ payment.loan.balance_amount|ghs }}</span>
+                        </div>
+                      </div>
+                      <a class="btn-list" href="{% url 'loans:loan_detail' payment.loan.id %}">Open</a>
+                    </div>
+                  </div>
+                {% empty %}
+                  <p class="muted">No recent payments found.</p>
+                {% endfor %}
+              </div>
+            </div>
+          </section>
+
+          <section class="section-card">
+            <div class="section-head">
+              <h3 class="section-title">Latest Portfolio Loans</h3>
+              <div class="section-sub">Operational list of the newest 50 loans with borrower and exposure detail</div>
+            </div>
+            <div class="section-body">
+              {% for loan in loans %}
+                <div class="soft-item">
+                  <div class="row-flex">
+                    <div>
+                      <div class="entity-title">
+                        <a href="{% url 'loans:loan_detail' loan.id %}" style="color:inherit;">Loan #{{ loan.id }}</a>
+                        —
+                        <a href="{% url 'loans:borrower_detail' loan.borrower.id %}" style="color:inherit;">{{ loan.borrower.full_name }}</a>
+                        <span class="muted">({{ loan.borrower.national_id }})</span>
+                      </div>
+                      <div class="entity-meta">
+                        <a href="{% url 'agent_detail' loan.agent_name.id %}">{{ loan.agent_name.name }}</a>
+                        · {{ loan.created_at|date:"d M Y, H:i" }}
+                        · Weekly {{ loan.weekly_payment|ghs }}
+                        · Payments {{ loan.actual_payments_count }}/{{ loan.expected_payments_count }}
+                      </div>
+                      <div class="stack-meta">
+                        <span class="chip chip-violet">{{ loan.get_loan_category_display }}</span>
+                        <span class="chip {% if loan.status == 'DEFAULT' %}chip-red{% elif loan.status == 'ACTIVE' %}chip-gold{% else %}chip-green{% endif %}">Loan {{ loan.status }}</span>
+                        <span class="chip {% if loan.borrower.status == 'BAD' %}chip-red{% elif loan.borrower.status == 'ACTIVE' %}chip-gold{% else %}chip-green{% endif %}">Borrower {{ loan.borrower.status }}</span>
+                        <span class="chip chip-blue">Principal {{ loan.amount|ghs }}</span>
+                        <span class="chip chip-green">Expected {{ loan.total_expected_amount|ghs }}</span>
+                        <span class="chip chip-slate">Principal Out {{ loan.principal_outstanding|ghs }}</span>
+                        <span class="chip chip-slate">ROIC Out {{ loan.roic_outstanding|ghs }}</span>
+                        <span class="chip chip-cyan">Balance {{ loan.balance_amount|ghs }}</span>
+                      </div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                      <a class="btn-list" href="{% url 'loans:loan_detail' loan.id %}">Open</a>
+                      <a class="btn-list btn-list-primary" href="{% url 'loans:loan_statement' loan.id %}">Statement</a>
+                    </div>
+                  </div>
+                </div>
+              {% empty %}
+                <p class="muted">No loans available.</p>
+              {% endfor %}
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+{{ chart_month_labels|json_script:"dashboard-month-labels" }}
+{{ chart_month_disbursed|json_script:"dashboard-month-disbursed" }}
+{{ chart_month_collected|json_script:"dashboard-month-collected" }}
+{{ chart_month_loan_counts|json_script:"dashboard-month-loan-counts" }}
+{{ chart_month_payment_counts|json_script:"dashboard-month-payment-counts" }}
+{{ chart_daily_labels|json_script:"dashboard-daily-labels" }}
+{{ chart_daily_disbursed|json_script:"dashboard-daily-disbursed" }}
+{{ chart_daily_collected|json_script:"dashboard-daily-collected" }}
+{{ chart_loan_status_labels|json_script:"dashboard-loan-status-labels" }}
+{{ chart_loan_status_counts|json_script:"dashboard-loan-status-counts" }}
+{{ chart_loan_status_balances|json_script:"dashboard-loan-status-balances" }}
+{{ chart_borrower_status_labels|json_script:"dashboard-borrower-status-labels" }}
+{{ chart_borrower_status_counts|json_script:"dashboard-borrower-status-counts" }}
+{{ chart_borrower_status_balances|json_script:"dashboard-borrower-status-balances" }}
+{{ chart_category_labels|json_script:"dashboard-category-labels" }}
+{{ chart_category_counts|json_script:"dashboard-category-counts" }}
+{{ chart_category_disbursed|json_script:"dashboard-category-disbursed" }}
+{{ chart_category_balance|json_script:"dashboard-category-balance" }}
+{{ chart_agent_labels|json_script:"dashboard-agent-labels" }}
+{{ chart_agent_outstanding|json_script:"dashboard-agent-outstanding" }}
+{{ chart_agent_collection_rates|json_script:"dashboard-agent-collection-rates" }}
+{{ chart_location_labels|json_script:"dashboard-location-labels" }}
+{{ chart_location_balances|json_script:"dashboard-location-balances" }}
+{{ chart_group_labels|json_script:"dashboard-group-labels" }}
+{{ chart_group_balances|json_script:"dashboard-group-balances" }}
+{{ chart_borrower_labels|json_script:"dashboard-borrower-labels" }}
+{{ chart_borrower_balances|json_script:"dashboard-borrower-balances" }}
+{{ chart_age_band_labels|json_script:"dashboard-age-band-labels" }}
+{{ chart_age_band_counts|json_script:"dashboard-age-band-counts" }}
+{{ chart_age_band_balances|json_script:"dashboard-age-band-balances" }}
+{{ chart_payment_mix_labels|json_script:"dashboard-payment-mix-labels" }}
+{{ chart_payment_mix_values|json_script:"dashboard-payment-mix-values" }}
+{{ chart_outstanding_mix_labels|json_script:"dashboard-outstanding-mix-labels" }}
+{{ chart_outstanding_mix_values|json_script:"dashboard-outstanding-mix-values" }}
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script>
+  (function () {
+    const buttons = document.querySelectorAll('[data-tab-target]');
+    const panels = document.querySelectorAll('.tab-panel');
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-tab-target');
+        buttons.forEach((b) => {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        panels.forEach((panel) => panel.classList.remove('active'));
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        document.getElementById(id)?.classList.add('active');
+        window.setTimeout(() => charts.forEach((chart) => chart.resize()), 40);
+      });
+    });
+
+    const parseJSON = (id) => {
+      const el = document.getElementById(id);
+      return el ? JSON.parse(el.textContent) : [];
+    };
+
+    const monthLabels = parseJSON('dashboard-month-labels');
+    const monthDisbursed = parseJSON('dashboard-month-disbursed');
+    const monthCollected = parseJSON('dashboard-month-collected');
+    const monthLoanCounts = parseJSON('dashboard-month-loan-counts');
+    const monthPaymentCounts = parseJSON('dashboard-month-payment-counts');
+    const dailyLabels = parseJSON('dashboard-daily-labels');
+    const dailyDisbursed = parseJSON('dashboard-daily-disbursed');
+    const dailyCollected = parseJSON('dashboard-daily-collected');
+    const loanStatusLabels = parseJSON('dashboard-loan-status-labels');
+    const loanStatusCounts = parseJSON('dashboard-loan-status-counts');
+    const loanStatusBalances = parseJSON('dashboard-loan-status-balances');
+    const borrowerStatusLabels = parseJSON('dashboard-borrower-status-labels');
+    const borrowerStatusCounts = parseJSON('dashboard-borrower-status-counts');
+    const borrowerStatusBalances = parseJSON('dashboard-borrower-status-balances');
+    const categoryLabels = parseJSON('dashboard-category-labels');
+    const categoryCounts = parseJSON('dashboard-category-counts');
+    const categoryDisbursed = parseJSON('dashboard-category-disbursed');
+    const categoryBalance = parseJSON('dashboard-category-balance');
+    const agentLabels = parseJSON('dashboard-agent-labels');
+    const agentOutstanding = parseJSON('dashboard-agent-outstanding');
+    const agentCollectionRates = parseJSON('dashboard-agent-collection-rates');
+    const locationLabels = parseJSON('dashboard-location-labels');
+    const locationBalances = parseJSON('dashboard-location-balances');
+    const groupLabels = parseJSON('dashboard-group-labels');
+    const groupBalances = parseJSON('dashboard-group-balances');
+    const borrowerLabels = parseJSON('dashboard-borrower-labels');
+    const borrowerBalances = parseJSON('dashboard-borrower-balances');
+    const ageBandLabels = parseJSON('dashboard-age-band-labels');
+    const ageBandCounts = parseJSON('dashboard-age-band-counts');
+    const ageBandBalances = parseJSON('dashboard-age-band-balances');
+    const paymentMixLabels = parseJSON('dashboard-payment-mix-labels');
+    const paymentMixValues = parseJSON('dashboard-payment-mix-values');
+    const outstandingMixLabels = parseJSON('dashboard-outstanding-mix-labels');
+    const outstandingMixValues = parseJSON('dashboard-outstanding-mix-values');
+
+    const charts = [];
+    const initChart = (id, option) => {
+      const el = document.getElementById(id);
+      if (!el || !window.echarts) return;
+      const chart = echarts.init(el);
+      chart.setOption(option);
+      charts.push(chart);
+    };
+
+    initChart('monthlyTrendChart', {
+      tooltip: { trigger: 'axis' },
+      legend: { bottom: 0 },
+      grid: { left: 48, right: 20, top: 30, bottom: 60 },
+      xAxis: { type: 'category', data: monthLabels },
+      yAxis: { type: 'value' },
+      series: [
+        { name: 'Disbursed', type: 'bar', data: monthDisbursed, itemStyle: { color: '#517a28' } },
+        { name: 'Collected', type: 'line', smooth: true, data: monthCollected, itemStyle: { color: '#b88620' } }
+      ]
+    });
+
+    initChart('loanStatusChart', {
+      tooltip: { trigger: 'item' },
+      legend: { bottom: 0 },
+      series: [{
+        type: 'pie',
+        radius: ['44%', '72%'],
+        data: loanStatusLabels.map((label, index) => ({ name: label, value: loanStatusCounts[index] ?? 0 }))
+      }]
+    });
+
+    initChart('borrowerStatusChart', {
+      tooltip: { trigger: 'axis' },
+      grid: { left: 48, right: 20, top: 30, bottom: 40 },
+      xAxis: { type: 'category', data: borrowerStatusLabels },
+      yAxis: { type: 'value' },
+      series: [{ type: 'bar', data: borrowerStatusBalances, itemStyle: { color: '#2e5c8a' } }]
+    });
+
+    initChart('outstandingMixChart', {
+      tooltip: { trigger: 'item' },
+      legend: { bottom: 0 },
+      series: [{
+        type: 'pie',
+        radius: ['44%', '72%'],
+        data: outstandingMixLabels.map((label, index) => ({ name: label, value: outstandingMixValues[index] ?? 0 }))
+      }]
+    });
+
+    initChart('monthlyCashflowChart', {
+      tooltip: { trigger: 'axis' },
+      legend: { bottom: 0 },
+      grid: { left: 48, right: 20, top: 30, bottom: 60 },
+      xAxis: { type: 'category', data: monthLabels },
+      yAxis: { type: 'value' },
+      series: [
+        { name: 'Disbursed', type: 'bar', data: monthDisbursed, itemStyle: { color: '#3a5a1e' } },
+        { name: 'Collected', type: 'bar', data: monthCollected, itemStyle: { color: '#b88620' } }
+      ]
+    });
+
+    initChart('dailyCashflowChart', {
+      tooltip: { trigger: 'axis' },
+      legend: { bottom: 0 },
+      grid: { left: 48, right: 20, top: 30, bottom: 60 },
+      xAxis: { type: 'category', data: dailyLabels, axisLabel: { rotate: 35 } },
+      yAxis: { type: 'value' },
+      series: [
+        { name: 'Disbursed', type: 'line', smooth: true, data: dailyDisbursed, itemStyle: { color: '#517a28' } },
+        { name: 'Collected', type: 'line', smooth: true, data: dailyCollected, itemStyle: { color: '#b88620' } }
+      ]
+    });
+
+    initChart('volumeTrendChart', {
+      tooltip: { trigger: 'axis' },
+      legend: { bottom: 0 },
+      grid: { left: 48, right: 20, top: 30, bottom: 60 },
+      xAxis: { type: 'category', data: monthLabels },
+      yAxis: { type: 'value' },
+      series: [
+        { name: 'Loans Created', type: 'bar', data: monthLoanCounts, itemStyle: { color: '#2e5c8a' } },
+        { name: 'Payments Posted', type: 'line', smooth: true, data: monthPaymentCounts, itemStyle: { color: '#15803d' } }
+      ]
+    });
+
+    initChart('ageBandChart', {
+      tooltip: { trigger: 'axis' },
+      legend: { bottom: 0 },
+      grid: { left: 48, right: 20, top: 30, bottom: 60 },
+      xAxis: { type: 'category', data: ageBandLabels },
+      yAxis: { type: 'value' },
+      series: [
+        { name: 'Loan Count', type: 'bar', data: ageBandCounts, itemStyle: { color: '#7c3aed' } },
+        { name: 'Balance', type: 'line', smooth: true, data: ageBandBalances, itemStyle: { color: '#b91c1c' } }
+      ]
+    });
+
+    initChart('ageBalanceChart', {
+      tooltip: { trigger: 'axis' },
+      grid: { left: 48, right: 20, top: 30, bottom: 50 },
+      xAxis: { type: 'category', data: ageBandLabels },
+      yAxis: { type: 'value' },
+      series: [{ type: 'bar', data: ageBandBalances, itemStyle: { color: '#dc2626' } }]
+    });
+
+    initChart('paymentMixChart', {
+      tooltip: { trigger: 'item' },
+      legend: { bottom: 0 },
+      series: [{
+        type: 'pie',
+        radius: ['44%', '72%'],
+        data: paymentMixLabels.map((label, index) => ({ name: label, value: paymentMixValues[index] ?? 0 }))
+      }]
+    });
+
+    initChart('locationExposureChart', {
+      tooltip: { trigger: 'axis' },
+      grid: { left: 48, right: 20, top: 30, bottom: 80 },
+      xAxis: { type: 'category', data: locationLabels, axisLabel: { rotate: 30 } },
+      yAxis: { type: 'value' },
+      series: [{ type: 'bar', data: locationBalances, itemStyle: { color: '#2e5c8a' } }]
+    });
+
+    initChart('groupExposureChart', {
+      tooltip: { trigger: 'axis' },
+      grid: { left: 48, right: 20, top: 30, bottom: 80 },
+      xAxis: { type: 'category', data: groupLabels, axisLabel: { rotate: 30 } },
+      yAxis: { type: 'value' },
+      series: [{ type: 'bar', data: groupBalances, itemStyle: { color: '#6d28d9' } }]
+    });
+
+    initChart('categoryCountChart', {
+      tooltip: { trigger: 'axis' },
+      grid: { left: 48, right: 20, top: 30, bottom: 80 },
+      xAxis: { type: 'category', data: categoryLabels, axisLabel: { rotate: 25 } },
+      yAxis: { type: 'value' },
+      series: [{ type: 'bar', data: categoryCounts, itemStyle: { color: '#517a28' } }]
+    });
+
+    initChart('categoryExposureChart', {
+      tooltip: { trigger: 'axis' },
+      legend: { bottom: 0 },
+      grid: { left: 48, right: 20, top: 30, bottom: 80 },
+      xAxis: { type: 'category', data: categoryLabels, axisLabel: { rotate: 25 } },
+      yAxis: { type: 'value' },
+      series: [
+        { name: 'Disbursed', type: 'bar', data: categoryDisbursed, itemStyle: { color: '#3a5a1e' } },
+        { name: 'Balance', type: 'line', smooth: true, data: categoryBalance, itemStyle: { color: '#b91c1c' } }
+      ]
+    });
+
+    initChart('agentOutstandingChart', {
+      tooltip: { trigger: 'axis' },
+      grid: { left: 48, right: 20, top: 30, bottom: 80 },
+      xAxis: { type: 'category', data: agentLabels, axisLabel: { rotate: 30 } },
+      yAxis: { type: 'value' },
+      series: [{ type: 'bar', data: agentOutstanding, itemStyle: { color: '#0f766e' } }]
+    });
+
+    initChart('agentCollectionRateChart', {
+      tooltip: { trigger: 'axis' },
+      grid: { left: 48, right: 20, top: 30, bottom: 80 },
+      xAxis: { type: 'category', data: agentLabels, axisLabel: { rotate: 30 } },
+      yAxis: { type: 'value' },
+      series: [{ type: 'line', smooth: true, data: agentCollectionRates, itemStyle: { color: '#b88620' } }]
+    });
+
+    window.addEventListener('resize', () => charts.forEach((chart) => chart.resize()));
+  })();
+</script>
+
+{% endblock %}

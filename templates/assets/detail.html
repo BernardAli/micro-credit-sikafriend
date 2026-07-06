@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load currency %}
+{% block content %}
+<style>
+  .asset-detail-shell{display:grid;gap:18px}
+  .panel{border:1px solid var(--border);border-radius:24px;background:var(--panel);box-shadow:0 20px 48px rgba(26,31,20,.05);overflow:hidden}
+  .section{padding:20px 22px}
+  .section + .section{border-top:1px solid var(--border-soft)}
+  .hero{border:1px solid var(--border);border-radius:30px;overflow:hidden;color:#fff;background:linear-gradient(135deg,color-mix(in srgb,var(--primary-2) 32%, #000) 0%,var(--primary-2) 52%,color-mix(in srgb,var(--gold) 18%, var(--primary-3)) 100%);box-shadow:0 24px 70px var(--primary-glow)}
+  .hero-inner{padding:26px}
+  .hero-kicker{font-size:12px;text-transform:uppercase;letter-spacing:.45px;font-weight:900;opacity:.8;margin-bottom:6px}
+  .hero-title{margin:0;font-size:31px;font-weight:900}
+  .hero-sub{margin-top:10px;opacity:.88;line-height:1.68;max-width:980px}
+  .grid-2,.grid-4{display:grid;gap:16px}
+  .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .stat-card{border:1px solid var(--border);border-radius:22px;padding:18px;background:var(--panel-strong)}
+  .stat-label{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.38px;color:var(--muted)}
+  .stat-value{font-size:22px;font-weight:900;margin-top:8px;color:var(--text)}
+  .meta-list{display:grid;gap:10px}
+  .meta-row{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--border-soft);padding-bottom:10px}
+  .meta-row:last-child{border-bottom:none;padding-bottom:0}
+  .meta-label{font-size:12px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .meta-value{color:var(--text);text-align:right}
+  .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:18px}
+  .table{width:100%;border-collapse:collapse;min-width:720px;background:var(--panel)}
+  .table th,.table td{padding:12px 14px;border-bottom:1px solid var(--border-soft);text-align:left;font-size:13px}
+  .table th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:var(--bg-soft)}
+  @media(max-width:1100px){.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-2{grid-template-columns:1fr}}
+</style>
+
+<div class="asset-detail-shell">
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-kicker">{{ asset.category.name }}</div>
+      <h1 class="hero-title">{{ asset.asset_code }} · {{ asset.name }}</h1>
+      <div class="hero-sub">Track carrying value, custody, maintenance history, depreciation, and the accounting accounts tied to this asset.</div>
+    </div>
+  </section>
+
+  <section class="grid-4">
+    <div class="stat-card"><div class="stat-label">Acquisition Cost</div><div class="stat-value">{{ asset.purchase_cost|currency }}</div></div>
+    <div class="stat-card"><div class="stat-label">Accumulated Depreciation</div><div class="stat-value">{{ asset.posted_accumulated_depreciation|currency }}</div></div>
+    <div class="stat-card"><div class="stat-label">Net Book Value</div><div class="stat-value">{{ asset.net_book_value|currency }}</div></div>
+    <div class="stat-card"><div class="stat-label">Depreciation Due</div><div class="stat-value">{{ asset.depreciation_due|currency }}</div></div>
+  </section>
+
+  <section class="grid-2">
+    <div class="panel">
+      <div class="section">
+        <h2 style="margin:0 0 12px;">Asset Profile</h2>
+        <div class="meta-list">
+          <div class="meta-row"><div class="meta-label">Status</div><div class="meta-value">{{ asset.get_status_display }}</div></div>
+          <div class="meta-row"><div class="meta-label">Condition</div><div class="meta-value">{{ asset.get_condition_display }}</div></div>
+          <div class="meta-row"><div class="meta-label">Custodian</div><div class="meta-value">{{ asset.custodian.name|default:"-" }}</div></div>
+          <div class="meta-row"><div class="meta-label">Location</div><div class="meta-value">{{ asset.location|default:"-" }}</div></div>
+          <div class="meta-row"><div class="meta-label">Branch</div><div class="meta-value">{{ asset.branch_name|default:"-" }}</div></div>
+          <div class="meta-row"><div class="meta-label">Vendor</div><div class="meta-value">{{ asset.vendor.name|default:"-" }}</div></div>
+          <div class="meta-row"><div class="meta-label">Warranty</div><div class="meta-value">{% if asset.warranty_expiry %}{{ asset.warranty_expiry }}{% else %}-{% endif %}</div></div>
+          <div class="meta-row"><div class="meta-label">Useful Life</div><div class="meta-value">{{ asset.useful_life_months }} months</div></div>
+          <div class="meta-row"><div class="meta-label">Depreciation Method</div><div class="meta-value">{{ asset.get_depreciation_method_display }}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section">
+        <h2 style="margin:0 0 12px;">Accounting Links</h2>
+        <div class="meta-list">
+          <div class="meta-row"><div class="meta-label">Asset Account</div><div class="meta-value">{{ asset.asset_account.code }} - {{ asset.asset_account.name }}</div></div>
+          <div class="meta-row"><div class="meta-label">Accumulated Depreciation</div><div class="meta-value">{{ asset.accumulated_depreciation_account.code }} - {{ asset.accumulated_depreciation_account.name }}</div></div>
+          <div class="meta-row"><div class="meta-label">Depreciation Expense</div><div class="meta-value">{{ asset.depreciation_expense_account.code }} - {{ asset.depreciation_expense_account.name }}</div></div>
+          <div class="meta-row"><div class="meta-label">Maintenance Expense</div><div class="meta-value">{{ asset.maintenance_expense_account.code }} - {{ asset.maintenance_expense_account.name }}</div></div>
+          <div class="meta-row"><div class="meta-label">Funding Account</div><div class="meta-value">{% if asset.funding_account %}{{ asset.funding_account.code }} - {{ asset.funding_account.name }}{% else %}-{% endif %}</div></div>
+          <div class="meta-row"><div class="meta-label">Capitalization Journal</div><div class="meta-value">{% if asset.acquisition_entry %}{{ asset.acquisition_entry.entry_no }}{% else %}Not posted{% endif %}</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="section">
+      <h2 style="margin:0 0 12px;">Depreciation History</h2>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Run</th><th>Period</th><th class="right">Amount</th><th class="right">Closing Accumulated</th><th class="right">Closing NBV</th></tr></thead>
+          <tbody>
+            {% for line in asset.depreciation_lines.all %}
+              <tr>
+                <td>{{ line.run.title }}</td>
+                <td>{{ line.run.period_start }} to {{ line.run.period_end }}</td>
+                <td class="right">{{ line.depreciation_amount|currency }}</td>
+                <td class="right">{{ line.closing_accumulated_depreciation|currency }}</td>
+                <td class="right">{{ line.closing_book_value|currency }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5">No depreciation has been posted for this asset yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid-2">
+    <div class="panel">
+      <div class="section">
+        <h2 style="margin:0 0 12px;">Assignment History</h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Assigned To</th><th>Date</th><th>Returned</th><th>Location</th></tr></thead>
+            <tbody>
+              {% for item in asset.assignments.all %}
+                <tr>
+                  <td>{{ item.assigned_to.name|default:"-" }}</td>
+                  <td>{{ item.assigned_date }}</td>
+                  <td>{{ item.returned_date|default:"-" }}</td>
+                  <td>{{ item.location|default:"-" }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4">No assignments recorded.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section">
+        <h2 style="margin:0 0 12px;">Maintenance History</h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Type</th><th>Status</th><th>Date</th><th class="right">Actual Cost</th></tr></thead>
+            <tbody>
+              {% for item in asset.maintenance_records.all %}
+                <tr>
+                  <td>{{ item.get_maintenance_type_display }}</td>
+                  <td>{{ item.get_status_display }}</td>
+                  <td>{% if item.completed_on %}{{ item.completed_on }}{% else %}{{ item.requested_on }}{% endif %}</td>
+                  <td class="right">{{ item.actual_cost|currency }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4">No maintenance records recorded.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

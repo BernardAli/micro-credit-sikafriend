@@ -1,0 +1,505 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block page_title %}Sign In{% endblock %} — {{ saas_name|default:"SikaFriend" }}</title>
+<meta name="theme-color" content="#0f2043">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ─── TOKENS (matches public/base.html) ──────────────────────────────────── */
+:root {
+  --navy:       #0f2043;
+  --navy-900:   #0a1628;
+  --navy-800:   #1a3460;
+  --navy-200:   #c2d0ec;
+  --navy-100:   #e1e9f8;
+  --navy-50:    #f0f4fd;
+  --gold:       #e8a020;
+  --gold-dark:  #c4851a;
+  --gold-light: #fbbf24;
+  --gold-50:    #fef9ec;
+  --white: #ffffff;
+  --gray-900: #0f172a;
+  --gray-800: #1e293b;
+  --gray-700: #334155;
+  --gray-600: #475569;
+  --gray-500: #64748b;
+  --gray-400: #94a3b8;
+  --gray-300: #cbd5e1;
+  --gray-200: #e2e8f0;
+  --gray-100: #f1f5f9;
+  --gray-50:  #f8fafc;
+  --red:      #dc2626;
+  --red-50:   #fef2f2;
+  --green:    #16a34a;
+  --green-50: #f0fdf4;
+  --font-head: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  --font-body: 'Inter', -apple-system, sans-serif;
+  --r-sm: 8px;
+  --r:    12px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-pill: 999px;
+  --sh-sm: 0 2px 8px rgba(15,32,67,.08);
+  --sh:    0 4px 16px rgba(15,32,67,.10);
+  --sh-md: 0 8px 32px rgba(15,32,67,.12);
+  --sh-xl: 0 32px 80px rgba(15,32,67,.20);
+  --gold-sh: 0 8px 32px rgba(232,160,32,.28);
+  --ease: cubic-bezier(.4,0,.2,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--gray-800);
+  background: var(--gray-50);
+  min-height: 100%;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { text-decoration: none; color: inherit; }
+button, input, select, textarea { font: inherit; }
+ul { list-style: none; }
+img, svg, iframe { display: block; max-width: 100%; }
+
+/* ─── TOP BAR ─────────────────────────────────────────────────────────────── */
+.auth-topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 60px;
+  background: rgba(255,255,255,.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--gray-200);
+  box-shadow: 0 1px 12px rgba(15,32,67,.05);
+}
+.auth-topbar__inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 100%; max-width: 1200px; margin: 0 auto; padding: 0 clamp(18px,4vw,48px);
+  min-width: 0; gap: 12px;
+}
+.auth-logo {
+  display: flex; align-items: center; gap: 10px;
+  min-width: 0;
+}
+.auth-logo__mark {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: var(--navy); display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-head); font-weight: 800; font-size: 17px; color: var(--gold);
+  flex-shrink: 0;
+}
+.auth-logo__name {
+  font-family: var(--font-head); font-size: 19px; font-weight: 800;
+  color: var(--navy); letter-spacing: -.02em;
+}
+.auth-topbar__back {
+  font-size: 14px; font-weight: 500; color: var(--gray-600);
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--r-pill);
+  border: 1px solid var(--gray-200); background: var(--white);
+  transition: background .15s, border-color .15s, color .15s;
+}
+.auth-topbar__back:hover { background: var(--gray-100); border-color: var(--gray-300); color: var(--navy); }
+.auth-topbar__back svg { width: 14px; height: 14px; }
+
+/* ─── PAGE LAYOUT ─────────────────────────────────────────────────────────── */
+.auth-page {
+  min-height: 100vh;
+  padding-top: 60px;
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.auth-shell {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,1.05fr);
+  box-shadow: var(--sh-xl);
+  border-radius: 0;
+  overflow: hidden;
+  animation: fadeUp .45s var(--ease) both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── LEFT BRAND PANEL ────────────────────────────────────────────────────── */
+.auth-brand {
+  background: linear-gradient(155deg, #060e20 0%, #0f2043 55%, #1a3460 100%);
+  padding: clamp(40px,5vw,64px) clamp(32px,4vw,56px);
+  display: flex; flex-direction: column;
+  position: sticky; top: 60px;
+  height: calc(100vh - 60px); overflow-y: auto;
+  color: #fff;
+}
+
+.auth-brand__orb1 {
+  position: absolute; top: -80px; right: -80px; width: 320px; height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232,160,32,.18), transparent 65%);
+  pointer-events: none;
+}
+.auth-brand__orb2 {
+  position: absolute; bottom: -60px; left: -40px; width: 240px; height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(26,52,96,.6), transparent 65%);
+  pointer-events: none;
+}
+.auth-brand-inner { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; }
+
+.auth-brand__kicker {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-head); font-size: 11px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--gold);
+  margin-bottom: 20px;
+}
+.auth-brand__kicker::before {
+  content: ''; display: block; width: 18px; height: 2px;
+  background: var(--gold); border-radius: 2px;
+}
+
+.auth-brand__headline {
+  font-family: var(--font-head); font-size: clamp(26px,3vw,36px);
+  font-weight: 800; line-height: 1.15; color: #fff; margin-bottom: 16px;
+}
+.auth-brand__headline em { color: var(--gold); font-style: italic; }
+
+.auth-brand__sub {
+  font-size: 15px; color: rgba(255,255,255,.6); line-height: 1.7; margin-bottom: 40px;
+}
+
+/* Feature list */
+.auth-features { display: flex; flex-direction: column; gap: 20px; flex: 1; }
+.auth-feature { display: flex; align-items: flex-start; gap: 14px; }
+.auth-feature__icon {
+  width: 38px; height: 38px; border-radius: var(--r-sm);
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.1);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  font-size: 17px;
+}
+.auth-feature__text strong {
+  display: block; font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 3px;
+}
+.auth-feature__text span { font-size: 13px; color: rgba(255,255,255,.52); line-height: 1.5; }
+
+/* Stats grid */
+.auth-brand__stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 32px;
+}
+.auth-brand__stat {
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+  border-radius: var(--r-md); padding: 16px;
+}
+.auth-brand__stat-val {
+  font-family: var(--font-head); font-size: 20px; font-weight: 800;
+  color: var(--gold); line-height: 1;
+}
+.auth-brand__stat-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .08em; color: rgba(255,255,255,.5); margin-top: 5px;
+}
+
+/* Trust badge */
+.auth-brand__trust {
+  margin-top: 24px; display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+  border-radius: var(--r-md);
+}
+.auth-brand__trust svg { width: 18px; height: 18px; color: var(--gold); flex-shrink: 0; }
+.auth-brand__trust span { font-size: 12.5px; color: rgba(255,255,255,.58); line-height: 1.5; }
+
+/* ─── RIGHT FORM PANEL ────────────────────────────────────────────────────── */
+.auth-form-pane {
+  background: var(--white);
+  padding: clamp(36px,5vw,64px) clamp(28px,4.5vw,60px);
+  display: flex; align-items: center; justify-content: center;
+  min-height: calc(100vh - 60px);
+}
+
+.auth-form-wrap { width: 100%; max-width: 420px; min-width: 0; }
+
+.auth-form-head { margin-bottom: 28px; }
+
+.auth-form-head__kicker {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-head); font-size: 11px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--gold-dark);
+  margin-bottom: 12px;
+}
+.auth-form-head__kicker::before {
+  content: ''; display: block; width: 16px; height: 2px;
+  background: var(--gold); border-radius: 2px;
+}
+
+.auth-form-head h1 {
+  font-family: var(--font-head); font-size: clamp(22px,2.5vw,28px);
+  font-weight: 800; color: var(--gray-900); line-height: 1.2; margin-bottom: 8px;
+}
+
+.auth-form-head__sub {
+  font-size: 14.5px; color: var(--gray-500); line-height: 1.65;
+}
+
+.auth-divider {
+  height: 1px; background: var(--gray-100); margin-bottom: 24px;
+}
+
+/* ─── MESSAGES ────────────────────────────────────────────────────────────── */
+.message-card {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 13px 16px; border-radius: var(--r);
+  margin-bottom: 18px;
+  font-size: 13.5px; font-weight: 500; line-height: 1.55;
+  border: 1px solid #fca5a5; background: var(--red-50); color: var(--red);
+}
+.message-card .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0; margin-top: 5px;
+}
+.message-card--success {
+  border-color: #86efac; background: var(--green-50); color: var(--green);
+}
+
+/* ─── FORM FIELDS ─────────────────────────────────────────────────────────── */
+.form-grid { display: flex; flex-direction: column; gap: 16px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+
+.field label {
+  font-size: 13px; font-weight: 600; color: var(--gray-700);
+}
+
+.field input {
+  width: 100%; padding: 12px 16px; font-size: 15px;
+  color: var(--gray-900); background: var(--white);
+  border: 1.5px solid var(--gray-200); border-radius: var(--r);
+  outline: none; transition: border-color .15s, box-shadow .15s;
+  -webkit-appearance: none;
+}
+.field input:focus {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 4px rgba(15,32,67,.07);
+}
+.field input::placeholder { color: var(--gray-400); }
+
+.field-errors {
+  font-size: 12.5px; color: var(--red);
+  margin: 0; padding-left: 0; list-style: none;
+}
+
+.password-wrap { position: relative; }
+.password-wrap input { padding-right: 76px; }
+.toggle-pw {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 12px; font-weight: 600; color: var(--navy);
+  padding: 4px 10px; border-radius: var(--r-sm);
+  cursor: pointer; user-select: none;
+  transition: background .15s;
+}
+.toggle-pw:hover { background: var(--navy-50); }
+
+/* ─── SUBMIT BUTTON ───────────────────────────────────────────────────────── */
+.btn-submit {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; margin-top: 4px; padding: 14px 24px;
+  font-family: var(--font-head); font-size: 15.5px; font-weight: 700;
+  color: var(--gray-900); background: var(--gold);
+  border: none; border-radius: var(--r-pill); cursor: pointer;
+  box-shadow: 0 4px 20px rgba(232,160,32,.3);
+  transition: background .2s var(--ease), transform .2s var(--ease), box-shadow .2s var(--ease);
+}
+.btn-submit:hover {
+  background: var(--gold-dark); color: var(--white);
+  transform: translateY(-2px); box-shadow: var(--gold-sh);
+}
+.btn-submit:active { transform: translateY(0); }
+
+/* ─── HELPER ROW ──────────────────────────────────────────────────────────── */
+.helper-row {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; margin-top: 14px; font-size: 13px; color: var(--gray-500); flex-wrap: wrap;
+}
+.text-link {
+  font-weight: 600; color: var(--navy);
+  border-bottom: 1.5px solid var(--gold);
+  padding-bottom: 1px; transition: color .15s;
+}
+.text-link:hover { color: var(--gold-dark); }
+
+/* ─── SECURITY NOTE ───────────────────────────────────────────────────────── */
+.security-note {
+  margin-top: 20px; padding: 14px 16px;
+  background: var(--navy-50); border: 1px solid var(--navy-100);
+  border-radius: var(--r); font-size: 12.5px; color: var(--gray-600); line-height: 1.6;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.security-note svg { width: 15px; height: 15px; color: var(--navy); flex-shrink: 0; margin-top: 2px; }
+
+.footer-note {
+  text-align: center; margin-top: 24px; font-size: 12px;
+  color: var(--gray-400); line-height: 1.6;
+}
+.footer-note a { color: var(--navy); font-weight: 600; border-bottom: 1px solid var(--gray-200); }
+.footer-note a:hover { border-color: var(--gold); }
+
+/* ─── RESPONSIVE ──────────────────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .auth-shell { grid-template-columns: 1fr; max-width: 520px; }
+  .auth-brand {
+    position: static; height: auto; min-height: unset;
+    padding: clamp(28px,4vw,40px) clamp(24px,4vw,40px);
+  }
+  .auth-brand__stats { grid-template-columns: repeat(4,1fr); }
+  .auth-feature { display: none; }
+  .auth-features { display: none; }
+  .auth-form-pane { min-height: unset; padding: 32px 24px 40px; }
+}
+@media (max-width: 600px) {
+  .auth-page { align-items: flex-start; }
+  .auth-brand__stats { grid-template-columns: 1fr 1fr; }
+  .auth-topbar__back span { display: none; }
+  .auth-topbar__inner { padding: 0 16px; }
+  .auth-shell { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─── TOP BAR ──────────────────────────────────────────────────────────── -->
+<header class="auth-topbar">
+  <div class="auth-topbar__inner">
+    <a href="/" class="auth-logo">
+      <div class="auth-logo__mark">{{ saas_name|default:"S"|first|upper }}</div>
+      <span class="auth-logo__name">{{ saas_name|default:"SikaFriend" }}</span>
+    </a>
+    <a href="/" class="auth-topbar__back">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5l-5 5 5 5"/>
+      </svg>
+      <span>Back to home</span>
+    </a>
+  </div>
+</header>
+
+<!-- ─── MAIN ─────────────────────────────────────────────────────────────── -->
+<div class="auth-page">
+<div class="auth-shell">
+
+  <!-- Left brand panel -->
+  <section class="auth-brand" style="position:relative">
+    <div class="auth-brand__orb1"></div>
+    <div class="auth-brand__orb2"></div>
+    <div class="auth-brand-inner">
+
+      <div class="auth-brand__kicker">{% block brand_kicker %}Secure Platform Access{% endblock %}</div>
+
+      <h2 class="auth-brand__headline">{% block brand_heading %}Welcome back to your<br><em>lending workspace</em>{% endblock %}</h2>
+      <p class="auth-brand__sub">{% block brand_body %}Access borrower records, loan portfolios, collections, repayment tracking, and operational analytics — all from one secure dashboard.{% endblock %}</p>
+
+      <div class="auth-features">
+        {% block brand_features %}
+        <div class="auth-feature">
+          <div class="auth-feature__icon">📋</div>
+          <div class="auth-feature__text">
+            <strong>Loan Portfolio</strong>
+            <span>Manage active loans, repayments, and disbursements in real time.</span>
+          </div>
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature__icon">👤</div>
+          <div class="auth-feature__text">
+            <strong>Borrower Records</strong>
+            <span>Complete borrower profiles, history, and credit scoring.</span>
+          </div>
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature__icon">📊</div>
+          <div class="auth-feature__text">
+            <strong>Analytics & Reports</strong>
+            <span>Portfolio health, collections rate, and disbursement trends.</span>
+          </div>
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature__icon">💬</div>
+          <div class="auth-feature__text">
+            <strong>SMS Notifications</strong>
+            <span>Automated repayment reminders and borrower communications.</span>
+          </div>
+        </div>
+        {% endblock %}
+      </div>
+
+      <div class="auth-brand__stats">
+        {% block brand_stats %}
+        <div class="auth-brand__stat">
+          <div class="auth-brand__stat-val">100%</div>
+          <div class="auth-brand__stat-label">Data Isolated</div>
+        </div>
+        <div class="auth-brand__stat">
+          <div class="auth-brand__stat-val">TLS</div>
+          <div class="auth-brand__stat-label">Encrypted</div>
+        </div>
+        <div class="auth-brand__stat">
+          <div class="auth-brand__stat-val">24/7</div>
+          <div class="auth-brand__stat-label">Uptime</div>
+        </div>
+        <div class="auth-brand__stat">
+          <div class="auth-brand__stat-val">RBAC</div>
+          <div class="auth-brand__stat-label">Role Access</div>
+        </div>
+        {% endblock %}
+      </div>
+
+      <div class="auth-brand__trust">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Schema-isolated data storage. Your organisation's data is never shared with other tenants.</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Right form panel -->
+  <section class="auth-form-pane">
+    <div class="auth-form-wrap">
+
+      <div class="auth-form-head">
+        <div class="auth-form-head__kicker">{% block form_kicker %}Authentication{% endblock %}</div>
+        <h1>{% block form_title %}Sign in{% endblock %}</h1>
+        <p class="auth-form-head__sub">{% block form_intro %}Enter your credentials to access the management system.{% endblock %}</p>
+      </div>
+      <div class="auth-divider"></div>
+
+      {% block form_content %}{% endblock %}
+
+      {% block form_note %}
+      <div class="security-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>This portal is restricted to authorised personnel. All access activity is logged and monitored.</span>
+      </div>
+      {% endblock %}
+
+      <div class="footer-note">
+        © {% now "Y" %} {{ saas_name|default:"SikaFriend" }}.
+        <a href="/terms/">Terms</a> · <a href="/privacy/">Privacy</a>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+</div>
+
+{% block page_scripts %}{% endblock %}
+</body>
+</html>

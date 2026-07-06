@@ -1,0 +1,983 @@
+{% extends "public/base.html" %}
+{% load public_money %}
+{% block title %}My Account — {{ saas_name }}{% endblock %}
+{% block header_class %}pub-header--solid{% endblock %}
+{% block logo_class %}{% endblock %}
+
+{% block head_styles %}
+body { background: var(--gray-50); }
+
+/* ── Page header ─────────────────────────────────────────────────────── */
+.acct-hero {
+  background: linear-gradient(135deg, #060e20 0%, var(--navy) 60%, var(--navy-800) 100%);
+  padding: calc(var(--header-h) + 40px) var(--px) 48px;
+  position: relative; overflow: hidden;
+}
+.acct-hero::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 80% at 80% 50%, rgba(232,160,32,.12), transparent 65%);
+  pointer-events: none;
+}
+.acct-hero__inner {
+  max-width: var(--container); margin: 0 auto;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 24px; flex-wrap: wrap; position: relative; z-index: 1;
+}
+.acct-hero__left {}
+.acct-hero__greeting {
+  font-size: 13px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .12em; color: var(--gold); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.acct-hero__greeting::before {
+  content: ''; display: block; width: 18px; height: 2px;
+  background: var(--gold); border-radius: 2px;
+}
+.acct-hero__name {
+  font-family: var(--font-head); font-size: clamp(26px,3.5vw,38px);
+  font-weight: 800; color: #fff; line-height: 1.15; margin-bottom: 10px;
+}
+.acct-hero__sub { font-size: 15px; color: rgba(255,255,255,.55); }
+.acct-hero__actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* ── Layout ──────────────────────────────────────────────────────────── */
+.acct-body {
+  max-width: var(--container); margin: 0 auto;
+  padding: 36px var(--px) 80px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 24px;
+}
+
+/* ── Cards ───────────────────────────────────────────────────────────── */
+.acct-card {
+  background: var(--white); border: 1px solid var(--gray-200);
+  border-radius: var(--r-lg); padding: 28px 28px 24px;
+  box-shadow: var(--sh-xs);
+}
+.acct-card--wide { grid-column: span 2; }
+.acct-card--full { grid-column: span 3; }
+
+.acct-card__header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 22px; padding-bottom: 16px;
+  border-bottom: 1px solid var(--gray-100);
+}
+.acct-card__title {
+  font-family: var(--font-head); font-size: 13px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em; color: var(--gray-500);
+}
+.acct-card__icon {
+  width: 34px; height: 34px; border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.acct-card__icon--navy  { background: var(--navy-50); }
+.acct-card__icon--gold  { background: var(--gold-50); }
+.acct-card__icon--gray  { background: var(--gray-100); }
+.acct-card__icon--green { background: var(--green-50); }
+
+/* ── Status badges ───────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px; border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.badge--trial      { background: var(--gold-50);  color: var(--gold-dark);  border: 1px solid #fcd29a; }
+.badge--active     { background: var(--green-50); color: var(--green);      border: 1px solid #86efac; }
+.badge--suspended  { background: var(--red-50);   color: var(--red);        border: 1px solid #fca5a5; }
+.badge--cancelled  { background: var(--gray-100); color: var(--gray-600);   border: 1px solid var(--gray-300); }
+.badge::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+}
+
+/* ── Workspace card ──────────────────────────────────────────────────── */
+.workspace-url {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; background: var(--gray-50);
+  border: 1.5px solid var(--gray-200); border-radius: var(--r-md);
+  margin-bottom: 20px; transition: border-color .15s;
+}
+.workspace-url:hover { border-color: var(--navy-200); }
+.workspace-url__icon {
+  width: 32px; height: 32px; border-radius: var(--r-sm);
+  background: var(--navy); display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-head); font-weight: 800; font-size: 14px; color: var(--gold);
+  flex-shrink: 0;
+}
+.workspace-url__text { flex: 1; min-width: 0; }
+.workspace-url__label { font-size: 11px; color: var(--gray-400); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+.workspace-url__link  { font-size: 14px; color: var(--navy); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.workspace-url__ext { width: 14px; height: 14px; color: var(--gray-400); flex-shrink: 0; }
+
+.workspace-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.workspace-meta-item {}
+.workspace-meta-item__label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--gray-400); margin-bottom: 4px; }
+.workspace-meta-item__value { font-size: 14px; font-weight: 600; color: var(--gray-800); }
+
+/* ── Subscription card ───────────────────────────────────────────────── */
+.plan-name {
+  font-family: var(--font-head); font-size: 22px; font-weight: 800;
+  color: var(--gray-900); margin-bottom: 4px;
+}
+.plan-price { font-size: 14px; color: var(--gray-500); margin-bottom: 20px; }
+.plan-price strong { color: var(--gray-800); font-weight: 700; }
+
+.trial-countdown {
+  padding: 14px 16px; border-radius: var(--r-md); margin-bottom: 20px;
+  background: var(--gold-50); border: 1px solid #fcd29a;
+  display: flex; align-items: center; gap: 12px;
+}
+.trial-countdown__days {
+  font-family: var(--font-head); font-size: 28px; font-weight: 800; color: var(--gold-dark);
+  line-height: 1; flex-shrink: 0;
+}
+.trial-countdown__text { font-size: 13px; color: var(--gray-600); line-height: 1.55; }
+.trial-countdown__text strong { color: var(--gray-800); }
+
+.trial-expired-note {
+  padding: 12px 14px; border-radius: var(--r); margin-bottom: 20px;
+  background: var(--red-50); border: 1px solid #fca5a5;
+  font-size: 13px; color: var(--red); font-weight: 500;
+}
+
+.plan-limits { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.plan-limit { padding: 12px 14px; background: var(--gray-50); border-radius: var(--r); }
+.plan-limit__val { font-family: var(--font-head); font-size: 18px; font-weight: 800; color: var(--navy); }
+.plan-limit__label { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+
+.feature-list { display: flex; flex-direction: column; gap: 8px; }
+.feature-item { display: flex; align-items: center; gap: 10px; font-size: 13.5px; }
+.feature-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+.feature-item--on  { color: var(--gray-700); }
+.feature-item--off { color: var(--gray-400); }
+.feature-item--on  svg { color: var(--green); }
+.feature-item--off svg { color: var(--gray-300); }
+
+/* ── Account info card ───────────────────────────────────────────────── */
+.acct-info-row {
+  display: flex; align-items: flex-start; gap: 14px; padding: 14px 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+.acct-info-row:last-child { border-bottom: none; padding-bottom: 0; }
+.acct-info-row__icon {
+  width: 32px; height: 32px; border-radius: var(--r-sm);
+  background: var(--gray-100); display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.acct-info-row__icon svg { width: 15px; height: 15px; color: var(--gray-500); }
+.acct-info-row__label { font-size: 11.5px; color: var(--gray-400); font-weight: 600; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 3px; }
+.acct-info-row__value { font-size: 14px; font-weight: 600; color: var(--gray-800); word-break: break-all; }
+
+/* ── Quick actions card ──────────────────────────────────────────────── */
+.quick-actions { display: flex; flex-direction: column; gap: 10px; }
+.quick-action {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+  border: 1px solid var(--gray-200); border-radius: var(--r-md);
+  color: var(--gray-800); transition: border-color .15s, background .15s, transform .15s;
+  cursor: pointer; text-decoration: none; background: var(--white);
+}
+.quick-action:hover { border-color: var(--navy-200); background: var(--navy-50); transform: translateX(3px); }
+.quick-action__icon {
+  width: 36px; height: 36px; border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  font-size: 17px;
+}
+.quick-action__text { flex: 1; }
+.quick-action__title { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+.quick-action__sub   { font-size: 12px; color: var(--gray-500); margin-top: 1px; }
+.quick-action__arrow { width: 16px; height: 16px; color: var(--gray-400); flex-shrink: 0; }
+
+.api-note {
+  padding: 12px 14px; border-radius: var(--r-md);
+  background: var(--navy-50); border: 1px solid var(--navy-200);
+  color: var(--gray-700); font-size: 13px; line-height: 1.6;
+}
+.api-key-box, .api-code-box {
+  width: 100%; border: 1px solid var(--gray-200); border-radius: var(--r-md);
+  background: var(--gray-50); color: var(--gray-900);
+  padding: 12px 14px; font-size: 13px;
+}
+.api-key-box { font-family: monospace; font-weight: 700; }
+.api-code-box {
+  overflow-x: auto; white-space: pre; line-height: 1.55; margin: 0;
+  font-family: monospace;
+}
+.api-key-row {
+  padding: 12px 0; border-bottom: 1px solid var(--gray-100);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+}
+.api-key-row:last-child { border-bottom: none; padding-bottom: 0; }
+.api-key-meta__name { font-size: 14px; font-weight: 700; color: var(--gray-900); }
+.api-key-meta__sub { font-size: 12px; color: var(--gray-500); margin-top: 4px; line-height: 1.5; }
+.api-form-inline {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.api-form-inline input[type="text"] {
+  flex: 1; min-width: 220px; padding: 11px 14px; border: 1.5px solid var(--gray-200);
+  border-radius: var(--r-md); font-size: 14px; color: var(--gray-800); background: var(--white);
+}
+.api-form-inline input[type="text"]:focus {
+  outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(15,32,67,.08);
+}
+
+/* ── Upgrade banner ──────────────────────────────────────────────────── */
+.upgrade-banner {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-800) 100%);
+  border-radius: var(--r-lg); padding: 28px 32px;
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  flex-wrap: wrap;
+}
+.upgrade-banner__text {}
+.upgrade-banner__kicker {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em;
+  color: var(--gold); margin-bottom: 6px;
+}
+.upgrade-banner__heading {
+  font-family: var(--font-head); font-size: 20px; font-weight: 800;
+  color: #fff; margin-bottom: 6px;
+}
+.upgrade-banner__sub { font-size: 14px; color: rgba(255,255,255,.55); }
+
+/* ── Empty state ─────────────────────────────────────────────────────── */
+.acct-empty {
+  grid-column: span 3; text-align: center; padding: 80px 24px;
+  background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--r-lg);
+}
+.acct-empty__icon { font-size: 56px; margin-bottom: 16px; }
+.acct-empty__title { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: var(--gray-900); margin-bottom: 10px; }
+.acct-empty__sub { font-size: 15px; color: var(--gray-500); max-width: 420px; margin: 0 auto 28px; line-height: 1.7; }
+
+/* ── Payment modal ───────────────────────────────────────────────────── */
+.pay-overlay {
+  position: fixed; inset: 0; z-index: 5000;
+  background: rgba(6,14,32,.55); backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  opacity: 0; pointer-events: none; transition: opacity .22s var(--ease);
+}
+.pay-overlay.is-open { opacity: 1; pointer-events: all; }
+.pay-modal {
+  background: var(--white); border-radius: var(--r-lg);
+  width: 100%; max-width: 500px; max-height: 92vh; overflow-y: auto;
+  box-shadow: var(--sh-xl); padding: 32px 32px 28px;
+  transform: translateY(16px) scale(.98); transition: transform .25s var(--ease);
+}
+.pay-overlay.is-open .pay-modal { transform: none; }
+
+.pay-modal__head {
+  display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 26px;
+}
+.pay-modal__kicker {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .11em;
+  color: var(--gold-dark); margin-bottom: 5px;
+}
+.pay-modal__title {
+  font-family: var(--font-head); font-size: 22px; font-weight: 800; color: var(--gray-900);
+}
+.pay-modal__close {
+  width: 34px; height: 34px; border-radius: var(--r-sm); flex-shrink: 0;
+  background: var(--gray-100); border: none; font-size: 20px; line-height: 1;
+  cursor: pointer; color: var(--gray-600); transition: background .15s; display: flex; align-items: center; justify-content: center;
+}
+.pay-modal__close:hover { background: var(--gray-200); }
+
+.pay-section { margin-bottom: 18px; }
+.pay-label {
+  font-size: 12.5px; font-weight: 700; color: var(--gray-600);
+  text-transform: uppercase; letter-spacing: .07em; margin-bottom: 9px; display: block;
+}
+
+.pay-cycle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pay-cycle-opt input[type="radio"] { display: none; }
+.pay-cycle-opt__box {
+  display: block; padding: 14px 16px; border: 2px solid var(--gray-200);
+  border-radius: var(--r-md); cursor: pointer; transition: all .18s;
+  line-height: 1.5;
+}
+.pay-cycle-opt input:checked + .pay-cycle-opt__box {
+  border-color: var(--navy); background: var(--navy-50);
+}
+.pay-cycle-opt__tier { font-size: 13px; font-weight: 700; color: var(--gray-700); }
+.pay-cycle-opt input:checked + .pay-cycle-opt__box .pay-cycle-opt__tier { color: var(--navy); }
+.pay-cycle-opt__price { font-family: var(--font-head); font-size: 18px; font-weight: 800; color: var(--gray-900); margin-top: 2px; }
+.pay-cycle-opt input:checked + .pay-cycle-opt__box .pay-cycle-opt__price { color: var(--navy); }
+.pay-cycle-opt__save {
+  font-size: 11px; font-weight: 700; color: var(--green);
+  background: var(--green-50); border-radius: var(--r-pill);
+  padding: 2px 8px; display: inline-block; margin-top: 4px;
+}
+
+.pay-amount-box {
+  background: var(--gold-50); border: 1.5px solid #fcd29a; border-radius: var(--r-md);
+  padding: 14px 18px; margin: 18px 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.pay-amount-box__label { font-size: 13px; color: var(--gray-600); font-weight: 500; }
+.pay-amount-box__val { font-family: var(--font-head); font-size: 26px; font-weight: 800; color: var(--gold-dark); }
+
+.pay-select, .pay-input {
+  width: 100%; padding: 11px 14px; border: 1.5px solid var(--gray-200);
+  border-radius: var(--r-md); font-size: 14px; color: var(--gray-800);
+  background: var(--white); transition: border-color .15s;
+}
+.pay-select:focus, .pay-input:focus {
+  outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(15,32,67,.08);
+}
+
+.pay-divider { border: none; border-top: 1px solid var(--gray-100); margin: 22px 0; }
+
+.pay-submit {
+  width: 100%; padding: 15px; background: var(--navy); color: #fff;
+  border: none; border-radius: var(--r-md);
+  font-family: var(--font-head); font-size: 15px; font-weight: 800;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background .2s, transform .15s; margin-top: 8px;
+}
+.pay-submit:hover { background: var(--navy-800); transform: translateY(-1px); }
+.pay-submit:active { transform: none; }
+
+/* ── Payment history table ───────────────────────────────────────────── */
+.pay-table-wrap { overflow-x: auto; margin: 0 -4px; }
+.pay-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.pay-table th {
+  text-align: left; padding: 10px 14px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--gray-500); border-bottom: 1.5px solid var(--gray-100); white-space: nowrap;
+}
+.pay-table td {
+  padding: 14px 14px; border-bottom: 1px solid var(--gray-100);
+  color: var(--gray-700); vertical-align: middle;
+}
+.pay-table tr:last-child td { border-bottom: none; }
+.pay-table tbody tr:hover td { background: var(--gray-50); }
+.pay-table__amount { font-family: var(--font-head); font-weight: 800; color: var(--gray-900); }
+.pay-table__ref { font-family: monospace; font-size: 12px; color: var(--gray-500); }
+.pay-history-empty { text-align: center; padding: 48px 24px; }
+.pay-history-empty__icon { font-size: 44px; margin-bottom: 12px; }
+.pay-history-empty__text { font-size: 14px; color: var(--gray-400); }
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .acct-body { grid-template-columns: 1fr 1fr; }
+  .acct-card--wide { grid-column: span 2; }
+  .acct-card--full { grid-column: span 2; }
+  .acct-empty { grid-column: span 2; }
+}
+@media (max-width: 640px) {
+  .acct-body { grid-template-columns: 1fr; }
+  .acct-card--wide,
+  .acct-card--full { grid-column: span 1; }
+  .acct-empty { grid-column: span 1; }
+  .upgrade-banner { text-align: center; justify-content: center; }
+  .workspace-meta { grid-template-columns: 1fr; }
+  .plan-limits { grid-template-columns: 1fr 1fr; }
+  .pay-cycle-grid { grid-template-columns: 1fr; }
+}
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ──────────────────────────────────────────────────────────────── -->
+<section class="acct-hero">
+  <div class="acct-hero__inner">
+    <div class="acct-hero__left">
+      <div class="acct-hero__greeting">My Account</div>
+      <h1 class="acct-hero__name">
+        {% if page_user.get_full_name %}{{ page_user.get_full_name }}{% else %}{{ page_user.username }}{% endif %}
+      </h1>
+      <p class="acct-hero__sub">
+        {% if tenant %}{{ tenant.name }} · {{ tenant.get_status_display }} subscription{% else %}{{ saas_name }} subscriber{% endif %}
+      </p>
+    </div>
+    <div class="acct-hero__actions">
+      {% if tenant_url %}
+        <a href="{{ tenant_url }}" target="_blank" class="btn btn-gold">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Open Workspace
+        </a>
+      {% endif %}
+      <form method="post" action="{% url 'logout' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-outline" style="border-color:rgba(255,255,255,.35);color:#fff;">Sign Out</button></form>
+    </div>
+  </div>
+</section>
+
+<!-- ── Dashboard grid ─────────────────────────────────────────────────────── -->
+<div class="acct-body">
+
+{% if tenant %}
+
+  <!-- ── Workspace card ─────────────────────────────────────────────────── -->
+  <div class="acct-card acct-card--wide fade-in">
+    <div class="acct-card__header">
+      <span class="acct-card__title">Workspace</span>
+      <div class="acct-card__icon acct-card__icon--navy">🏢</div>
+    </div>
+
+    <a href="{{ tenant_url }}" target="_blank" class="workspace-url" style="text-decoration:none;">
+      <div class="workspace-url__icon">{{ tenant.name|first|upper }}</div>
+      <div class="workspace-url__text">
+        <div class="workspace-url__label">Workspace URL</div>
+        <span class="workspace-url__link">{{ tenant_url }}</span>
+      </div>
+      <svg class="workspace-url__ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    </a>
+
+    <div class="workspace-meta">
+      <div class="workspace-meta-item">
+        <div class="workspace-meta-item__label">Company</div>
+        <div class="workspace-meta-item__value">{{ tenant.name }}</div>
+      </div>
+      <div class="workspace-meta-item">
+        <div class="workspace-meta-item__label">Subdomain</div>
+        <div class="workspace-meta-item__value">{{ tenant.schema_name }}</div>
+      </div>
+      <div class="workspace-meta-item">
+        <div class="workspace-meta-item__label">Schema</div>
+        <div class="workspace-meta-item__value" style="font-family:monospace;font-size:13px;">{{ tenant.schema_name }}</div>
+      </div>
+      <div class="workspace-meta-item">
+        <div class="workspace-meta-item__label">Created</div>
+        <div class="workspace-meta-item__value">{{ tenant.created_at|date:"N j, Y" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Subscription card ──────────────────────────────────────────────── -->
+  <div class="acct-card fade-in delay-1">
+    <div class="acct-card__header">
+      <span class="acct-card__title">Subscription</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        {% if tenant.plan %}
+        <button class="btn btn-gold btn--sm" onclick="openPayModal()" type="button">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Make Payment
+        </button>
+        {% endif %}
+        <div class="acct-card__icon acct-card__icon--gold">💳</div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      {% if tenant.status == "TRIAL" %}
+        <span class="badge badge--trial">Trial</span>
+      {% elif tenant.status == "ACTIVE" %}
+        <span class="badge badge--active">Active</span>
+      {% elif tenant.status == "SUSPENDED" %}
+        <span class="badge badge--suspended">Suspended</span>
+      {% else %}
+        <span class="badge badge--cancelled">Cancelled</span>
+      {% endif %}
+      {% if tenant.plan %}
+        <span style="font-size:13px;color:var(--gray-500);">{{ tenant.plan.get_tier_display }} tier</span>
+      {% endif %}
+    </div>
+
+    {% if tenant.plan %}
+      <div class="plan-name">{{ tenant.plan.name }}</div>
+      <div class="plan-price">
+        <strong>{{ tenant.plan.price_monthly|public_money }}</strong>/month
+        &nbsp;·&nbsp;{{ tenant.plan.price_yearly|public_money }}/year
+      </div>
+    {% endif %}
+
+    {% if tenant.is_trial %}
+      {% if trial_days_remaining is not None %}
+        {% if trial_days_remaining == 0 %}
+          <div class="trial-expired-note">
+            ⚠️ Your trial has expired. Upgrade to keep access to your workspace.
+          </div>
+        {% else %}
+          <div class="trial-countdown">
+            <div class="trial-countdown__days">{{ trial_days_remaining }}</div>
+            <div class="trial-countdown__text">
+              <strong>days remaining</strong> in your free trial.<br>
+              Upgrade any time to keep full access.
+            </div>
+          </div>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+
+    {% if tenant.plan %}
+      <div class="plan-limits">
+        <div class="plan-limit">
+          <div class="plan-limit__val">{% if tenant.plan.max_borrowers == -1 %}∞{% else %}{{ tenant.plan.max_borrowers }}{% endif %}</div>
+          <div class="plan-limit__label">Borrowers</div>
+        </div>
+        <div class="plan-limit">
+          <div class="plan-limit__val">{% if tenant.plan.max_agents == -1 %}∞{% else %}{{ tenant.plan.max_agents }}{% endif %}</div>
+          <div class="plan-limit__label">Agents</div>
+        </div>
+      </div>
+
+      {% if plan_features %}
+        <div class="feature-list">
+          {% for f in plan_features %}
+          <div class="feature-item {% if f.enabled %}feature-item--on{% else %}feature-item--off{% endif %}">
+            {% if f.enabled %}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            {% else %}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            {% endif %}
+            {{ f.label }}
+          </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <!-- ── Account info card ──────────────────────────────────────────────── -->
+  <div class="acct-card fade-in delay-1">
+    <div class="acct-card__header">
+      <span class="acct-card__title">Account</span>
+      <div class="acct-card__icon acct-card__icon--gray">👤</div>
+    </div>
+
+    <div class="acct-info-row">
+      <div class="acct-info-row__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div>
+        <div class="acct-info-row__label">Full Name</div>
+        <div class="acct-info-row__value">
+          {% if page_user.get_full_name %}{{ page_user.get_full_name }}{% else %}—{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="acct-info-row">
+      <div class="acct-info-row__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </div>
+      <div>
+        <div class="acct-info-row__label">Email</div>
+        <div class="acct-info-row__value">{{ page_user.email|default:"—" }}</div>
+      </div>
+    </div>
+
+    <div class="acct-info-row">
+      <div class="acct-info-row__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <div>
+        <div class="acct-info-row__label">Username</div>
+        <div class="acct-info-row__value" style="font-family:monospace;font-size:13px;">{{ page_user.username }}</div>
+      </div>
+    </div>
+
+    <div class="acct-info-row">
+      <div class="acct-info-row__icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div>
+        <div class="acct-info-row__label">Member Since</div>
+        <div class="acct-info-row__value">{{ page_user.date_joined|date:"N j, Y" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Quick actions ──────────────────────────────────────────────────── -->
+  <div class="acct-card fade-in delay-2">
+    <div class="acct-card__header">
+      <span class="acct-card__title">Quick Actions</span>
+      <div class="acct-card__icon acct-card__icon--gray">⚡</div>
+    </div>
+    <div class="quick-actions">
+      <a href="{{ tenant_url }}" target="_blank" class="quick-action">
+        <div class="quick-action__icon" style="background:var(--navy-50);">🚀</div>
+        <div class="quick-action__text">
+          <div class="quick-action__title">Open Workspace</div>
+          <div class="quick-action__sub">Go to your {{ tenant.schema_name }}.localhost dashboard</div>
+        </div>
+        <svg class="quick-action__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+      <a href="{% url 'password_reset' %}" class="quick-action">
+        <div class="quick-action__icon" style="background:var(--gray-100);">🔑</div>
+        <div class="quick-action__text">
+          <div class="quick-action__title">Change Password</div>
+          <div class="quick-action__sub">Send a password reset link to your email</div>
+        </div>
+        <svg class="quick-action__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+      <a href="/contact/" class="quick-action">
+        <div class="quick-action__icon" style="background:var(--green-50);">💬</div>
+        <div class="quick-action__text">
+          <div class="quick-action__title">Contact Support</div>
+          <div class="quick-action__sub">Get help from the {{ saas_name }} team</div>
+        </div>
+        <svg class="quick-action__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+      <a href="/pricing/" class="quick-action">
+        <div class="quick-action__icon" style="background:var(--gold-50);">📦</div>
+        <div class="quick-action__text">
+          <div class="quick-action__title">View Plans</div>
+          <div class="quick-action__sub">Compare plans and upgrade your subscription</div>
+        </div>
+        <svg class="quick-action__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="acct-card acct-card--wide fade-in delay-2">
+    <div class="acct-card__header">
+      <span class="acct-card__title">Enterprise API</span>
+      <div class="acct-card__icon acct-card__icon--navy">🔌</div>
+    </div>
+
+    {% if api_access_enabled %}
+      <div class="api-note" style="margin-bottom:16px;">
+        Your workspace can be accessed through Enterprise API endpoints with a bearer key. Keys are tenant-scoped and should be stored like passwords.
+      </div>
+
+      {% if api_key_plaintext %}
+        <div style="margin-bottom:18px;">
+          <div class="acct-info-row__label" style="margin-bottom:8px;">New API Key</div>
+          <input class="api-key-box" type="text" readonly value="{{ api_key_plaintext }}">
+          <div style="font-size:12px;color:var(--gray-500);margin-top:8px;">Copy this key now. For security, it is only shown once.</div>
+        </div>
+      {% endif %}
+
+      <form method="post" style="margin-bottom:20px;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_api_key">
+        <div class="api-form-inline">
+          <input type="text" name="key_name" placeholder="Key name, e.g. Production Integration" maxlength="120">
+          <button type="submit" class="btn btn-navy">Create API Key</button>
+        </div>
+      </form>
+
+      <div style="display:grid;gap:16px;">
+        <div>
+          <div class="acct-info-row__label" style="margin-bottom:8px;">Available Endpoints</div>
+          <div class="api-code-box">GET {{ api_docs.overview_url }}
+GET {{ api_docs.borrowers_url }}
+GET {{ api_docs.loans_url }}
+GET {{ api_docs.payments_url }}</div>
+        </div>
+
+        <div>
+          <div class="acct-info-row__label" style="margin-bottom:8px;">Example cURL</div>
+          <div class="api-code-box">curl -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" "{{ api_docs.overview_url }}"</div>
+        </div>
+
+        <div>
+          <div class="acct-info-row__label" style="margin-bottom:8px;">Keys</div>
+          {% if api_keys %}
+            {% for key in api_keys %}
+              <div class="api-key-row">
+                <div class="api-key-meta">
+                  <div class="api-key-meta__name">{{ key.name }}</div>
+                  <div class="api-key-meta__sub">
+                    Prefix: <span style="font-family:monospace;">{{ key.key_prefix }}</span><br>
+                    Created {{ key.created_at|date:"M d, Y H:i" }}{% if key.last_used_at %} · Last used {{ key.last_used_at|date:"M d, Y H:i" }}{% endif %}
+                  </div>
+                </div>
+                {% if key.is_active %}
+                  <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="revoke_api_key">
+                    <input type="hidden" name="key_id" value="{{ key.id }}">
+                    <button type="submit" class="btn btn-outline">Revoke</button>
+                  </form>
+                {% else %}
+                  <span class="badge badge--cancelled">Revoked</span>
+                {% endif %}
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="api-note">No API keys created yet.</div>
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="api-note">
+        Enterprise API access is available only to eligible Enterprise owners with API-enabled subscriptions.
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="acct-card fade-in delay-2">
+    <div class="acct-card__header">
+      <span class="acct-card__title">Referrals & Promo</span>
+      <div class="acct-card__icon acct-card__icon--gold">🎁</div>
+    </div>
+    {% if tenant %}
+      <div class="acct-info-row">
+        <div class="acct-info-row__icon">🔗</div>
+        <div>
+          <div class="acct-info-row__label">Your Referral Code</div>
+          <div class="acct-info-row__value" style="font-family:monospace;">{{ tenant.referral_code }}</div>
+        </div>
+      </div>
+      <div class="acct-info-row">
+        <div class="acct-info-row__icon">📈</div>
+        <div>
+          <div class="acct-info-row__label">Converted Referrals</div>
+          <div class="acct-info-row__value">{{ converted_referrals_count }}</div>
+        </div>
+      </div>
+      <div class="acct-info-row">
+        <div class="acct-info-row__icon">👥</div>
+        <div>
+          <div class="acct-info-row__label">Referred By</div>
+          <div class="acct-info-row__value">
+            {% if incoming_referral %}{{ incoming_referral.referrer.name }}{% else %}Direct signup{% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="acct-info-row">
+        <div class="acct-info-row__icon">🏷️</div>
+        <div>
+          <div class="acct-info-row__label">Latest Promo</div>
+          <div class="acct-info-row__value">
+            {% if latest_promo_redemption %}
+              {{ latest_promo_redemption.promo_code_text }} · {{ latest_promo_redemption.get_status_display }}
+            {% else %}
+              No promo used
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% if referrals_made %}
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-100);display:grid;gap:10px;">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gray-500);">Recent Referrals</div>
+        {% for referral in referrals_made %}
+        <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--gray-600);">
+          <span>{{ referral.referred_tenant.name }}</span>
+          <span style="font-weight:700;color:var(--navy);">{{ referral.get_status_display }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <!-- ── Upgrade banner (show only if on trial or starter) ──────────────── -->
+  {% if tenant.is_trial or tenant.plan.tier == "STARTER" %}
+  <div class="acct-card--wide fade-in delay-2" style="grid-column:span 2;">
+    <div class="upgrade-banner">
+      <div class="upgrade-banner__text">
+        <div class="upgrade-banner__kicker">Ready to grow?</div>
+        <div class="upgrade-banner__heading">Upgrade your subscription</div>
+        <div class="upgrade-banner__sub">
+          Unlock unlimited borrowers, advanced reporting, accounting, and API access.
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="/pricing/" class="btn btn-gold btn--lg">View Plans</a>
+        <a href="/contact/" class="btn btn-outline btn--lg" style="border-color:rgba(255,255,255,.35);color:#fff;">Talk to Sales</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Payment history ───────────────────────────────────────────────── -->
+  <div class="acct-card acct-card--full fade-in delay-3">
+    <div class="acct-card__header">
+      <span class="acct-card__title">Payment History</span>
+      <div class="acct-card__icon acct-card__icon--navy">🧾</div>
+    </div>
+
+    {% if recent_payments %}
+    <div class="pay-table-wrap">
+      <table class="pay-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Plan</th>
+            <th>Billing</th>
+            <th>Period</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th>Reference</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in recent_payments %}
+          <tr>
+            <td style="white-space:nowrap;">{{ p.created_at|date:"M d, Y" }}</td>
+            <td>{{ p.plan.name|default:"—" }}</td>
+            <td>{{ p.get_billing_cycle_display }}</td>
+            <td style="white-space:nowrap;font-size:12px;">{{ p.period_start|date:"M d" }} – {{ p.period_end|date:"M d, Y" }}</td>
+            <td class="pay-table__amount">{{ p.amount|public_money }}</td>
+            <td>{{ p.get_method_display }}</td>
+            <td class="pay-table__ref">{{ p.reference|default:"—" }}</td>
+            <td>
+              {% if p.status == "CONFIRMED" %}
+                <span class="badge badge--active">Confirmed</span>
+              {% elif p.status == "PENDING" %}
+                <span class="badge badge--trial">Pending</span>
+              {% else %}
+                <span class="badge badge--suspended">Failed</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="pay-history-empty">
+      <div class="pay-history-empty__icon">🧾</div>
+      <div class="pay-history-empty__text">No payments yet. Click <strong>Make Payment</strong> in the Subscription card to activate your subscription.</div>
+    </div>
+    {% endif %}
+  </div>
+
+{% else %}
+  <!-- ── No workspace found ─────────────────────────────────────────────── -->
+  <div class="acct-empty fade-in">
+    <div class="acct-empty__icon">🏗️</div>
+    <h2 class="acct-empty__title">No workspace found</h2>
+    <p class="acct-empty__sub">
+      We couldn't find a {{ saas_name }} workspace linked to <strong>{{ page_user.email }}</strong>.
+      Sign up to create your micro-credit workspace.
+    </p>
+    <a href="/signup/" class="btn btn-navy btn--lg">Create a Workspace</a>
+  </div>
+{% endif %}
+
+</div><!-- /acct-body -->
+
+<!-- ── Payment modal ──────────────────────────────────────────────────────── -->
+{% if tenant and tenant.plan %}
+<div class="pay-overlay" id="payOverlay" role="dialog" aria-modal="true" aria-labelledby="payModalTitle">
+  <div class="pay-modal">
+
+    <div class="pay-modal__head">
+      <div>
+        <div class="pay-modal__kicker">Subscription Payment</div>
+        <h2 class="pay-modal__title" id="payModalTitle">{{ tenant.plan.name }}</h2>
+      </div>
+      <button class="pay-modal__close" onclick="closePayModal()" aria-label="Close">✕</button>
+    </div>
+
+    <form method="POST" action="{% url 'tenants:make_payment' %}" id="payForm">
+      {% csrf_token %}
+
+      <!-- Billing cycle -->
+      <div class="pay-section">
+        <span class="pay-label">Billing Cycle</span>
+        <div class="pay-cycle-grid">
+          <label class="pay-cycle-opt">
+            <input type="radio" name="billing_cycle" value="MONTHLY"
+                   data-amount="{{ tenant.plan.price_monthly }}" checked>
+            <span class="pay-cycle-opt__box">
+              <span class="pay-cycle-opt__tier">Monthly</span>
+              <span class="pay-cycle-opt__price">{{ tenant.plan.price_monthly|public_money }}</span>
+            </span>
+          </label>
+          <label class="pay-cycle-opt">
+            <input type="radio" name="billing_cycle" value="YEARLY"
+                   data-amount="{{ tenant.plan.price_yearly }}">
+            <span class="pay-cycle-opt__box">
+              <span class="pay-cycle-opt__tier">Yearly</span>
+              <span class="pay-cycle-opt__price">{{ tenant.plan.price_yearly|public_money }}</span>
+              {% if plan_savings_pct and plan_savings_pct > 0 %}
+              <span class="pay-cycle-opt__save">Save {{ plan_savings_pct }}%</span>
+              {% endif %}
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Amount display -->
+      <div class="pay-amount-box">
+        <span class="pay-amount-box__label">Total due today</span>
+        <span class="pay-amount-box__val" id="payAmountDisplay">{{ tenant.plan.price_monthly|public_money }}</span>
+      </div>
+      {% if latest_promo_redemption and latest_promo_redemption.status == "RESERVED" %}
+      <div style="margin-top:10px;padding:12px 14px;border-radius:14px;background:var(--gold-50);border:1px solid rgba(184,134,32,.16);font-size:13px;color:var(--gray-700);">
+        Promo <strong>{{ latest_promo_redemption.promo_code_text }}</strong> will be applied automatically to this payment.
+      </div>
+      {% endif %}
+
+      <hr class="pay-divider">
+
+      <!-- Payment method -->
+      <div class="pay-section">
+        <label class="pay-label" for="payMethod">Payment Method</label>
+        <select name="method" id="payMethod" class="pay-select" required>
+          <option value="" disabled selected>Choose method…</option>
+          <option value="MOBILE_MONEY">Mobile Money</option>
+          <option value="BANK_TRANSFER">Bank Transfer</option>
+          <option value="CARD">Card / Online</option>
+        </select>
+      </div>
+
+      <!-- Phone / Account number (shown for Mobile Money & Bank Transfer) -->
+      <div class="pay-section" id="payPhoneRow" style="display:none;">
+        <label class="pay-label" id="payPhoneLabel" for="payPhoneInput">Phone Number</label>
+        <input type="text" name="phone_or_account" id="payPhoneInput"
+               class="pay-input" placeholder="024 400 0000">
+      </div>
+
+      <!-- Transaction reference -->
+      <div class="pay-section">
+        <label class="pay-label" for="payRef">Transaction Reference <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--gray-400)">(optional)</span></label>
+        <input type="text" name="reference" id="payRef" class="pay-input"
+               placeholder="e.g. MTN-ABC-123456">
+      </div>
+
+      <button type="submit" class="pay-submit" id="paySubmitBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Confirm Payment — <span id="payBtnAmount">{{ tenant.plan.price_monthly|public_money }}</span>
+      </button>
+    </form>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  var overlay  = document.getElementById('payOverlay');
+  var method   = document.getElementById('payMethod');
+  var phoneRow = document.getElementById('payPhoneRow');
+  var phoneLbl = document.getElementById('payPhoneLabel');
+  var phoneInp = document.getElementById('payPhoneInput');
+  var amtDisp  = document.getElementById('payAmountDisplay');
+  var btnAmt   = document.getElementById('payBtnAmount');
+
+  function openPayModal()  { overlay.classList.add('is-open'); document.body.style.overflow='hidden'; }
+  function closePayModal() { overlay.classList.remove('is-open'); document.body.style.overflow=''; }
+  window.openPayModal  = openPayModal;
+  window.closePayModal = closePayModal;
+
+  // Close on backdrop click
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) closePayModal(); });
+
+  // Close on Escape key
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') closePayModal(); });
+
+  // Sync amount display when billing cycle changes
+  document.querySelectorAll('input[name="billing_cycle"]').forEach(function(r){
+    r.addEventListener('change', function(){
+      var fmt = 'GH₵' + new Intl.NumberFormat(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(Number(this.dataset.amount || 0));
+      if(amtDisp) amtDisp.textContent = fmt;
+      if(btnAmt)  btnAmt.textContent  = fmt;
+    });
+  });
+
+  // Show / hide phone field based on method
+  method.addEventListener('change', function(){
+    if(this.value === 'MOBILE_MONEY'){
+      phoneRow.style.display = 'block';
+      phoneLbl.textContent   = 'Mobile Money Phone Number';
+      phoneInp.placeholder   = '024 400 0000';
+    } else if(this.value === 'BANK_TRANSFER'){
+      phoneRow.style.display = 'block';
+      phoneLbl.textContent   = 'Bank Account Number';
+      phoneInp.placeholder   = 'e.g. 1234567890';
+    } else {
+      phoneRow.style.display = 'none';
+    }
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .borrower-update-shell{
+    max-width: 1160px;
+    margin: 0 auto;
+    display: grid;
+    gap: 18px;
+  }
+
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+
+
+  .hero-inner{position:relative;z-index:1;padding:28px}
+
+  .hero-wrap{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:18px;
+    flex-wrap:wrap;
+  }
+
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+
+  .hero-sub{
+    margin-top:10px;
+    max-width:860px;
+    opacity:.88;
+    line-height:1.65;
+    font-size:14px;
+  }
+
+  .hero-chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:16px;
+  }
+
+  .hero-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:8px 12px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.08);
+    font-size:12px;
+    font-weight:800;
+    color:#fff;
+    backdrop-filter:blur(8px);
+  }
+
+  .btn-soft{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:44px;
+    padding:10px 16px;
+    border-radius:999px;
+    font-weight:800;
+    text-decoration:none;
+    border:1px solid var(--border);
+    background:var(--panel-strong);
+    color:var(--text);
+    box-shadow:0 10px 24px rgba(26,31,20,.08);
+    transition:all .16s ease;
+  }
+
+  .btn-soft:hover{
+    transform:translateY(-1px);
+    color:var(--text);
+  }
+
+  .btn-soft-primary{
+    background:linear-gradient(135deg,var(--primary),var(--primary-3));
+    color:#fff;
+    border-color:var(--primary);
+    box-shadow:0 18px 36px rgba(58,90,30,.20);
+  }
+
+  .btn-soft-primary:hover{
+    color:#fff;
+  }
+
+  .form-card{
+    border:1px solid var(--border);
+    border-radius:30px;
+    background:var(--panel);
+    box-shadow:0 22px 60px rgba(26,31,20,.06);
+    overflow:hidden;
+  }
+
+  .form-head{
+    padding:22px 24px 0;
+  }
+
+  .form-title{
+    margin:0;
+    font-size:21px;
+    font-weight:900;
+    color:var(--text);
+  }
+
+  .form-sub{
+    margin-top:6px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.6;
+  }
+
+  .form-body{
+    padding:22px 24px 26px;
+  }
+
+  .section-card{
+    border:1px solid var(--border);
+    border-radius:24px;
+    background:var(--panel);
+    box-shadow:0 14px 36px rgba(26,31,20,.04);
+    overflow:hidden;
+    margin-bottom:18px;
+  }
+
+  .section-head{
+    padding:18px 20px 0;
+  }
+
+  .section-title{
+    margin:0;
+    font-size:17px;
+    font-weight:900;
+    color:var(--text);
+  }
+
+  .section-sub{
+    margin-top:5px;
+    font-size:13px;
+    color:var(--muted);
+    line-height:1.55;
+  }
+
+  .section-body{
+    padding:18px 20px 20px;
+  }
+
+  .field-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:16px;
+  }
+
+  .field-card{
+    border:1px solid var(--border);
+    background:var(--panel-strong);
+    border-radius:20px;
+    padding:14px;
+    box-shadow:0 8px 22px rgba(26,31,20,.03);
+  }
+
+  .field-card.full{
+    grid-column:1 / -1;
+  }
+
+  .field-label{
+    display:block;
+    margin-bottom:8px;
+    font-size:13px;
+    font-weight:900;
+    color:var(--text);
+  }
+
+  .field-help{
+    margin-top:8px;
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.5;
+  }
+
+  .upload-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:16px;
+  }
+
+  .upload-card{
+    border:1px solid var(--border);
+    border-radius:22px;
+    background:var(--panel);
+    padding:16px;
+    min-height:100%;
+    box-shadow:0 8px 24px rgba(26,31,20,.04);
+  }
+
+  .upload-title{
+    font-size:14px;
+    font-weight:900;
+    color:var(--text);
+    margin-bottom:8px;
+  }
+
+  .upload-help{
+    margin-top:8px;
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.5;
+  }
+
+  .current-file{
+    margin-top:10px;
+    padding:10px 12px;
+    border-radius:14px;
+    background:rgba(58,90,30,.05);
+    border:1px solid rgba(58,90,30,.10);
+    font-size:12px;
+    color:var(--text-2);
+    line-height:1.5;
+  }
+
+  .error-box{
+    margin-top:8px;
+    padding:8px 10px;
+    border-radius:12px;
+    background:rgba(220,38,38,.06);
+    border:1px solid rgba(220,38,38,.14);
+    color:var(--danger);
+    font-size:12px;
+    font-weight:700;
+  }
+
+  .non-field-errors{
+    margin-bottom:16px;
+    padding:14px 16px;
+    border-radius:16px;
+    background:rgba(220,38,38,.06);
+    border:1px solid rgba(220,38,38,.14);
+    color:var(--danger);
+    font-weight:800;
+  }
+
+  .action-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-top:10px;
+    padding-top:18px;
+    border-top:1px solid var(--border-soft);
+  }
+
+  .action-note{
+    font-size:13px;
+    color:var(--muted);
+  }
+
+  .action-buttons{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .form-control,
+  .form-select,
+  .form-control[type="file"],
+  input,
+  select,
+  textarea{
+    width:100%;
+    min-height:48px;
+    border-radius:14px;
+    border:1px solid #dbe3ef;
+    background:var(--panel-strong);
+    box-shadow:none;
+    padding:12px 14px;
+  }
+
+  .form-control:focus,
+  .form-select:focus,
+  .form-control[type="file"]:focus,
+  input:focus,
+  select:focus,
+  textarea:focus{
+    border-color:#86b7fe;
+    box-shadow:0 0 0 .2rem rgba(13,110,253,.12);
+    outline:none;
+  }
+
+  @media (max-width: 992px){
+    .field-grid,
+    .upload-grid{
+      grid-template-columns:1fr;
+    }
+  }
+
+  @media (max-width: 640px){
+    .hero-title{
+      font-size:24px;
+    }
+
+    .action-bar{
+      flex-direction:column;
+      align-items:stretch;
+    }
+
+    .action-buttons{
+      width:100%;
+      display:grid;
+      grid-template-columns:1fr;
+    }
+
+    .action-buttons > *{
+      width:100%;
+    }
+  }
+</style>
+
+<div class="borrower-update-shell">
+
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div>
+          <div class="hero-kicker">Borrower Management</div>
+          <h1 class="hero-title">{{ title }}</h1>
+          <div class="hero-sub">
+            Update borrower identity, contact details, preferred language, group information, and verification records while keeping the profile aligned with current KYC and operational data.
+          </div>
+
+          <div class="hero-chip-row">
+            <span class="hero-chip">Profile Maintenance</span>
+            <span class="hero-chip">KYC Update</span>
+            <span class="hero-chip">Document Review</span>
+          </div>
+        </div>
+
+        <a class="btn-soft" href="{% url 'loans:borrower_detail' borrower.id %}">
+          Back to Profile
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-card">
+    <div class="form-head">
+      <h3 class="form-title">Update Borrower Record</h3>
+      <div class="form-sub">
+        Review each field carefully before saving. Changes made here affect borrower profile visibility, portfolio reporting, collections workflow, and verification records.
+      </div>
+    </div>
+
+    <div class="form-body">
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="non-field-errors">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <section class="section-card">
+          <div class="section-head">
+            <h5 class="section-title">Profile & Identity Information</h5>
+            <div class="section-sub">
+              Core borrower details used for identification, communication, and grouping.
+            </div>
+          </div>
+
+          <div class="section-body">
+            <div class="field-grid">
+              <div class="field-card">
+                <label class="field-label">Borrower ID</label>
+                {{ form.borrower_id }}
+                {% if form.borrower_id.errors %}<div class="error-box">{{ form.borrower_id.errors }}</div>{% endif %}
+                <div class="field-help">Internal borrower reference used across the loan portfolio.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Full Name</label>
+                {{ form.full_name }}
+                {% if form.full_name.errors %}<div class="error-box">{{ form.full_name.errors }}</div>{% endif %}
+                <div class="field-help">Official borrower name as recorded in your register and documents.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">National ID</label>
+                {{ form.national_id }}
+                {% if form.national_id.errors %}<div class="error-box">{{ form.national_id.errors }}</div>{% endif %}
+                <div class="field-help">National identity reference for operational verification.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Phone</label>
+                {{ form.phone }}
+                {% if form.phone.errors %}<div class="error-box">{{ form.phone.errors }}</div>{% endif %}
+                <div class="field-help">Primary contact number for communication and collections follow-up.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Location</label>
+                {{ form.location }}
+                {% if form.location.errors %}<div class="error-box">{{ form.location.errors }}</div>{% endif %}
+                <div class="field-help">Current location, town, or community of the borrower.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Group Name</label>
+                {{ form.group_name }}
+                {% if form.group_name.errors %}<div class="error-box">{{ form.group_name.errors }}</div>{% endif %}
+                <div class="field-help">Borrower group, cluster, or field unit classification.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Ghana Card Number</label>
+                {{ form.ghana_card_number }}
+                {% if form.ghana_card_number.errors %}<div class="error-box">{{ form.ghana_card_number.errors }}</div>{% endif %}
+                <div class="field-help">Exact Ghana Card number tied to the borrower’s official identity.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Preferred Language</label>
+                {{ form.preferred_language }}
+                {% if form.preferred_language.errors %}<div class="error-box">{{ form.preferred_language.errors }}</div>{% endif %}
+                <div class="field-help">Preferred language for reminders, communication, and support.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-head">
+            <h5 class="section-title">Photos & Verification Documents</h5>
+            <div class="section-sub">
+              Update borrower photo and Ghana Card files where needed.
+            </div>
+          </div>
+
+          <div class="section-body">
+            <div class="upload-grid">
+              <div class="upload-card">
+                <div class="upload-title">Photo</div>
+                {{ form.photo }}
+                {% if form.photo.errors %}<div class="error-box">{{ form.photo.errors }}</div>{% endif %}
+                <div class="upload-help">Upload a clearer or more recent borrower photo if available.</div>
+                {% if borrower.photo %}
+                  <div class="current-file">Current file: available on borrower profile.</div>
+                {% endif %}
+              </div>
+
+              <div class="upload-card">
+                <div class="upload-title">Ghana Card Front</div>
+                {{ form.ghana_card_front }}
+                {% if form.ghana_card_front.errors %}<div class="error-box">{{ form.ghana_card_front.errors }}</div>{% endif %}
+                <div class="upload-help">Replace this if the current front image is unclear or outdated.</div>
+                {% if borrower.ghana_card_front %}
+                  <div class="current-file">Current file: available on borrower profile.</div>
+                {% endif %}
+              </div>
+
+              <div class="upload-card">
+                <div class="upload-title">Ghana Card Back</div>
+                {{ form.ghana_card_back }}
+                {% if form.ghana_card_back.errors %}<div class="error-box">{{ form.ghana_card_back.errors }}</div>{% endif %}
+                <div class="upload-help">Replace this if the back image is unclear, incomplete, or needs correction.</div>
+                {% if borrower.ghana_card_back %}
+                  <div class="current-file">Current file: available on borrower profile.</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="action-bar">
+          <div class="action-note">
+            Save only after confirming that the updated profile matches the borrower’s current identification and contact information.
+          </div>
+
+          <div class="action-buttons">
+            <a class="btn-soft" href="{% url 'loans:borrower_detail' borrower.id %}">Cancel</a>
+            <button class="btn-soft btn-soft-primary" type="submit">Save Changes</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
+
+</div>
+
+{% endblock %}

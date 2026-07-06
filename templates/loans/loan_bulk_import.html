@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .import-shell{max-width:1320px;margin:0 auto;display:grid;gap:18px}
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;padding:28px}
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+  .hero-sub{margin-top:10px;max-width:920px;opacity:.88;line-height:1.7;font-size:14px}
+  .hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .btn-soft{
+    display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:10px 16px;border-radius:999px;
+    font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text);
+    transition:all .16s ease;box-shadow:0 10px 24px rgba(26,31,20,.06);cursor:pointer;
+  }
+  .btn-soft:hover{transform:translateY(-1px);color:var(--text)}
+  .btn-soft-primary{background:linear-gradient(135deg,var(--primary),var(--primary-3));color:#fff;border-color:var(--primary)}
+  .btn-soft-primary:hover{color:#fff}
+  .panel{
+    border:1px solid var(--border);border-radius:28px;background:var(--panel);
+    box-shadow:0 22px 58px rgba(26,31,20,.06);overflow:hidden;
+  }
+  .panel-head{padding:20px 22px 14px;border-bottom:1px solid var(--border-soft)}
+  .panel-title{margin:0;font-size:19px;font-weight:900;color:var(--text)}
+  .panel-sub{margin-top:5px;font-size:13px;color:var(--muted);line-height:1.6}
+  .panel-body{padding:20px 22px 24px}
+  .import-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px}
+  .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .field{display:grid;gap:7px}
+  .field label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .field input,.field select{
+    width:100%;min-height:48px;padding:10px 13px;border-radius:14px;border:1px solid var(--border);
+    background:var(--panel-strong);color:var(--text);
+  }
+  .field.full{grid-column:1 / -1}
+  .field-help{font-size:12px;color:var(--muted);line-height:1.55}
+  .error-box{
+    padding:10px 12px;border-radius:14px;background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.14);
+    color:var(--danger);font-size:12px;font-weight:700;line-height:1.55;
+  }
+  .format-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .format-card{
+    border:1px solid var(--border);border-radius:22px;background:var(--panel-strong);padding:16px;
+    box-shadow:0 14px 34px rgba(26,31,20,.04);display:grid;gap:10px;
+  }
+  .format-badge{
+    display:inline-flex;padding:5px 11px;border-radius:999px;background:var(--gold-pale);
+    border:1px solid rgba(184,134,32,.18);font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--gold);
+  }
+  .format-title{margin:0;font-size:16px;font-weight:900;color:var(--text)}
+  .format-desc{font-size:12.5px;color:var(--muted);line-height:1.65}
+  .column-table-wrap{border:1px solid var(--border);border-radius:22px;background:var(--panel-strong);overflow:auto}
+  .column-table{width:100%;border-collapse:collapse;min-width:680px}
+  .column-table th,.column-table td{padding:13px 15px;text-align:left;border-bottom:1px solid var(--border-soft)}
+  .column-table th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:var(--bg-soft)}
+  .column-table td{font-size:13px;color:var(--text)}
+  .chip{
+    display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;background:rgba(58,90,30,.08);
+    border:1px solid rgba(58,90,30,.12);font-size:11px;font-weight:800;color:var(--primary);
+  }
+  .chip.optional{background:rgba(100,116,139,.08);border-color:rgba(100,116,139,.12);color:var(--muted)}
+  .result-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  .stat-card{
+    border:1px solid var(--border);border-radius:20px;background:var(--panel-strong);padding:16px;box-shadow:0 14px 32px rgba(26,31,20,.04);
+  }
+  .stat-label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .stat-value{margin-top:8px;font-size:24px;font-weight:900;color:var(--text)}
+  .result-list{display:grid;gap:10px;margin-top:16px}
+  .result-item{
+    border:1px solid var(--border);border-radius:18px;background:var(--panel-strong);padding:12px 14px;
+  }
+  .result-item strong{color:var(--text)}
+  .result-meta{font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:4px}
+  .result-item.error{border-color:rgba(220,38,38,.16);background:rgba(220,38,38,.04)}
+  @media(max-width:1080px){.import-grid,.format-grid,.result-grid{grid-template-columns:1fr}}
+  @media(max-width:700px){.field-grid{grid-template-columns:1fr}}
+</style>
+
+<div class="import-shell">
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-kicker">Loan Operations</div>
+      <h1 class="hero-title">{{ title }}</h1>
+      <div class="hero-sub">
+        Import loan records in bulk using CSV, Excel, JSON, or XML. This workspace is designed for controlled portfolio onboarding without triggering borrower or staff messaging.
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'loans:loans_list' %}" class="btn-soft">Back to Loans</a>
+        <a href="{% url 'loans:loan_create' %}" class="btn-soft btn-soft-primary">+ Add Single Loan</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="import-grid">
+    <div class="panel">
+      <div class="panel-head">
+        <h2 class="panel-title">Import Workspace</h2>
+        <div class="panel-sub">Upload a loan file, pick the import behavior, and let the system create or update records row by row.</div>
+      </div>
+      <div class="panel-body">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="field-grid">
+            <div class="field full">
+              <label for="{{ form.data_file.id_for_label }}">Loan File</label>
+              {{ form.data_file }}
+              {% if form.data_file.errors %}<div class="error-box">{{ form.data_file.errors }}</div>{% endif %}
+              <div class="field-help">Supported uploads: `.csv`, `.xlsx`, `.json`, and `.xml`.</div>
+            </div>
+            <div class="field">
+              <label for="{{ form.file_type.id_for_label }}">File Type</label>
+              {{ form.file_type }}
+              {% if form.file_type.errors %}<div class="error-box">{{ form.file_type.errors }}</div>{% endif %}
+              <div class="field-help">{{ form.file_type.help_text }}</div>
+            </div>
+            <div class="field">
+              <label for="{{ form.import_mode.id_for_label }}">Import Mode</label>
+              {{ form.import_mode }}
+              {% if form.import_mode.errors %}<div class="error-box">{{ form.import_mode.errors }}</div>{% endif %}
+              <div class="field-help">{{ form.import_mode.help_text }}</div>
+            </div>
+          </div>
+
+          {% if form.non_field_errors %}
+            <div class="error-box" style="margin-top:14px">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+            <button type="submit" class="btn-soft btn-soft-primary">Start Bulk Import</button>
+            <a href="{% url 'loans:loan_bulk_import' %}" class="btn-soft">Reset Form</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2 class="panel-title">File Type Options</h2>
+        <div class="panel-sub">Use the format your source system already exports, or download a sample template and fill it in.</div>
+      </div>
+      <div class="panel-body">
+        <div class="format-grid">
+          {% for option in format_options %}
+            <article class="format-card">
+              <div class="format-badge">{{ option.extensions }}</div>
+              <h3 class="format-title">{{ option.label }}</h3>
+              <div class="format-desc">{{ option.description }}</div>
+              <div>
+                <a href="{% url 'loans:loan_bulk_import_sample' option.slug %}" class="btn-soft">Download Sample {{ option.label }}</a>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2 class="panel-title">Expected Columns</h2>
+      <div class="panel-sub">These columns are recognized across all supported file types. JSON object keys and XML element names should use the same field names.</div>
+    </div>
+    <div class="panel-body">
+      <div class="column-table-wrap">
+        <table class="column-table">
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Required</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for column in column_help %}
+              <tr>
+                <td><code>{{ column.name }}</code></td>
+                <td>
+                  {% if column.required %}
+                    <span class="chip">Required</span>
+                  {% else %}
+                    <span class="chip optional">Optional</span>
+                  {% endif %}
+                </td>
+                <td>{{ column.help }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  {% if import_result %}
+    <section class="panel">
+      <div class="panel-head">
+        <h2 class="panel-title">Last Import Result</h2>
+        <div class="panel-sub">Review the summary and any row-level issues before running the next upload.</div>
+      </div>
+      <div class="panel-body">
+        <div class="result-grid">
+          <div class="stat-card">
+            <div class="stat-label">Rows Read</div>
+            <div class="stat-value">{{ import_result.total_rows }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Created</div>
+            <div class="stat-value">{{ import_result.created }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Updated / Failed</div>
+            <div class="stat-value">{{ import_result.updated }} / {{ import_result.errors|length }}</div>
+          </div>
+        </div>
+
+        {% if import_result.touched %}
+          <div class="result-list">
+            {% for item in import_result.touched %}
+              <div class="result-item">
+                <strong>Loan #{{ item.loan_id }}</strong> — {{ item.borrower_name }} ({{ item.borrower_id }})
+                <div class="result-meta">Agent: {{ item.agent_name }} · Action: {{ item.action|title }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if import_result.errors %}
+          <div class="result-list">
+            {% for error in import_result.errors %}
+              <div class="result-item error">
+                <strong>Row {{ error.row_number }}</strong>
+                <div class="result-meta">{{ error.message }}</div>
+                {% if error.row_data.borrower_id or error.row_data.agent_id %}
+                  <div class="result-meta">
+                    {{ error.row_data.borrower_id|default:"No borrower_id" }} · {{ error.row_data.agent_id|default:"No agent_id" }}
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </section>
+  {% endif %}
+</div>
+
+{% endblock %}

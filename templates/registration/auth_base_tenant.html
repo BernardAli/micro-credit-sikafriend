@@ -1,0 +1,702 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block page_title %}Account Access{% endblock %} | {{ company_name|default:"MicroCredit" }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+  {% if company and company.site_font %}<link href="{{ company.font_urls|safe }}" rel="stylesheet">{% endif %}
+  <style>
+    :root, [data-theme="light"] {
+      --bg: #f3f2ec;
+      --panel: rgba(255,255,255,.97);
+      --panel-strong: #ffffff;
+      --text: #1a1f14;
+      --muted: #58624a;
+      --muted-2: #8a9478;
+      --border: rgba(26,31,20,.10);
+      --border-soft: rgba(26,31,20,.06);
+      --primary: #3a5a1e;
+      --primary-2: #6b8f36;
+      --primary-3: #517a28;
+      --primary-glow: rgba(58,90,30,.16);
+      --gold: #b88620;
+      --gold-pale: rgba(196,146,42,.10);
+      --gold-glow: rgba(184,134,32,.16);
+      --success: #2d6b3e;
+      --success-bg: rgba(45,107,62,.08);
+      --danger: #b83232;
+      --danger-bg: rgba(184,50,50,.06);
+      --info-bg: rgba(58,90,30,.07);
+      --shadow-sm: 0 6px 20px rgba(26,31,20,.07);
+      --shadow-md: 0 16px 45px rgba(26,31,20,.09);
+      --shadow-xl: 0 36px 90px rgba(26,31,20,.12);
+      --brand-bg-1: color-mix(in srgb, var(--primary-2) 60%, #000);
+      --brand-bg-2: var(--primary-2);
+      --brand-bg-3: var(--primary);
+      --brand-orb: color-mix(in srgb, var(--gold) 22%, transparent);
+      --brand-text: rgba(255,255,255,.95);
+      --brand-muted: rgba(255,255,255,.68);
+      --brand-border: rgba(255,255,255,.12);
+      --brand-glass: rgba(255,255,255,.08);
+      --font-body:  'DM Sans', ui-sans-serif, system-ui, sans-serif;
+      --font-serif: 'DM Serif Display', serif;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f1409;
+      --panel: rgba(26,36,16,.98);
+      --panel-strong: #1c2814;
+      --text: #dde8c4;
+      --muted: #7a8c62;
+      --muted-2: #546040;
+      --border: rgba(160,190,110,.09);
+      --border-soft: rgba(160,190,110,.05);
+      --primary: #80b840;
+      --primary-2: #99c85c;
+      --primary-3: #60a030;
+      --primary-glow: rgba(128,184,64,.18);
+      --gold: #d0a030;
+      --gold-pale: rgba(208,160,48,.10);
+      --gold-glow: rgba(208,160,48,.18);
+      --success: #58b870;
+      --success-bg: rgba(88,184,112,.12);
+      --danger: #e05050;
+      --danger-bg: rgba(224,80,80,.12);
+      --info-bg: rgba(128,184,64,.10);
+      --shadow-sm: 0 6px 20px rgba(0,0,0,.30);
+      --shadow-md: 0 16px 45px rgba(0,0,0,.38);
+      --shadow-xl: 0 36px 90px rgba(0,0,0,.50);
+      --brand-bg-1: color-mix(in srgb, var(--primary-2) 20%, #000);
+      --brand-bg-2: color-mix(in srgb, var(--primary-2) 38%, #000);
+      --brand-bg-3: color-mix(in srgb, var(--primary) 48%, #000);
+      --brand-orb: color-mix(in srgb, var(--gold) 18%, transparent);
+      --brand-text: rgba(220,235,195,.96);
+      --brand-muted: rgba(180,200,150,.65);
+      --brand-border: rgba(160,200,100,.12);
+      --brand-glass: rgba(120,180,60,.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--text);
+      background: var(--bg);
+      background-image:
+        radial-gradient(ellipse 700px 500px at 0% 0%, rgba(58,90,30,.10), transparent 60%),
+        radial-gradient(ellipse 600px 400px at 100% 100%, rgba(184,134,32,.07), transparent 60%);
+      -webkit-font-smoothing: antialiased;
+      transition: background-color .3s, color .3s;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+    }
+
+    .auth-shell {
+      width: 100%;
+      max-width: 1160px;
+      display: grid;
+      grid-template-columns: 1.08fr .92fr;
+      border: 1px solid var(--border);
+      border-radius: 36px;
+      overflow: hidden;
+      box-shadow: var(--shadow-xl);
+      animation: fadeUp .4s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .brand-pane {
+      position: relative;
+      padding: 44px 40px;
+      color: var(--brand-text);
+      background: linear-gradient(145deg, var(--brand-bg-1) 0%, var(--brand-bg-2) 45%, var(--brand-bg-3) 100%);
+      overflow: hidden;
+    }
+
+    .brand-pane::before {
+      content: "";
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--brand-orb), transparent 70%);
+      pointer-events: none;
+    }
+
+    .brand-pane::after {
+      content: "";
+      position: absolute;
+      bottom: -40px;
+      left: 20px;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: radial-gradient(circle, color-mix(in srgb, var(--primary-3) 12%, transparent), transparent 70%);
+      pointer-events: none;
+    }
+
+    .brand-pane-accent {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--gold), transparent 70%);
+    }
+
+    .brand-top {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 36px;
+    }
+
+    .brand-mark {
+      width: 50px;
+      height: 50px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.06));
+      border: 1px solid var(--brand-border);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.20);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brand-mark svg {
+      width: 26px;
+      height: 26px;
+      fill: rgba(255,255,255,.9);
+    }
+
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(140deg, rgba(255,255,255,.18) 0%, transparent 60%);
+    }
+
+    .brand-name { line-height: 1.12; }
+    .brand-name strong {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      font-weight: 400;
+      display: block;
+    }
+    .brand-name span {
+      font-size: 11px;
+      opacity: .72;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .brand-copy {
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand-kicker {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .5em;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 10px;
+    }
+
+    .brand-copy h1 {
+      margin: 0;
+      font-family: var(--font-serif);
+      font-size: 34px;
+      line-height: 1.1;
+      font-weight: 400;
+      color: var(--brand-text);
+    }
+
+    .brand-copy p {
+      margin: 16px 0 0;
+      font-size: 14px;
+      line-height: 1.78;
+      opacity: .82;
+      max-width: 460px;
+      color: var(--brand-muted);
+    }
+
+    .brand-stats {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 30px;
+      max-width: 460px;
+    }
+
+    .brand-stat {
+      border: 1px solid var(--brand-border);
+      background: var(--brand-glass);
+      backdrop-filter: blur(8px);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .brand-stat .label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-weight: 700;
+      opacity: .72;
+    }
+
+    .brand-stat .value {
+      margin-top: 5px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .brand-footer {
+      position: relative;
+      z-index: 1;
+      margin-top: 28px;
+      font-size: 12px;
+      color: var(--brand-muted);
+      line-height: 1.7;
+    }
+
+    .form-pane {
+      background: var(--panel-strong);
+      padding: 44px 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .pane-theme-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      transition: background .2s, border-color .2s;
+    }
+
+    .pane-theme-toggle:hover {
+      background: var(--panel);
+      border-color: color-mix(in srgb, var(--gold) 28%, transparent);
+    }
+
+    .form-wrap {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .form-head { margin-bottom: 26px; }
+
+    .form-kicker {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .5em;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+
+    .form-head h2 {
+      margin: 0;
+      font-family: var(--font-serif);
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1.1;
+      color: var(--text);
+    }
+
+    .form-head p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.65;
+    }
+
+    .form-divider {
+      height: 1px;
+      border: none;
+      background: linear-gradient(90deg, var(--gold), color-mix(in srgb, var(--gold) 10%, transparent));
+      margin: 0 0 22px;
+    }
+
+    .message-card,
+    .status-card,
+    .security-note {
+      border-radius: 14px;
+      padding: 14px 15px;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .message-card {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+      border: 1px solid rgba(184,50,50,.16);
+      background: var(--danger-bg);
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    .message-card .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      margin-top: 6px;
+      flex: 0 0 auto;
+    }
+
+    .status-card {
+      margin-bottom: 18px;
+      border: 1px solid var(--border);
+      background: var(--info-bg);
+      color: var(--text);
+    }
+
+    .status-card.success {
+      border-color: rgba(45,107,62,.18);
+      background: var(--success-bg);
+    }
+
+    .status-card h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    .status-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 15px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .field input {
+      width: 100%;
+      min-height: 50px;
+      padding: 13px 14px;
+      border-radius: 13px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 14px;
+      color: var(--text);
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+
+    [data-theme="dark"] .field input { background: rgba(26,36,16,.8); }
+
+    .field input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+      background: var(--panel-strong);
+    }
+
+    [data-theme="dark"] .field input:focus { background: rgba(26,36,16,.95); }
+    .field input::placeholder { color: var(--muted-2); }
+
+    .field-errors {
+      margin: 0;
+      padding-left: 16px;
+      color: var(--danger);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .password-wrap { position: relative; }
+    .password-wrap input { padding-right: 80px; }
+
+    .toggle-pw {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--primary);
+      padding: 5px 8px;
+      border-radius: 8px;
+      transition: background .18s;
+      user-select: none;
+    }
+
+    .toggle-pw:hover { background: var(--primary-glow); }
+
+    .btn-submit,
+    .btn-secondary {
+      min-height: 50px;
+      border-radius: 14px;
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform .18s, box-shadow .18s, border-color .18s, background .18s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .btn-submit {
+      margin-top: 6px;
+      border: none;
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-3) 55%, var(--gold) 100%);
+      box-shadow: 0 12px 30px var(--primary-glow), 0 4px 12px var(--gold-glow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-submit::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.12) 0%, transparent 55%);
+    }
+
+    .btn-submit:hover,
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .action-row {
+      display: grid;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .helper-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-top: 12px;
+      font-size: 12.5px;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .text-link {
+      color: var(--primary-2);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .text-link:hover { text-decoration: underline; }
+
+    .security-note {
+      margin-top: 16px;
+      background: var(--gold-pale);
+      border: 1px solid color-mix(in srgb, var(--gold) 16%, transparent);
+      color: var(--muted);
+    }
+
+    .footer-note {
+      text-align: center;
+      margin-top: 22px;
+      font-size: 11.5px;
+      color: var(--muted-2);
+      line-height: 1.6;
+    }
+
+    .support-copy {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.65;
+    }
+
+    @media (max-width: 960px) {
+      .auth-shell {
+        grid-template-columns: 1fr;
+        max-width: 540px;
+      }
+      .brand-pane { padding: 28px 26px; }
+      .brand-copy h1 { font-size: 26px; }
+      .form-pane { padding: 32px 24px; }
+    }
+
+    @media (max-width: 520px) {
+      .page { padding: 12px; }
+      .brand-stats { grid-template-columns: 1fr; }
+      .brand-copy h1 { font-size: 22px; }
+      .form-head h2 { font-size: 22px; }
+      .helper-row { align-items: flex-start; }
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+  </style>
+  {% if company %}{% if company.dashboard_css_overrides or company.site_font %}
+  <style>
+    :root, [data-company-theme], [data-theme="dark"] [data-company-theme] {
+      {{ company.dashboard_css_overrides }}{% if company.site_font %}
+      --font-body:  {{ company.font_body_family|safe }}, ui-sans-serif, system-ui, sans-serif;
+      --font-serif: {{ company.font_serif_family|safe }}, Georgia, serif;{% endif %}
+    }
+  </style>{% endif %}{% endif %}
+  <script>
+    (function() {
+      var stored = localStorage.getItem('sf-theme');
+      var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = stored || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+      var companyTheme = "{{ company_theme|default:'forest' }}";
+      if (companyTheme && companyTheme !== 'forest') {
+        document.documentElement.setAttribute('data-company-theme', companyTheme);
+      }
+    })();
+  </script>
+</head>
+<body>
+<div class="page">
+  <div class="auth-shell">
+    <section class="brand-pane">
+      <div class="brand-pane-accent"></div>
+
+      <div class="brand-top">
+        <div class="brand-mark">
+          {% if company and company.logo %}
+            <img src="{{ company.logo.url }}" alt="{{ company_name }}" style="width:100%;height:100%;object-fit:contain;padding:6px;">
+          {% else %}
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17 8C8 10 5.9 16.17 3.82 21L5.71 22l1-2.3A4.49 4.49 0 008 20c9 0 11-7.5 9-12z"/>
+            </svg>
+          {% endif %}
+        </div>
+        <div class="brand-name">
+          <strong>{{ company_name|default:"MicroCredit" }}</strong>
+          <span>{{ company_tagline|default:"Micro-Credit Platform" }}</span>
+        </div>
+      </div>
+
+      <div class="brand-copy">
+        <div class="brand-kicker">{% block brand_kicker %}Secure Operations Portal{% endblock %}</div>
+        <h1>{% block brand_heading %}Welcome back to your lending workspace.{% endblock %}</h1>
+        <p>{% block brand_body %}Access borrower records, loan portfolios, collections activity, and secure account recovery from one disciplined micro-credit management platform.{% endblock %}</p>
+      </div>
+
+      <div class="brand-stats">
+        {% block brand_stats %}
+          <div class="brand-stat"><div class="label">Portfolio</div><div class="value">Ready</div></div>
+          <div class="brand-stat"><div class="label">Collections</div><div class="value">Tracked</div></div>
+          <div class="brand-stat"><div class="label">Borrowers</div><div class="value">Managed</div></div>
+          <div class="brand-stat"><div class="label">Analytics</div><div class="value">Available</div></div>
+        {% endblock %}
+      </div>
+
+      <div class="brand-footer">
+        {% block brand_footer %}
+          Built for disciplined lending, recovery visibility, and field operations.
+        {% endblock %}
+      </div>
+    </section>
+
+    <section class="form-pane">
+      <button class="pane-theme-toggle" id="themeToggle" type="button" aria-label="Toggle theme">🌿</button>
+
+      <div class="form-wrap">
+        <div class="form-head">
+          <div class="form-kicker">{% block form_kicker %}Authentication{% endblock %}</div>
+          <h2>{% block form_title %}Account access{% endblock %}</h2>
+          <p>{% block form_intro %}Continue securely inside the {{ company_name|default:"platform" }} management system.{% endblock %}</p>
+        </div>
+        <div class="form-divider"></div>
+
+        {% block form_content %}{% endblock %}
+
+        {% block form_note %}
+          <div class="security-note">
+            This portal is restricted to authorized personnel only. All access and recovery activity is monitored and recorded.
+          </div>
+        {% endblock %}
+
+        <div class="footer-note">
+          © {% now "Y" %} {{ company_name|default:"MicroCredit" }}
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+  const html = document.documentElement;
+  const toggle = document.getElementById('themeToggle');
+  const stored = localStorage.getItem('sf-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let theme = stored || (prefersDark ? 'dark' : 'light');
+
+  function applyTheme(nextTheme) {
+    html.setAttribute('data-theme', nextTheme);
+    if (toggle) toggle.textContent = nextTheme === 'dark' ? '☀️' : '🌿';
+    localStorage.setItem('sf-theme', nextTheme);
+    theme = nextTheme;
+  }
+
+  applyTheme(theme);
+  toggle?.addEventListener('click', () => applyTheme(theme === 'dark' ? 'light' : 'dark'));
+</script>
+
+{% block page_scripts %}{% endblock %}
+</body>
+</html>

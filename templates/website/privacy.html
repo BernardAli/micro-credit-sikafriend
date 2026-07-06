@@ -1,0 +1,662 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block title %}Privacy Policy — {{ profile.company_name }}{% endblock %}
+{% block meta_desc %}Learn how {{ profile.company_name }} collects, uses, and protects your personal and financial information. Our commitment to your privacy and data security.{% endblock %}
+
+{% block content %}
+<style>
+/* ── PRIVACY PAGE LAYOUT ── */
+.privacy-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 48px;
+  align-items: start;
+  padding: 72px 0 96px;
+}
+@media(max-width:900px){
+  .privacy-shell { grid-template-columns: 1fr; }
+  .privacy-toc { display: none; }
+}
+
+/* ── TABLE OF CONTENTS ── */
+.privacy-toc {
+  position: sticky;
+  top: calc(var(--header-h) + 28px);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 24px 20px;
+  box-shadow: var(--sh-sm);
+}
+.toc-heading {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .12em; color: var(--gold); margin-bottom: 16px;
+}
+.toc-heading::after { content:""; display:block; width:20px; height:1.5px; background:var(--gold); margin-top:6px; border-radius:1px; }
+.toc-links { display: flex; flex-direction: column; gap: 3px; }
+.toc-link {
+  font-size: 13px; color: var(--muted); padding: 7px 10px;
+  border-radius: var(--r-sm); transition: color .18s, background .18s;
+  text-decoration: none; display: flex; align-items: center; gap: 8px;
+}
+.toc-link::before { content:""; width:5px; height:5px; border-radius:50%; background:var(--border); flex-shrink:0; transition:background .18s; }
+.toc-link:hover, .toc-link.active { color: var(--primary); background: rgba(58,90,30,.06); }
+.toc-link:hover::before, .toc-link.active::before { background: var(--primary); }
+.toc-updated {
+  margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--muted2); line-height: 1.6;
+}
+
+/* ── POLICY BODY ── */
+.policy-body { min-width: 0; }
+.policy-intro {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 32px 36px;
+  margin-bottom: 36px;
+  box-shadow: var(--sh-sm);
+  position: relative; overflow: hidden;
+}
+.policy-intro::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--primary));
+}
+.policy-intro-text { font-size: 15px; color: var(--muted); line-height: 1.85; }
+.policy-intro-text strong { color: var(--text); }
+
+/* ── POLICY SECTION ── */
+.policy-section {
+  margin-bottom: 28px;
+  scroll-margin-top: calc(var(--header-h) + 20px);
+}
+.policy-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  box-shadow: var(--sh-sm);
+}
+.policy-card-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 22px 28px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  transition: background .18s;
+}
+.policy-card-head:hover { background: var(--bg2); }
+.policy-card-icon {
+  width: 40px; height: 40px; border-radius: var(--r-sm); flex-shrink: 0;
+  background: var(--gold-pale);
+  border: 1px solid rgba(184,134,32,.18);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.policy-card-title {
+  font-family: var(--font-serif); font-size: 20px; font-weight: 400;
+  color: var(--text); flex: 1;
+}
+.policy-num {
+  font-size: 11px; font-weight: 700; color: var(--muted2);
+  background: var(--bg2); border: 1px solid var(--border);
+  padding: 3px 9px; border-radius: var(--r);
+  flex-shrink: 0;
+}
+.policy-card-body {
+  padding: 28px 32px;
+  font-size: 14px; color: var(--muted); line-height: 1.85;
+}
+.policy-card-body p { margin-bottom: 16px; }
+.policy-card-body p:last-child { margin-bottom: 0; }
+.policy-card-body strong { color: var(--text); }
+.policy-card-body a { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
+.policy-card-body a:hover { color: var(--gold); }
+
+/* ── LISTS ── */
+.policy-list {
+  list-style: none; display: flex; flex-direction: column; gap: 10px;
+  margin: 16px 0;
+}
+.policy-list li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 14px; color: var(--muted); line-height: 1.7;
+}
+.policy-list li::before {
+  content: "→"; font-size: 11px; color: var(--gold); font-weight: 700;
+  margin-top: 3px; flex-shrink: 0;
+}
+
+/* ── TABLE ── */
+.policy-table {
+  width: 100%; border-collapse: collapse; margin: 18px 0;
+  font-size: 13px;
+}
+.policy-table th {
+  text-align: left; padding: 10px 14px;
+  background: var(--bg2); color: var(--text); font-weight: 700;
+  border-bottom: 2px solid var(--border);
+}
+.policy-table td {
+  padding: 10px 14px; color: var(--muted);
+  border-bottom: 1px solid var(--border2);
+  vertical-align: top;
+}
+.policy-table tr:last-child td { border-bottom: none; }
+.policy-table tr:hover td { background: var(--bg); }
+
+/* ── HIGHLIGHT BOX ── */
+.policy-highlight {
+  background: rgba(58,90,30,.05);
+  border: 1px solid rgba(58,90,30,.14);
+  border-radius: var(--r-lg);
+  padding: 18px 22px;
+  margin: 18px 0;
+  font-size: 13.5px; color: var(--text); line-height: 1.75;
+}
+[data-theme="dark"] .policy-highlight { background: rgba(122,184,64,.06); border-color: rgba(122,184,64,.14); }
+.policy-highlight-gold {
+  background: var(--gold-pale);
+  border: 1px solid rgba(184,134,32,.18);
+}
+
+/* ── CONTACT CARD ── */
+.privacy-contact {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px; margin-top: 20px;
+}
+.pc-item {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.pc-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--gold); }
+.pc-value { font-size: 13.5px; color: var(--text); font-weight: 600; }
+.pc-value a { color: inherit; text-decoration: none; }
+.pc-value a:hover { color: var(--primary); }
+</style>
+
+<!-- PAGE HERO -->
+<div class="page-hero" style="min-height:320px">
+  <div class="page-hero-img" style="background-image:url('{% static 'website/images/microcredit-loan-products.webp' %}')"></div>
+  <div class="page-hero-overlay" style="background:linear-gradient(160deg,rgba(8,18,4,.90),rgba(30,48,12,.80) 58%,rgba(58,38,8,.70) 100%)"></div>
+  <div class="page-hero-deco"></div>
+  <div class="wrap page-hero-inner">
+    <div class="page-hero-breadcrumb">
+      <a href="{% url 'company:website' %}">Home</a>
+      <span>›</span>
+      <span style="color:rgba(255,255,255,.90)">Privacy Policy</span>
+    </div>
+    <h1 class="h-md">Privacy Policy</h1>
+    <p class="lead">How {{ profile.company_name }} collects, uses, protects, and respects your personal information.</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="privacy-shell">
+
+    <!-- TABLE OF CONTENTS -->
+    <aside class="privacy-toc">
+      <div class="toc-heading">On this page</div>
+      <nav class="toc-links">
+        <a href="#information-collected"  class="toc-link">Information We Collect</a>
+        <a href="#how-we-use"             class="toc-link">How We Use Your Data</a>
+        <a href="#legal-basis"            class="toc-link">Legal Basis</a>
+        <a href="#data-sharing"           class="toc-link">Data Sharing</a>
+        <a href="#data-retention"         class="toc-link">Data Retention</a>
+        <a href="#your-rights"            class="toc-link">Your Rights</a>
+        <a href="#security"               class="toc-link">Security</a>
+        <a href="#cookies"                class="toc-link">Cookies</a>
+        <a href="#third-party"            class="toc-link">Third-Party Links</a>
+        <a href="#children"               class="toc-link">Children's Privacy</a>
+        <a href="#changes"                class="toc-link">Policy Changes</a>
+        <a href="#contact-dpo"            class="toc-link">Contact Us</a>
+      </nav>
+      <div class="toc-updated">
+        <strong style="color:var(--text)">Last updated</strong><br>
+        {% now "F j, Y" %}
+      </div>
+    </aside>
+
+    <!-- POLICY BODY -->
+    <div class="policy-body">
+
+      <!-- INTRO -->
+      <div class="policy-intro">
+        <p class="policy-intro-text">
+          <strong>{{ profile.company_name }}</strong>
+          {% if profile.registration_number %}(Reg. No. {{ profile.registration_number }}){% endif %}
+          is committed to protecting the privacy and security of your personal information.
+          This Privacy Policy explains how we collect, use, share, and safeguard information
+          when you use our services, visit our website, or interact with us as a borrower, agent, or business partner.
+        </p>
+        <p class="policy-intro-text" style="margin-top:14px;margin-bottom:0">
+          By accessing our services or submitting a loan application, you acknowledge that you have read
+          and understood this policy. If you do not agree with any part of this policy, please refrain
+          from using our services.
+        </p>
+      </div>
+
+      <!-- 1. INFORMATION WE COLLECT -->
+      <div class="policy-section" id="information-collected">
+        <div class="policy-card">
+          <div class="policy-card-head">
+            <div class="policy-card-icon">📋</div>
+            <div class="policy-card-title">Information We Collect</div>
+            <div class="policy-num">01</div>
+          </div>
+          <div class="policy-card-body">
+            <p>We collect information that is necessary to evaluate loan applications, manage accounts, prevent fraud, and comply with financial regulations. This includes:</p>
+
+            <strong>Personal Identification Data</strong>
+            <ul class="policy-list">
+              <li>Full legal name, date of birth, and national identification number (Ghana Card, Passport, or Voter ID)</li>
+              <li>Residential address, GPS coordinates, and proof of address documents</li>
+              <li>Photograph and biometric data where legally required for identity verification</li>
+              <li>Next-of-kin information and guarantor details</li>
+            </ul>
+
+            <strong>Financial Information</strong>
+            <ul class="policy-list">
+              <li>Income details, employment status, employer information, and payslips</li>
+              <li>Bank account numbers, mobile money wallet numbers, and transaction history</li>
+              <li>Existing loan obligations and credit history from credit bureaus</li>
+              <li>Business financial statements and trading records (for business loans)</li>
+            </ul>
+
+            <strong>Technical &amp; Usage Data</strong>
+            <ul class="policy-list">
+              <li>IP address, browser type, device identifiers, and operating system</li>
+              <li>Pages visited, time spent, and navigation patterns on our website</li>
+              <li>Communication records including phone calls, SMS, email, and WhatsApp messages</li>
+            </ul>
+
+            <div class="policy-highlight">
+              We only collect information that is <strong>necessary, relevant, and proportionate</strong> to the purpose for which it is collected, in accordance with applicable data protection laws.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. HOW WE USE -->
+      <div class="policy-section" id="how-we-use">
+        <div class="policy-card">
+          <div class="policy-card-head">
+            <div class="policy-card-icon">⚙️</div>
+            <div class="policy-card-title">How We Use Your Data</div>
+            <div class="policy-num">02</div>
+          </div>
+          <div class="policy-card-body">
+            <p>Your information is used solely for legitimate business and regulatory purposes:</p>
+
+            <table class="policy-table">
+              <thead>
+                <tr>
+                  <th>Purpose</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Loan Processing</strong></td>
+                  <td>Evaluating creditworthiness, verifying identity, and making lending decisions</td>
+                </tr>
+                <tr>
+                  <td><strong>Account Management</strong></td>
+                  <td>Setting up and managing your borrower account, repayment schedules, and statements</td>
+                </tr>
+                <tr>
+                  <td><strong>Collections</strong></td>
+                  <td>Sending repayment reminders, contacting guarantors, and managing overdue accounts</td>
+                </tr>
+                <tr>
+                  <td><strong>Regulatory Compliance</strong></td>
+                  <td>Meeting obligations under the Bank of Ghana, Anti-Money Laundering (AML) laws, and credit reporting regulations</td>
+                </tr>
+                <tr>
+                  <td><strong>Fraud Prevention</strong></td>
+                  <td>Detecting and preventing fraudulent applications, identity theft, and financial crime</td>
+                </tr>
+                <tr>
+                  <td><strong>Service Improvement</strong></td>
+                  <td>Analysing trends to improve our products, processes, and customer experience</td>
+                </tr>
+                <tr>
+                  <td><strong>Communications</strong></td>
+                  <td>Sending loan confirmations, statements, policy updates, and relevant product information</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p>We will not use your personal data for purposes incompatible with those stated above without first obtaining your explicit consent.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. LEGAL BASIS -->
+      <div class="policy-section" id="legal-basis">
+        <div class="policy-card">
+          <div class="policy-card-head">
+            <div class="policy-card-icon">⚖️</div>
+            <div class="policy-card-title">Legal Basis for Processing</div>
+            <div class="policy-num">03</div>
+          </div>
+          <div class="policy-card-body">
+            <p>We process your personal data under the following lawful bases:</p>
+            <ul class="policy-list">
+              <li><strong>Contractual necessity</strong> — processing required to fulfil the loan agreement between you and {{ profile.company_name }}</li>
+              <li><strong>Legal obligation</strong> — processing required to comply with financial sector laws, anti-money laundering regulations, and reporting obligations</li>
+              <li><strong>Legitimate interests</strong> — fraud prevention, risk management, portfolio analytics, and business security, where these interests do not override your rights</li>
+              <li><strong>Consent</strong> — for optional communications such as newsletters or marketing messages; you may withdraw consent at any time</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. DATA SHARING -->
+      <div class="policy-section" id="data-sharing">
+        <div class="policy-card">
+          <div class="policy-card-head">
+            <div class="policy-card-icon">🤝</div>
+            <div class="policy-card-title">Data Sharing &amp; Disclosure</div>
+            <div class="policy-num">04</div>
+          </div>
+          <div class="policy-card-body">
+            <p>We do not sell your personal information. We share data only in the following circumstances:</p>
+
+            <strong>Regulated Third Parties</strong>
+            <ul class="policy-list">
+              <li><strong>Credit Bureaus</strong> — We report loan performance to licensed credit bureaus as required by the Credit Reporting Act. This helps build your credit history and may affect your ability to access credit from other lenders.</li>
+              <li><strong>Bank of Ghana</strong> — Regulatory submissions, AML/CFT reports, and supervisory disclosures as required by law.</li>
+              <li><strong>Law Enforcement</strong> — In response to a valid court order, subpoena, or lawful government request.</li>
+            </ul>
+
+            <strong>Service Providers</strong>
+            <ul class="policy-list">
+              <li>Mobile money and payment processors used to disburse funds or collect repayments</li>
+              <li>SMS and communication service providers used to send account notifications</li>
+              <li>Cloud hosting and IT service providers who process data on our behalf under strict data processing agreements</li>
+            </ul>
+
+            <strong>Business Transfers</strong>
+            <ul class="policy-list">
+              <li>In the event of a merger, acquisition, or asset sale, your data may be transferred to the successor entity, subject to the same privacy protections.</li>
+            </ul>
+
+            <div class="policy-highlight policy-highlight-gold">
+              All third parties with whom we share data are contractually required to maintain its confidentiality and use it only for the specified purpose.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. RETENTION -->
+      <div class="policy-section" id="data-retention">
+        <div class="policy-card">
+          <div class="policy-card-head">
+            <div class="policy-card-icon">🗄️</div>
+            <div class="policy-card-title">Data Retention</div>
+            <div class="policy-num">05</div>
+          </div>
+          <div class="policy-card-body">
+            <p>We retain personal data for as long as necessary to fulfil the purposes described in this policy and to comply with our legal obligations:</p>
+
+            <table class="policy-table">
+              <thead>
+                <tr><th>Data Category</th><th>Retention Period</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Active loan account records</td>
+                  <td>Duration of the loan plus 7 years</td>
+                </tr>
+                <tr>
+                  <td>Identity verification documents</td>
+                  <td>7 years after account closure</td>
+                </tr>
+                <tr>
+                  <td>Credit bureau reports</td>
+                  <td>As required by the Credit Reporting Act</td>
+                </tr>
+                <tr>
+                  <td>Communication records (calls, SMS)</td>
+                  <td>2 years</td>
+                </tr>
+                <tr>
+                  <td>Website analytics data</td>
+                  <td>26 months</td>
+                </tr>
+                <tr>
+                  <td>Marketing consent records</td>
+                  <td>Until withdrawn, plus 3 years</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p>After the applicable retention period, data is securely deleted or anonymised.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. YOUR RIGHTS -->
+      <div class="policy-section" id="your-rights">
+        <div class="policy-card">
+          <div class="policy-card-head">
+            <div class="policy-card-icon">🛡️</div>
+            <div class="policy-card-title">Your Rights</div>
+            <div class="policy-num">06</div>
+          </div>
+          <div class="policy-card-body">
+            <p>Subject to applicable law, you have the following rights regarding your personal data:</p>
+            <ul class="policy-list">
+              <li><strong>Right of access</strong> — Request a copy of the personal data we hold about you</li>
+              <li><strong>Right to rectification</strong> — Request correction of inaccurate or incomplete data</li>
+              <li><strong>Right to erasure</strong> — Request deletion of your data where there is no legitimate reason for us to continue processing it</li>
+              <li><strong>Right to restrict processing</strong> — Request that we limit how we use your data in certain circumstances</li>
+              <li><strong>Right to data portability</strong> — Receive your data in a structured, machine-readable format</li>
+              <li><strong>Right to object</strong> — Object to processing based on legitimate interests or for direct marketing purposes</li>
+              <li><strong>Right to withdraw consent</strong> — Withdraw consent for optional processing at any time without affecting prior lawful processing</li>
+            </ul>
+
+            <div class="policy-highlight">
+              To exercise any of these rights, contact us using the details in the <a href="#contact-dpo">Contact Us</a> section. We will respond within <strong>30 days</strong>. Some rights may be limited where we have overriding legitimate interests or legal obligations.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. SECURITY -->
+      <div class="policy-section" id="security">
+        <div class="policy-card">
+          <div class="policy-card-head">
+            <div class="policy-card-icon">🔐</div>
+            <div class="policy-card-title">Data Security</div>
+            <div class="policy-num">07</div>
+          </div>
+          <div class="policy-card-body">
+            <p>We implement appropriate technical and organisational measures to protect your personal data against unauthorised access, loss, alteration, or disclosure:</p>
+            <ul class="policy-list">
+              <li>Encrypted storage of sensitive financial and identification data</li>
+              <li>Role-based access controls ensuring staff can only access data relevant to their function</li>
+              <li>Regular security audits and vulnerability assessments</li>
+              <li>Secure HTTPS connections for all web-based communications</li>
+              <li>Staff training on data protection and confidentiality obligations</li>
+              <li>Physical security controls at premises where paper records are stored</li>
+            </ul>
+            <p>In the event of a data breach that poses a risk to your rights and freedoms, we will notify you and the relevant regulatory authority as required by law.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. COOKIES -->
+      <div class="policy-section" id="cookies">
+        <div class="policy-card">
+          <div class="policy-card-head">
+            <div class="policy-card-icon">🍪</div>
+            <div class="policy-card-title">Cookies &amp; Tracking</div>
+            <div class="policy-num">08</div>
+          </div>
+          <div class="policy-card-body">
+            <p>Our website uses cookies and similar technologies to improve your browsing experience:</p>
+
+            <table class="policy-table">
+              <thead>
+                <tr><th>Cookie Type</th><th>Purpose</th><th>Duration</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Essential</strong></td>
+                  <td>Session management, security tokens, and login state</td>
+                  <td>Session</td>
+                </tr>
+                <tr>
+                  <td><strong>Functional</strong></td>
+                  <td>Remembering your theme preference (light/dark mode)</td>
+                  <td>1 year</td>
+                </tr>
+                <tr>
+                  <td><strong>Analytics</strong></td>
+                  <td>Anonymous usage statistics to improve the website</td>
+                  <td>26 months</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p>You can control cookies through your browser settings. Disabling essential cookies may affect the functionality of our client portal and online services.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9. THIRD PARTY LINKS -->
+      <div class="policy-section" id="third-party">
+        <div class="policy-card">
+          <div class="policy-card-head">
+            <div class="policy-card-icon">🔗</div>
+            <div class="policy-card-title">Third-Party Links</div>
+            <div class="policy-num">09</div>
+          </div>
+          <div class="policy-card-body">
+            <p>Our website may contain links to third-party websites such as social media platforms, payment providers, or partner institutions. These sites operate under their own privacy policies, which we do not control.</p>
+            <p>We encourage you to review the privacy policy of any third-party site before providing your personal information to them. {{ profile.company_name }} is not responsible for the data practices of external sites.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 10. CHILDREN -->
+      <div class="policy-section" id="children">
+        <div class="policy-card">
+          <div class="policy-card-head">
+            <div class="policy-card-icon">👶</div>
+            <div class="policy-card-title">Children's Privacy</div>
+            <div class="policy-num">10</div>
+          </div>
+          <div class="policy-card-body">
+            <p>Our services are intended exclusively for adults (18 years and older). We do not knowingly collect personal data from children under the age of 18.</p>
+            <p>If you believe a child has provided us with personal information without parental consent, please contact us immediately and we will take steps to delete that information.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 11. CHANGES -->
+      <div class="policy-section" id="changes">
+        <div class="policy-card">
+          <div class="policy-card-head">
+            <div class="policy-card-icon">📝</div>
+            <div class="policy-card-title">Changes to This Policy</div>
+            <div class="policy-num">11</div>
+          </div>
+          <div class="policy-card-body">
+            <p>We may update this Privacy Policy from time to time to reflect changes in our practices, services, or legal requirements. When we make material changes, we will:</p>
+            <ul class="policy-list">
+              <li>Update the "Last Updated" date at the top of this page</li>
+              <li>Notify registered borrowers via SMS or email for significant changes</li>
+              <li>Post a notice on our website</li>
+            </ul>
+            <p>Your continued use of our services after changes are posted constitutes acceptance of the updated policy. We encourage you to review this policy periodically.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 12. CONTACT -->
+      <div class="policy-section" id="contact-dpo">
+        <div class="policy-card">
+          <div class="policy-card-head">
+            <div class="policy-card-icon">✉️</div>
+            <div class="policy-card-title">Contact Us</div>
+            <div class="policy-num">12</div>
+          </div>
+          <div class="policy-card-body">
+            <p>For any questions, concerns, or requests relating to this Privacy Policy or the personal data we hold about you, please contact us:</p>
+
+            <div class="privacy-contact">
+              <div class="pc-item">
+                <div class="pc-label">Company</div>
+                <div class="pc-value">{{ profile.company_name }}</div>
+              </div>
+              {% if profile.email %}
+              <div class="pc-item">
+                <div class="pc-label">Email</div>
+                <div class="pc-value"><a href="mailto:{{ profile.email }}">{{ profile.email }}</a></div>
+              </div>
+              {% endif %}
+              {% if profile.phone %}
+              <div class="pc-item">
+                <div class="pc-label">Phone</div>
+                <div class="pc-value"><a href="tel:{{ profile.phone }}">{{ profile.phone }}</a></div>
+              </div>
+              {% endif %}
+              {% if profile.address %}
+              <div class="pc-item">
+                <div class="pc-label">Address</div>
+                <div class="pc-value">{{ profile.address }}</div>
+              </div>
+              {% endif %}
+              {% if profile.registration_number %}
+              <div class="pc-item">
+                <div class="pc-label">Reg. Number</div>
+                <div class="pc-value">{{ profile.registration_number }}</div>
+              </div>
+              {% endif %}
+              {% if profile.license_number %}
+              <div class="pc-item">
+                <div class="pc-label">Licence No.</div>
+                <div class="pc-value">{{ profile.license_number }}</div>
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="policy-highlight" style="margin-top:24px">
+              If you are not satisfied with our response, you have the right to lodge a complaint with the <strong>Data Protection Commission of Ghana</strong> or any other competent supervisory authority in your jurisdiction.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /policy-body -->
+  </div><!-- /privacy-shell -->
+</div>
+
+<script>
+(function(){
+  /* Highlight active TOC link on scroll */
+  const sections = document.querySelectorAll('.policy-section[id]');
+  const tocLinks = document.querySelectorAll('.toc-link');
+  if(!sections.length || !tocLinks.length) return;
+
+  const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 110;
+
+  function activate(){
+    let current = '';
+    sections.forEach(s => {
+      if(s.getBoundingClientRect().top <= headerH + 40) current = s.id;
+    });
+    tocLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  }
+
+  window.addEventListener('scroll', activate, {passive:true});
+  activate();
+})();
+</script>
+{% endblock %}

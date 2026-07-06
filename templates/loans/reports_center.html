@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .reports-shell{display:grid;gap:16px}
+  .reports-header{
+    display:flex;
+    justify-content:space-between;
+    gap:16px;
+    align-items:flex-start;
+    padding:20px;
+    border:1px solid var(--border, rgba(15,23,42,.12));
+    border-radius:8px;
+    background:var(--surface, #fff);
+    box-shadow:0 8px 24px rgba(15,23,42,.06);
+  }
+  .reports-kicker{
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font-size:.72rem;
+    color:var(--muted, #64748b);
+    font-weight:800;
+  }
+  .reports-title{margin:4px 0 6px;font-size:1.45rem;line-height:1.2;color:var(--text, #0f172a)}
+  .reports-sub{max-width:760px;color:var(--muted, #64748b);font-size:.95rem;line-height:1.55}
+  .reports-period{
+    min-width:220px;
+    text-align:right;
+    color:var(--muted, #64748b);
+    font-size:.9rem;
+  }
+  .reports-period strong{display:block;color:var(--text, #0f172a);font-size:1rem}
+  .filter-panel{
+    padding:16px;
+    border:1px solid var(--border, rgba(15,23,42,.12));
+    border-radius:8px;
+    background:var(--surface, #fff);
+  }
+  .filter-grid{
+    display:grid;
+    grid-template-columns:2fr repeat(5, minmax(120px, 1fr));
+    gap:12px;
+    align-items:end;
+  }
+  .field{display:grid;gap:6px}
+  .field label{font-size:.78rem;font-weight:800;color:var(--muted, #64748b);text-transform:uppercase;letter-spacing:.04em}
+  .field select,.field input{
+    width:100%;
+    min-height:40px;
+    border:1px solid var(--border, rgba(15,23,42,.14));
+    border-radius:8px;
+    padding:8px 10px;
+    background:var(--input-bg, #fff);
+    color:var(--text, #0f172a);
+  }
+  .filter-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:12px;
+  }
+  .btn-report{
+    min-height:38px;
+    border:1px solid var(--border, rgba(15,23,42,.14));
+    border-radius:8px;
+    padding:8px 12px;
+    font-weight:800;
+    background:var(--surface, #fff);
+    color:var(--text, #0f172a);
+    cursor:pointer;
+    text-decoration:none;
+  }
+  .btn-report-primary{background:var(--primary, #2563eb);border-color:var(--primary, #2563eb);color:#fff}
+  .metrics-grid{
+    display:grid;
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+    gap:12px;
+  }
+  .metric-card{
+    border:1px solid var(--border, rgba(15,23,42,.12));
+    border-radius:8px;
+    padding:14px;
+    background:var(--surface, #fff);
+  }
+  .metric-label{font-size:.78rem;font-weight:800;color:var(--muted, #64748b);text-transform:uppercase;letter-spacing:.04em}
+  .metric-value{margin-top:6px;font-size:1.25rem;font-weight:900;color:var(--text, #0f172a);overflow-wrap:anywhere}
+  .metric-help{margin-top:6px;font-size:.82rem;color:var(--muted, #64748b);line-height:1.45}
+  .report-section{
+    border:1px solid var(--border, rgba(15,23,42,.12));
+    border-radius:8px;
+    background:var(--surface, #fff);
+    overflow:hidden;
+  }
+  .section-head{padding:14px 16px;border-bottom:1px solid var(--border, rgba(15,23,42,.10))}
+  .section-title{margin:0;font-size:1rem;color:var(--text, #0f172a)}
+  .section-desc{margin-top:4px;color:var(--muted, #64748b);font-size:.9rem}
+  .table-scroll{overflow:auto}
+  .report-table{width:100%;border-collapse:collapse;min-width:760px}
+  .report-table th,.report-table td{padding:10px 12px;border-bottom:1px solid var(--border, rgba(15,23,42,.08));text-align:left;font-size:.88rem;vertical-align:top}
+  .report-table th{font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted, #64748b);background:color-mix(in srgb, var(--surface, #fff) 88%, #e2e8f0)}
+  .report-table tr:last-child td{border-bottom:0}
+  @media(max-width:1100px){
+    .filter-grid{grid-template-columns:1fr 1fr}
+    .metrics-grid{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:720px){
+    .reports-header{display:grid}
+    .reports-period{text-align:left}
+    .filter-grid,.metrics-grid{grid-template-columns:1fr}
+  }
+</style>
+
+<div class="reports-shell">
+  <section class="reports-header">
+    <div>
+      <div class="reports-kicker">Micro Finance Reports</div>
+      <h1 class="reports-title">{{ report.title }}</h1>
+      <div class="reports-sub">{{ report.description }}</div>
+    </div>
+    <div class="reports-period">
+      <strong>{{ period.label }}</strong>
+      {{ period.start|date:"d M Y" }} to {{ period.end|date:"d M Y" }}
+    </div>
+  </section>
+
+  <section class="filter-panel">
+    <form method="get" action="{% url 'loans:reports_center' %}">
+      <div class="filter-grid">
+        <div class="field">
+          <label for="report">Report</label>
+          <select id="report" name="report">
+            {% for group in report_groups %}
+              <optgroup label="{{ group.name }}">
+                {% for item in group.reports %}
+                  <option value="{{ item.key }}" {% if report_key == item.key %}selected{% endif %}>{{ item.title }}</option>
+                {% endfor %}
+              </optgroup>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="period_type">Period</label>
+          <select id="period_type" name="period_type">
+            {% for value,label in period_choices %}
+              <option value="{{ value }}" {% if period.type == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="year">Year</label>
+          <select id="year" name="year">
+            {% for year in year_choices %}
+              <option value="{{ year }}" {% if period.year == year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="month">Month</label>
+          <select id="month" name="month">
+            {% for value,label in month_choices %}
+              <option value="{{ value }}" {% if period.month == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="quarter">Quarter</label>
+          <select id="quarter" name="quarter">
+            {% for value,label in quarter_choices %}
+              <option value="{{ value }}" {% if period.quarter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="half">Half</label>
+          <select id="half" name="half">
+            {% for value,label in half_year_choices %}
+              <option value="{{ value }}" {% if period.half == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="start_date">Custom Start</label>
+          <input id="start_date" type="date" name="start_date" value="{{ period.start|date:'Y-m-d' }}">
+        </div>
+        <div class="field">
+          <label for="end_date">Custom End</label>
+          <input id="end_date" type="date" name="end_date" value="{{ period.end|date:'Y-m-d' }}">
+        </div>
+      </div>
+      <div class="filter-actions">
+        <button class="btn-report btn-report-primary" type="submit">View Report</button>
+        {% for value,label in export_formats %}
+          <button class="btn-report" type="submit" name="format" value="{{ value }}">{{ label }}</button>
+        {% endfor %}
+      </div>
+    </form>
+  </section>
+
+  {% if report.metrics %}
+    <section class="metrics-grid">
+      {% for metric in report.metrics %}
+        <div class="metric-card">
+          <div class="metric-label">{{ metric.label }}</div>
+          <div class="metric-value">{{ metric.value }}</div>
+          {% if metric.help %}<div class="metric-help">{{ metric.help }}</div>{% endif %}
+        </div>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  {% for section in report.sections %}
+    <section class="report-section">
+      <div class="section-head">
+        <h2 class="section-title">{{ section.title }}</h2>
+        {% if section.description %}<div class="section-desc">{{ section.description }}</div>{% endif %}
+      </div>
+      <div class="table-scroll">
+        <table class="report-table">
+          <thead>
+            <tr>
+              {% for column in section.columns %}
+                <th>{{ column }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in section.rows %}
+              <tr>
+                {% for value in row %}
+                  <td>{{ value }}</td>
+                {% endfor %}
+              </tr>
+            {% empty %}
+              <tr><td colspan="{{ section.columns|length }}">No data found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% endfor %}
+</div>
+{% endblock %}

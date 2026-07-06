@@ -1,0 +1,112 @@
+{% extends "public/base.html" %}
+
+{% block title %}About Us — {{ saas_name }}{% endblock %}
+{% block meta_description %}Learn about {{ saas_name }}, the professional micro-credit management platform built for lending institutions across Africa.{% endblock %}
+{% block header_class %}pub-header--solid{% endblock %}
+{% block logo_class %}{% endblock %}
+
+{% block head_styles %}
+.page-hero-light { padding: calc(var(--header-h) + 64px) 0 64px; background:var(--gray-50); border-bottom:1px solid var(--gray-200); }
+.about-grid { display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:center; }
+.about-values { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:24px; }
+.value-card { background:var(--white); border:1px solid var(--gray-200); border-radius:var(--r-lg); padding:24px; }
+.value-icon { width:44px; height:44px; border-radius:var(--r-sm); background:var(--navy-50); color:var(--navy); display:flex; align-items:center; justify-content:center; margin-bottom:14px; }
+.value-title { font-family:var(--font-head); font-size:16px; font-weight:700; color:var(--gray-900); margin-bottom:6px; }
+.value-desc  { font-size:14px; color:var(--gray-500); line-height:1.6; }
+.about-image-card { background:linear-gradient(155deg,var(--navy) 0%,var(--navy-800) 100%); border-radius:var(--r-xl); padding:40px; color:#fff; }
+.about-image-card .pub-h3--light { margin-bottom:16px; }
+.about-stat-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:28px; }
+.about-stat { text-align:center; padding:18px; background:rgba(255,255,255,.07); border-radius:var(--r); border:1px solid rgba(255,255,255,.1); }
+.about-stat .as-val { font-family:var(--font-head); font-size:28px; font-weight:800; color:var(--gold); }
+.about-stat .as-lbl { font-size:12px; color:rgba(255,255,255,.55); margin-top:4px; }
+.team-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+.team-card { text-align:center; }
+.team-av { width:80px; height:80px; border-radius:50%; margin:0 auto 16px; }
+.team-name { font-family:var(--font-head); font-size:17px; font-weight:700; color:var(--gray-900); }
+.team-role { font-size:13.5px; color:var(--gray-500); margin-top:4px; }
+@media(max-width:900px){ .about-grid{grid-template-columns:1fr;gap:40px;} .team-grid{grid-template-columns:1fr 1fr;} .about-values{grid-template-columns:1fr;} }
+@media(max-width:540px){ .team-grid{grid-template-columns:1fr;} }
+{% endblock %}
+
+{% block content %}
+
+<div class="page-hero-light">
+  <div class="pub-container" style="text-align:center">
+    <div class="pub-badge pub-badge--navy" style="margin-bottom:20px">Our Story</div>
+    <h1 class="pub-h2">Built for the micro-credit industry</h1>
+    <p class="pub-subtitle" style="margin:14px auto 0;max-width:580px">We built {{ saas_name }} because we saw how many micro-credit institutions were still managing hundreds of borrowers in spreadsheets. There had to be a better way.</p>
+  </div>
+</div>
+
+<section class="pub-section">
+  <div class="pub-container">
+    <div class="about-grid fade-in">
+      <div>
+        <div class="pub-kicker">Why we exist</div>
+        <h2 class="pub-h2">Micro-credit institutions deserve professional tools</h2>
+        <p class="pub-subtitle" style="margin-top:16px;margin-bottom:24px">Across Africa, thousands of micro-credit companies, savings groups, and cooperative lenders are growing rapidly — but still relying on paper ledgers and Excel spreadsheets to manage millions of cedis in loans.</p>
+        <p style="font-size:16px;color:var(--gray-600);line-height:1.75">{{ saas_name }} was built from the ground up for this space. Not adapted from corporate banking software. Not a generic loan tracker. A purpose-built platform that understands micro-credit — group loans, field agent collection, weekly repayments, and the realities of lending in African markets.</p>
+        <div style="margin-top:32px;display:flex;gap:14px;flex-wrap:wrap">
+          <a href="/signup/" class="btn-gold btn">Start Free Trial</a>
+          <a href="/contact/" class="btn-ghost btn">Contact Us</a>
+        </div>
+      </div>
+      <div>
+        <div class="about-image-card">
+          <h3 class="pub-h3--light">Built for the African market</h3>
+          <p style="font-size:15px;color:rgba(255,255,255,.65);line-height:1.7">We understand the nuances of micro-lending across Ghana, Nigeria, Kenya, Uganda, and beyond — multi-currency support, local tax compliance, mobile money integration, and SMS in local languages.</p>
+          <div class="about-stat-row">
+            <div class="about-stat"><div class="as-val">200+</div><div class="as-lbl">Companies</div></div>
+            <div class="about-stat"><div class="as-val">GHS 50M+</div><div class="as-lbl">Managed</div></div>
+            <div class="about-stat"><div class="as-val">25K+</div><div class="as-lbl">Borrowers</div></div>
+            <div class="about-stat"><div class="as-val">99.9%</div><div class="as-lbl">Uptime</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pub-section pub-section--gray">
+  <div class="pub-container">
+    <div class="section-head section-head--center fade-in">
+      <div class="pub-kicker">Our values</div>
+      <h2 class="pub-h2">What we stand for</h2>
+    </div>
+    <div class="about-values fade-in">
+      <div class="value-card">
+        <div class="value-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="value-title">Security first</div>
+        <div class="value-desc">Every company gets a private, isolated database. Your data never touches another company's records. We don't cut corners on data separation.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+        <div class="value-title">Simplicity by design</div>
+        <div class="value-desc">We believe software should be simple enough for a first-day user to disburse a loan without training. Complex features are only a click away when needed.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+        <div class="value-title">Built for the field</div>
+        <div class="value-desc">Designed for field agents collecting on mobile data, for admin staff managing operations from a laptop, and for managers reviewing reports on a Sunday evening.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+        <div class="value-title">Transparent pricing</div>
+        <div class="value-desc">No hidden implementation fees. No per-user charges that make you think twice before adding a team member. Simple, predictable pricing that grows with you.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pub-section" style="background:var(--navy);text-align:center">
+  <div class="pub-container">
+    <h2 class="pub-h2 pub-h2--light" style="margin-bottom:14px">Ready to work with us?</h2>
+    <p class="pub-subtitle pub-subtitle--light" style="margin:0 auto 32px">Start a free trial today, or reach out if you have questions.</p>
+    <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="/signup/" class="btn btn-gold btn--lg">Start Free Trial</a>
+      <a href="/contact/" class="btn btn-outline btn--lg">Contact Us</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

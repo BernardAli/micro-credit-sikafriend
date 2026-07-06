@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .workforce-form-shell{max-width:1200px;margin:0 auto;display:grid;gap:16px}
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;padding:28px}
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+  .hero-sub{margin-top:8px;max-width:860px;opacity:.88;line-height:1.65}
+  .form-card{border:1px solid var(--border);border-radius:28px;background:var(--panel);box-shadow:0 20px 50px rgba(26,31,20,.05);overflow:hidden}
+  .tabs-shell{padding:18px 22px 0;background:var(--bg-soft);border-bottom:1px solid var(--border-soft)}
+  .tabs-nav{display:flex;flex-wrap:wrap;gap:10px}
+  .tab-btn{border:none;border-radius:999px;padding:11px 16px;background:rgba(26,31,20,.06);color:var(--muted);font-weight:900;font-size:12px;letter-spacing:.03em;text-transform:uppercase;cursor:pointer;transition:all .2s ease}
+  .tab-btn:hover{background:rgba(26,31,20,.1);color:var(--text)}
+  .tab-btn.active{background:var(--primary);color:#fff;box-shadow:0 12px 28px var(--primary-glow)}
+  .tab-panel{display:none}
+  .tab-panel.active{display:block}
+  .section{padding:20px 22px;border-bottom:1px solid var(--border-soft)}
+  .section:last-child{border-bottom:none}
+  .section-title{margin:0 0 6px;font-size:18px;font-weight:900;color:var(--text)}
+  .section-sub{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  .field{display:grid;gap:6px}
+  .field.full{grid-column:1 / -1}
+  .field label{font-size:12px;font-weight:900;color:var(--text);text-transform:uppercase;letter-spacing:.04em}
+  .field input,.field select,.field textarea{width:100%;min-height:46px;border:1px solid var(--border);border-radius:14px;padding:10px 12px;background:var(--panel-strong)}
+  .field input[type="checkbox"]{width:auto;min-height:auto}
+  .check-card{border:1px solid var(--border);border-radius:18px;padding:14px;background:var(--panel-strong);display:flex;align-items:center;gap:10px}
+  .help{font-size:12px;color:var(--muted);line-height:1.55}
+  .err{font-size:12px;color:var(--danger);font-weight:700}
+  .non-field-errors{margin:18px 22px 0;padding:14px 16px;border-radius:16px;background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.14);color:var(--danger);font-weight:800}
+  .actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;padding:18px 22px;background:var(--bg-soft)}
+  .btn-soft{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border-radius:999px;font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text)}
+  .btn-soft-primary{background:var(--primary);border-color:var(--primary);color:#fff}
+  @media (max-width:900px){.grid,.grid-3{grid-template-columns:1fr}}
+</style>
+
+<div class="workforce-form-shell">
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-kicker">Workforce Management</div>
+      <h1 class="hero-title">{{ title }}</h1>
+      <div class="hero-sub">Create or update field agents, HR officers, finance staff, recovery teams, and other employees in one structured workforce record. Payroll, access, and operational data all live here.</div>
+    </div>
+  </section>
+
+  <form method="post" enctype="multipart/form-data" novalidate class="form-card">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="non-field-errors">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="tabs-shell">
+      <div class="tabs-nav" role="tablist" aria-label="Workforce form sections">
+        <button type="button" class="tab-btn" id="workforce-form-tab-button-profile" data-tab-target="profile" role="tab" aria-selected="true" aria-controls="workforce-form-tab-panel-profile">Profile</button>
+        <button type="button" class="tab-btn" id="workforce-form-tab-button-contact" data-tab-target="contact" role="tab" aria-selected="false" aria-controls="workforce-form-tab-panel-contact">Contact & Compliance</button>
+        <button type="button" class="tab-btn" id="workforce-form-tab-button-payroll" data-tab-target="payroll" role="tab" aria-selected="false" aria-controls="workforce-form-tab-panel-payroll">Payroll</button>
+        <button type="button" class="tab-btn" id="workforce-form-tab-button-documents" data-tab-target="documents" role="tab" aria-selected="false" aria-controls="workforce-form-tab-panel-documents">Documents & Notes</button>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="workforce-form-tab-panel-profile" data-tab-panel="profile" role="tabpanel" aria-labelledby="workforce-form-tab-button-profile">
+      <section class="section">
+        <h2 class="section-title">Identity & Role</h2>
+        <div class="section-sub">Core workforce identity, business role, and reporting information.</div>
+        <div class="grid-3">
+          <div class="field"><label for="{{ form.agent_id.id_for_label }}">Employee Code</label>{{ form.agent_id }}{% if form.agent_id.errors %}<div class="err">{{ form.agent_id.errors.0 }}</div>{% endif %}</div>
+          <div class="field"><label for="{{ form.name.id_for_label }}">Full Name</label>{{ form.name }}{% if form.name.errors %}<div class="err">{{ form.name.errors.0 }}</div>{% endif %}</div>
+          <div class="field"><label for="{{ form.workforce_role.id_for_label }}">Role</label>{{ form.workforce_role }}{% if form.workforce_role.errors %}<div class="err">{{ form.workforce_role.errors.0 }}</div>{% endif %}</div>
+          <div class="field"><label for="{{ form.department.id_for_label }}">Department</label>{{ form.department }}</div>
+          <div class="field"><label for="{{ form.job_title.id_for_label }}">Job Title</label>{{ form.job_title }}</div>
+          <div class="field"><label for="{{ form.supervisor.id_for_label }}">Supervisor</label>{{ form.supervisor }}</div>
+          <div class="field"><label for="{{ form.group_name.id_for_label }}">Team / Branch Group</label>{{ form.group_name }}</div>
+          <div class="field"><label for="{{ form.employment_type.id_for_label }}">Employment Type</label>{{ form.employment_type }}</div>
+          <div class="field"><label for="{{ form.employment_status.id_for_label }}">Employment Status</label>{{ form.employment_status }}</div>
+          <div class="field"><label for="{{ form.hire_date.id_for_label }}">Hire Date</label>{{ form.hire_date }}</div>
+          <div class="field"><label for="{{ form.date_of_birth.id_for_label }}">Date of Birth</label>{{ form.date_of_birth }}</div>
+          <div class="field"><label for="{{ form.location.id_for_label }}">Operational Location</label>{{ form.location }}</div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" id="workforce-form-tab-panel-contact" data-tab-panel="contact" role="tabpanel" aria-labelledby="workforce-form-tab-button-contact">
+      <section class="section">
+        <h2 class="section-title">Contact & Compliance</h2>
+        <div class="section-sub">Recovery contact details, emergency reachability, and ID or compliance references.</div>
+        <div class="grid">
+          <div class="field"><label for="{{ form.phone.id_for_label }}">Phone</label>{{ form.phone }}{% if form.phone.errors %}<div class="err">{{ form.phone.errors.0 }}</div>{% endif %}</div>
+          <div class="field"><label for="{{ form.email.id_for_label }}">Email</label>{{ form.email }}{% if form.email.errors %}<div class="err">{{ form.email.errors.0 }}</div>{% endif %}<div class="help">Used for recovery, notifications, and password reset if the employee has a login.</div></div>
+          <div class="field full"><label for="{{ form.residential_address.id_for_label }}">Residential Address</label>{{ form.residential_address }}</div>
+          <div class="field"><label for="{{ form.emergency_contact_name.id_for_label }}">Emergency Contact Name</label>{{ form.emergency_contact_name }}</div>
+          <div class="field"><label for="{{ form.emergency_contact_phone.id_for_label }}">Emergency Contact Phone</label>{{ form.emergency_contact_phone }}</div>
+          <div class="field"><label for="{{ form.ghana_card_number.id_for_label }}">National ID / Ghana Card Number</label>{{ form.ghana_card_number }}{% if form.ghana_card_number.errors %}<div class="err">{{ form.ghana_card_number.errors.0 }}</div>{% endif %}</div>
+          <div class="field"><label for="{{ form.tax_number.id_for_label }}">Tax Number</label>{{ form.tax_number }}</div>
+          <div class="field"><label for="{{ form.social_security_number.id_for_label }}">Social Security / SSNIT Number</label>{{ form.social_security_number }}</div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" id="workforce-form-tab-panel-payroll" data-tab-panel="payroll" role="tabpanel" aria-labelledby="workforce-form-tab-button-payroll">
+      <section class="section">
+        <h2 class="section-title">Payroll & Payment</h2>
+        <div class="section-sub">Salary structure, standard allowances, commissions, payment routing, and access settings.</div>
+        <div class="grid-3">
+          <div class="field"><label for="{{ form.base_salary.id_for_label }}">Base Salary</label>{{ form.base_salary }}</div>
+          <div class="field"><label for="{{ form.housing_allowance.id_for_label }}">Housing Allowance</label>{{ form.housing_allowance }}</div>
+          <div class="field"><label for="{{ form.transport_allowance.id_for_label }}">Transport Allowance</label>{{ form.transport_allowance }}</div>
+          <div class="field"><label for="{{ form.meal_allowance.id_for_label }}">Meal Allowance</label>{{ form.meal_allowance }}</div>
+          <div class="field"><label for="{{ form.communication_allowance.id_for_label }}">Communication Allowance</label>{{ form.communication_allowance }}</div>
+          <div class="field"><label for="{{ form.other_allowance.id_for_label }}">Other Allowance</label>{{ form.other_allowance }}</div>
+          <div class="field"><label for="{{ form.commission_rate.id_for_label }}">Commission Rate (%)</label>{{ form.commission_rate }}<div class="help">Useful for field agents or recovery officers with collections-based incentives.</div></div>
+          <div class="field"><label for="{{ form.preferred_payment_method.id_for_label }}">Preferred Payment Method</label>{{ form.preferred_payment_method }}</div>
+          <div class="field"><label for="{{ form.bank_name.id_for_label }}">Bank Name</label>{{ form.bank_name }}</div>
+          <div class="field"><label for="{{ form.bank_account_name.id_for_label }}">Bank Account Name</label>{{ form.bank_account_name }}</div>
+          <div class="field"><label for="{{ form.bank_account_number.id_for_label }}">Bank Account Number</label>{{ form.bank_account_number }}</div>
+          <div class="field"><label for="{{ form.mobile_money_name.id_for_label }}">Mobile Money Name</label>{{ form.mobile_money_name }}</div>
+          <div class="field"><label for="{{ form.mobile_money_number.id_for_label }}">Mobile Money Number</label>{{ form.mobile_money_number }}</div>
+        </div>
+        <div class="grid" style="margin-top:14px">
+          <div class="check-card">{{ form.payroll_active }} <div><strong>Payroll Active</strong><div class="help">Include this employee in payroll runs when active and eligible.</div></div></div>
+          <div class="check-card">{{ form.has_admin_access }} <div><strong>Admin Console Access</strong><div class="help">Grant staff-style platform access for HR, finance, operations, or management users.</div></div></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" id="workforce-form-tab-panel-documents" data-tab-panel="documents" role="tabpanel" aria-labelledby="workforce-form-tab-button-documents">
+      <section class="section">
+        <h2 class="section-title">Photos, Documents & Notes</h2>
+        <div class="section-sub">Optional images and internal notes for field identity, HR, or payroll teams.</div>
+        <div class="grid">
+          <div class="field"><label for="{{ form.photo.id_for_label }}">Profile Photo</label>{{ form.photo }}</div>
+          <div class="field"><label for="{{ form.ghana_card_front.id_for_label }}">ID Front</label>{{ form.ghana_card_front }}</div>
+          <div class="field"><label for="{{ form.ghana_card_back.id_for_label }}">ID Back</label>{{ form.ghana_card_back }}</div>
+          <div class="field full"><label for="{{ form.notes.id_for_label }}">Internal Notes</label>{{ form.notes }}</div>
+        </div>
+      </section>
+    </div>
+
+    <div class="actions">
+      <a href="{% url 'agent_list' %}" class="btn-soft">Cancel</a>
+      <button type="submit" class="btn-soft btn-soft-primary">Save Workforce Member</button>
+    </div>
+  </form>
+</div>
+<script>
+  (() => {
+    const tabButtons = Array.from(document.querySelectorAll("[id^='workforce-form-tab-button-']"));
+    const tabPanels = Array.from(document.querySelectorAll("[id^='workforce-form-tab-panel-']"));
+    if (!tabButtons.length || !tabPanels.length) return;
+
+    const openTab = (tabName, updateHash = true) => {
+      tabButtons.forEach((button) => {
+        const isActive = button.dataset.tabTarget === tabName;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-selected", isActive ? "true" : "false");
+      });
+      tabPanels.forEach((panel) => {
+        panel.classList.toggle("active", panel.dataset.tabPanel === tabName);
+      });
+      if (updateHash) {
+        history.replaceState(null, "", `#${tabName}`);
+      }
+    };
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => openTab(button.dataset.tabTarget));
+    });
+
+    const hashTab = window.location.hash.replace("#", "");
+    const errorPanel = tabPanels.find((panel) => panel.querySelector(".err, .errorlist, ul.errorlist"));
+    const initialTab = errorPanel?.dataset.tabPanel || tabButtons.find((button) => button.dataset.tabTarget === hashTab)?.dataset.tabTarget || "profile";
+    openTab(initialTab, Boolean(hashTab));
+  })();
+</script>
+{% endblock %}

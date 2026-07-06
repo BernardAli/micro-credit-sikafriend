@@ -1,0 +1,630 @@
+{% extends "base.html" %}
+{% load currency %}
+{% block content %}
+
+<style>
+  .analysis-shell{
+    display:grid;
+    gap:16px;
+  }
+
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+
+  .hero-inner{position:relative;z-index:1;padding:28px}
+
+  .hero-wrap{
+    display:flex;
+    justify-content:space-between;
+    gap:18px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+
+  .hero-left{
+    display:flex;
+    gap:16px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  .hero-avatar{
+    width:92px;
+    height:92px;
+    border-radius:24px;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.18);
+    background:rgba(255,255,255,.08);
+    box-shadow:0 14px 35px rgba(26,31,20,.16);
+    flex:0 0 auto;
+  }
+
+  .hero-avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+
+  .hero-fallback{
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:26px;
+    font-weight:900;
+    color:#fff;
+  }
+
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+
+  .hero-meta{
+    margin-top:6px;
+    opacity:.86;
+  }
+
+  .hero-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .btn-soft{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:10px 16px;
+    border-radius:999px;
+    font-weight:800;
+    text-decoration:none;
+    border:1px solid var(--border);
+    background:var(--panel-strong);
+    color:var(--text);
+  }
+
+  .btn-soft:hover{
+    color:var(--text);
+  }
+
+  .btn-soft-primary{
+    background:var(--primary);
+    color:#fff;
+    border-color:var(--primary);
+  }
+
+  .btn-soft-primary:hover{
+    color:#fff;
+  }
+
+  .metrics-grid-4{
+    display:grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap:14px;
+  }
+
+  .metrics-grid-3{
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap:14px;
+  }
+
+  .metrics-grid-2{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap:14px;
+  }
+
+  .stat-card{
+    border:1px solid var(--border);
+    border-radius:22px;
+    background:var(--panel);
+    padding:18px;
+    box-shadow:0 18px 45px rgba(26,31,20,.05);
+    min-height:132px;
+  }
+
+  .stat-label{
+    font-size:12px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    color:var(--muted);
+  }
+
+  .stat-value{
+    font-size:25px;
+    font-weight:900;
+    line-height:1.08;
+    margin-top:8px;
+    color:var(--text);
+  }
+
+  .stat-sub{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:6px;
+  }
+
+  .section-card{
+    border:1px solid var(--border);
+    border-radius:24px;
+    background:var(--panel-strong);
+    box-shadow:0 20px 50px rgba(26,31,20,.05);
+    overflow:hidden;
+  }
+
+  .section-head{
+    padding:18px 20px 0;
+  }
+
+  .section-title{
+    margin:0;
+    font-size:18px;
+    font-weight:900;
+    color:var(--text);
+  }
+
+  .section-sub{
+    color:var(--muted);
+    font-size:13px;
+    margin-top:4px;
+  }
+
+  .section-body{
+    padding:18px 20px 20px;
+  }
+
+  .filter-grid{
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap:12px;
+  }
+
+  .filter-grid input{
+    width:100%;
+    min-height:46px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px 12px;
+    background:var(--panel-strong);
+  }
+
+  .chart-box{
+    width:100%;
+    height:360px;
+  }
+
+  .soft-item{
+    border:1px solid var(--border);
+    border-radius:18px;
+    background:var(--panel);
+    padding:14px;
+    margin:10px 0;
+  }
+
+  .entity-title{
+    font-weight:900;
+    color:var(--text);
+    line-height:1.15;
+  }
+
+  .entity-meta{
+    font-size:13px;
+    color:var(--muted);
+    margin-top:4px;
+  }
+
+  .stack-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:10px;
+  }
+
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--panel-strong);
+    font-size:12px;
+    font-weight:800;
+    color:var(--text-2);
+  }
+
+  .chip-blue{ background:rgba(46,92,138,.08); color:var(--info); border-color:rgba(46,92,138,.18); }
+  .chip-green{ background:rgba(22,163,74,.08); color:var(--success); border-color:rgba(22,163,74,.14); }
+  .chip-amber{ background:rgba(245,158,11,.10); color:var(--warning); border-color:rgba(245,158,11,.16); }
+  .chip-red{ background:rgba(220,38,38,.08); color:var(--danger); border-color:rgba(220,38,38,.14); }
+  .chip-slate{ background:rgba(100,116,139,.08); color:var(--muted); border-color:var(--border); }
+
+  .muted{
+    color:var(--muted);
+  }
+
+  @media (max-width: 1200px){
+    .metrics-grid-4{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @media (max-width: 900px){
+    .metrics-grid-3,
+    .metrics-grid-2,
+    .filter-grid{ grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 640px){
+    .metrics-grid-4{ grid-template-columns: 1fr; }
+    .hero-title{ font-size:24px; }
+    .stat-value{ font-size:22px; }
+  }
+</style>
+
+<div class="analysis-shell">
+
+  <!-- HERO -->
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div class="hero-left">
+          <div class="hero-avatar">
+            {% if agent.photo %}
+              <img src="{{ agent.photo.url }}" alt="{{ agent.name }}">
+            {% else %}
+              <div class="hero-fallback">{{ agent.name|slice:":1"|upper }}</div>
+            {% endif %}
+          </div>
+
+          <div>
+            <div class="hero-kicker">Monthly Range Analysis</div>
+            <h1 class="hero-title">{{ agent.name }}</h1>
+            <div class="hero-meta">Range: {{ start_date|date:"d/m/Y" }} — {{ end_date|date:"d/m/Y" }}</div>
+          </div>
+        </div>
+
+        <div class="hero-actions">
+          <a class="btn-soft" href="{% url 'agent_detail' agent.id %}">Back</a>
+          <a class="btn-soft btn-soft-primary" href="{% url 'agent_comprehensive_analysis' agent.id %}">Full Analysis</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RANGE FILTER -->
+  <section class="section-card">
+    <div class="section-head">
+      <h3 class="section-title">Select Analysis Range</h3>
+      <div class="section-sub">Review agent performance over a specific date interval</div>
+    </div>
+
+    <div class="section-body">
+      <form method="get" class="filter-grid">
+        <div>
+          <label class="muted">Start Date</label>
+          <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
+        </div>
+        <div>
+          <label class="muted">End Date</label>
+          <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
+        </div>
+        <div style="display:flex; align-items:end; gap:10px; flex-wrap:wrap;">
+          <button type="submit" class="btn-soft btn-soft-primary">Apply Range</button>
+          <a class="btn-soft" href="{% url 'agent_monthly_range_analysis' agent.id %}">Reset</a>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- KPI GRID -->
+  <section class="metrics-grid-4">
+    <div class="stat-card">
+      <div class="stat-label">Borrowers Served</div>
+      <div class="stat-value">{{ total_borrowers }}</div>
+      <div class="stat-sub">Distinct borrowers in selected range</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Loans Created</div>
+      <div class="stat-value">{{ total_loans }}</div>
+      <div class="stat-sub">Active: {{ active_loans }} · Closed: {{ closed_loans }} · Default: {{ default_loans }}</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Collection Rate</div>
+      <div class="stat-value">{{ collections_rate }}%</div>
+      <div class="stat-sub">Collected divided by expected</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Outstanding</div>
+      <div class="stat-value">{{ total_outstanding|ghs }}</div>
+      <div class="stat-sub">Remaining range exposure</div>
+    </div>
+  </section>
+
+  <section class="metrics-grid-3">
+    <div class="stat-card">
+      <div class="stat-label">Disbursed</div>
+      <div class="stat-value">{{ total_disbursed|ghs }}</div>
+      <div class="stat-sub">Principal created in selected range</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Expected</div>
+      <div class="stat-value">{{ total_expected|ghs }}</div>
+      <div class="stat-sub">Principal plus ROIC expected</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Collected</div>
+      <div class="stat-value">{{ total_collected|ghs }}</div>
+      <div class="stat-sub">Payments received in selected range</div>
+    </div>
+  </section>
+
+  <section class="metrics-grid-3">
+    <div class="stat-card">
+      <div class="stat-label">Principal Collected</div>
+      <div class="stat-value">{{ total_principal_collected|ghs }}</div>
+      <div class="stat-sub">Principal recovered in range</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">ROIC Collected</div>
+      <div class="stat-value">{{ total_roic_collected|ghs }}</div>
+      <div class="stat-sub">ROIC recovered in range</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Total ROIC</div>
+      <div class="stat-value">{{ total_roic|ghs }}</div>
+      <div class="stat-sub">ROIC value of loans created in range</div>
+    </div>
+  </section>
+
+  <!-- CHARTS -->
+  <section class="metrics-grid-2">
+    <div class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Loan Mix in Range</h3>
+        <div class="section-sub">Loan status composition in selected period</div>
+      </div>
+      <div class="section-body">
+        <div id="rangeStatusPieChart" class="chart-box"></div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Collections Split</h3>
+        <div class="section-sub">Principal and ROIC recovery in selected period</div>
+      </div>
+      <div class="section-body">
+        <div id="rangeCollectionsChart" class="chart-box"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="metrics-grid-2">
+    <div class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Outstanding Composition</h3>
+        <div class="section-sub">Principal vs ROIC outstanding</div>
+      </div>
+      <div class="section-body">
+        <div id="rangeOutstandingChart" class="chart-box"></div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Top Borrowers in Range</h3>
+        <div class="section-sub">Borrowers with the highest exposure in selected period</div>
+      </div>
+      <div class="section-body">
+        <div id="rangeTopBorrowersChart" class="chart-box"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOP BORROWERS -->
+  <section class="section-card">
+    <div class="section-head">
+      <h3 class="section-title">Borrowers in Range</h3>
+      <div class="section-sub">Top borrower exposures for the selected period</div>
+    </div>
+
+    <div class="section-body">
+      {% for row in borrower_rows %}
+        <div class="soft-item">
+          <div class="entity-title">{{ row.borrower.full_name }}</div>
+          <div class="entity-meta">
+            Loans: {{ row.total_loans }} · Disbursed: {{ row.disbursed|ghs }} · Expected: {{ row.expected|ghs }} · Collected: {{ row.collected|ghs }}
+          </div>
+          <div class="stack-meta">
+            <span class="chip chip-slate">Principal Out: {{ row.principal_outstanding|ghs }}</span>
+            <span class="chip chip-slate">ROIC Out: {{ row.roic_outstanding|ghs }}</span>
+            <span class="chip chip-red">Total Out: {{ row.total_outstanding|ghs }}</span>
+          </div>
+        </div>
+      {% empty %}
+        <p class="muted">No borrower activity for this range.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- RECENT ACTIVITY -->
+  <section class="metrics-grid-2">
+    <div class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Recent Loans in Range</h3>
+        <div class="section-sub">Loans created during the selected period</div>
+      </div>
+
+      <div class="section-body">
+        {% for loan in recent_loans %}
+          <div class="soft-item">
+            <div class="entity-title">Loan #{{ loan.id }} — {{ loan.borrower.full_name }}</div>
+            <div class="entity-meta">
+              Principal: {{ loan.amount|ghs }} · ROIC: {{ loan.roic_amount|ghs }} · Weekly: {{ loan.weekly_payment|ghs }} · Status: {{ loan.status }}
+            </div>
+          </div>
+        {% empty %}
+          <p class="muted">No recent loans in this range.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Recent Payments in Range</h3>
+        <div class="section-sub">Payments posted during the selected period</div>
+      </div>
+
+      <div class="section-body">
+        {% for payment in recent_payments %}
+          <div class="soft-item">
+            <div class="entity-title">{{ payment.payment_date|date:"d/m/Y" }} — {{ payment.amount|ghs }}</div>
+            <div class="entity-meta">
+              {{ payment.loan.borrower.full_name }} · Loan #{{ payment.loan.id }}
+              {% if payment.reference %} · Ref: {{ payment.reference }}{% endif %}
+            </div>
+            <div class="stack-meta">
+              <span class="chip chip-green">Principal Paid: {{ payment.principal_paid|ghs }}</span>
+              <span class="chip chip-amber">ROIC Paid: {{ payment.roic_paid|ghs }}</span>
+            </div>
+          </div>
+        {% empty %}
+          <p class="muted">No payments in this range.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script>
+  const borrowerLabels = [
+    {% for row in borrower_rows %}
+      "{{ row.borrower.full_name|escapejs }}"{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  const borrowerOutstanding = [
+    {% for row in borrower_rows %}
+      {{ row.total_outstanding|default:0 }}{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  const rangeStatusPieChart = echarts.init(document.getElementById('rangeStatusPieChart'));
+  rangeStatusPieChart.setOption({
+    tooltip: { trigger: 'item' },
+    legend: { bottom: 0 },
+    series: [{
+      type: 'pie',
+      radius: ['45%', '72%'],
+      data: [
+        { value: {{ active_loans|default:0 }}, name: 'Active' },
+        { value: {{ closed_loans|default:0 }}, name: 'Closed' },
+        { value: {{ default_loans|default:0 }}, name: 'Default' }
+      ]
+    }]
+  });
+
+  const rangeCollectionsChart = echarts.init(document.getElementById('rangeCollectionsChart'));
+  rangeCollectionsChart.setOption({
+    tooltip: { trigger: 'item' },
+    legend: { bottom: 0 },
+    series: [{
+      type: 'pie',
+      radius: ['45%', '72%'],
+      data: [
+        { value: {{ total_principal_collected|default:0 }}, name: 'Principal Collected' },
+        { value: {{ total_roic_collected|default:0 }}, name: 'ROIC Collected' }
+      ]
+    }]
+  });
+
+  const rangeOutstandingChart = echarts.init(document.getElementById('rangeOutstandingChart'));
+  rangeOutstandingChart.setOption({
+    tooltip: { trigger: 'item' },
+    legend: { bottom: 0 },
+    series: [{
+      type: 'pie',
+      radius: ['45%', '72%'],
+      data: [
+        { value: {{ principal_outstanding|default:0 }}, name: 'Principal Outstanding' },
+        { value: {{ roic_outstanding|default:0 }}, name: 'ROIC Outstanding' }
+      ]
+    }]
+  });
+
+  const rangeTopBorrowersChart = echarts.init(document.getElementById('rangeTopBorrowersChart'));
+  rangeTopBorrowersChart.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: borrowerLabels, axisLabel: { rotate: 25 } },
+    yAxis: { type: 'value' },
+    series: [
+      { name: 'Outstanding', type: 'bar', data: borrowerOutstanding }
+    ]
+  });
+
+  window.addEventListener('resize', function () {
+    rangeStatusPieChart.resize();
+    rangeCollectionsChart.resize();
+    rangeOutstandingChart.resize();
+    rangeTopBorrowersChart.resize();
+  });
+</script>
+
+{% endblock %}

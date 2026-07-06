@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .setup-shell{max-width:980px;margin:0 auto;display:grid;gap:18px}
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;padding:28px}
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+  .hero-sub{margin-top:10px;max-width:900px;line-height:1.68;opacity:.88}
+  .panel{
+    border:1px solid var(--border);border-radius:24px;background:var(--panel);
+    box-shadow:0 20px 50px rgba(26,31,20,.05);padding:22px;
+  }
+  .panel h2{margin:0 0 10px;font-size:20px;font-weight:900;color:var(--text)}
+  .panel p{margin:0 0 14px;color:var(--muted);line-height:1.7}
+  .list{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+  .list li{padding:12px 14px;border:1px solid var(--border);border-radius:16px;background:var(--panel-strong);font-family:monospace;color:var(--text)}
+  .code-box{
+    margin-top:14px;padding:16px;border-radius:18px;background:#111827;color:#f9fafb;
+    font-family:monospace;overflow:auto;
+  }
+</style>
+
+<div class="setup-shell">
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-kicker">Assets Module Setup</div>
+      <h1 class="hero-title">Assets Tables Are Not Ready Yet</h1>
+      <div class="hero-sub">The Assets module was added successfully, but its database tables have not been created in the current database yet. Instead of crashing, this page is waiting for the migration to be applied.</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Missing Tables</h2>
+    <p>The following assets tables are missing from the active database:</p>
+    <ul class="list">
+      {% for table in missing_tables %}
+        <li>{{ table }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2>Required Step</h2>
+    <p>Apply the assets migration in the Django environment that is running this app.</p>
+    <div class="code-box">python3 manage.py migrate assets</div>
+  </section>
+</div>
+{% endblock %}

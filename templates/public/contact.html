@@ -1,0 +1,148 @@
+{% extends "public/base.html" %}
+
+{% block title %}Contact Us — {{ saas_name }}{% endblock %}
+{% block meta_description %}Get in touch with the {{ saas_name }} team. We're here to help with questions, demos, and support.{% endblock %}
+{% block header_class %}pub-header--solid{% endblock %}
+{% block logo_class %}{% endblock %}
+
+{% block head_styles %}
+.contact-grid { display:grid; grid-template-columns:1fr 1.4fr; gap:64px; align-items:start; }
+.contact-info__card { background:var(--navy); border-radius:var(--r-xl); padding:clamp(32px,4vw,48px); color:#fff; margin-bottom:24px; }
+.contact-method { display:flex; align-items:flex-start; gap:16px; padding:20px 0; border-bottom:1px solid rgba(255,255,255,.1); }
+.contact-method:last-child { border-bottom:none; padding-bottom:0; }
+.cm-icon { width:44px; height:44px; border-radius:var(--r-sm); background:rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.cm-label { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.5); margin-bottom:6px; }
+.cm-value { font-size:15px; font-weight:600; color:#fff; }
+.cm-value a { color:#fff; border-bottom:1px solid rgba(232,160,32,.5); transition:border-color .2s; }
+.cm-value a:hover { border-color:var(--gold); }
+.cm-sub { font-size:13px; color:rgba(255,255,255,.5); margin-top:4px; }
+
+.contact-form-card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--r-xl); padding:clamp(32px,4vw,48px); box-shadow:var(--sh-sm); }
+.cf-title { font-family:var(--font-head); font-size:clamp(22px,2.5vw,28px); font-weight:800; color:var(--gray-900); margin-bottom:6px; }
+.cf-sub { font-size:15px; color:var(--gray-500); margin-bottom:32px; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+
+.topic-select-group { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:4px; }
+.topic-opt { position:relative; }
+.topic-opt input[type=radio] { position:absolute; opacity:0; }
+.topic-opt label { display:block; padding:10px 14px; border:1.5px solid var(--gray-200); border-radius:var(--r); cursor:pointer; font-size:14px; font-weight:500; color:var(--gray-600); transition:all .2s; }
+.topic-opt label:hover { border-color:var(--navy-200); color:var(--navy); background:var(--navy-50); }
+.topic-opt input[type=radio]:checked + label { border-color:var(--navy); color:var(--navy); background:var(--navy-50); font-weight:700; }
+
+@media(max-width:900px){ .contact-grid{grid-template-columns:1fr;} .form-row{grid-template-columns:1fr;} .topic-select-group{grid-template-columns:1fr;} }
+{% endblock %}
+
+{% block content %}
+
+<div style="padding:calc(var(--header-h) + 56px) 0 56px;background:var(--gray-50);border-bottom:1px solid var(--gray-200);text-align:center">
+  <div class="pub-container">
+    <div class="pub-badge pub-badge--navy" style="margin-bottom:20px">Get In Touch</div>
+    <h1 class="pub-h2">We'd love to hear from you</h1>
+    <p class="pub-subtitle" style="margin:14px auto 0;max-width:520px">Whether you have a question, need a demo, or just want to chat about micro-credit software — we're here.</p>
+  </div>
+</div>
+
+<section class="pub-section">
+  <div class="pub-container">
+    <div class="contact-grid fade-in">
+
+      <!-- Left: Info -->
+      <div>
+        <div class="contact-info__card">
+          <h3 style="font-family:var(--font-head);font-size:20px;font-weight:700;color:#fff;margin-bottom:8px">Talk to our team</h3>
+          <p style="font-size:14px;color:rgba(255,255,255,.6);margin-bottom:24px;line-height:1.65">We respond to all inquiries within one business day. Enterprise inquiries get priority response.</p>
+          <div class="contact-method">
+            <div class="cm-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+            <div>
+              <div class="cm-label">Email</div>
+              <div class="cm-value"><a href="mailto:{{ saas_email }}">{{ saas_email }}</a></div>
+              <div class="cm-sub">Response within 1 business day</div>
+            </div>
+          </div>
+          <div class="contact-method">
+            <div class="cm-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .18h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 8a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14.92z"/></svg></div>
+            <div>
+              <div class="cm-label">Support Hours</div>
+              <div class="cm-value">Monday – Friday, 8am – 6pm GMT</div>
+              <div class="cm-sub">Priority support for Professional &amp; Enterprise</div>
+            </div>
+          </div>
+          <div class="contact-method">
+            <div class="cm-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+            <div>
+              <div class="cm-label">Based in</div>
+              <div class="cm-value">Accra, Ghana 🇬🇭</div>
+              <div class="cm-sub">Serving micro-credit institutions across Africa</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pub-card" style="background:var(--gold-50);border-color:#fcd29a">
+          <div style="font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--gray-900);margin-bottom:8px">Want a live demo?</div>
+          <p style="font-size:14px;color:var(--gray-600);line-height:1.65;margin-bottom:16px">We'll walk you through the platform with your own sample data. Takes 20 minutes and you'll leave with a clear picture of how it fits your workflow.</p>
+          <a href="/signup/" class="btn-gold btn btn--sm">Start Free Trial Instead</a>
+        </div>
+      </div>
+
+      <!-- Right: Form -->
+      <div class="contact-form-card">
+        <div class="cf-title">Send us a message</div>
+        <div class="cf-sub">We'll get back to you within one business day.</div>
+
+        {% if contact_success %}
+        <div style="background:var(--green-50);border:1px solid #86efac;border-radius:var(--r);padding:18px 20px;text-align:center">
+          <div style="font-size:28px;margin-bottom:10px">✓</div>
+          <div style="font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--green);margin-bottom:8px">Message sent!</div>
+          <div style="font-size:14px;color:var(--gray-600)">Thank you for reaching out. We'll reply to <strong>{{ contact_email }}</strong> within one business day.</div>
+        </div>
+        {% else %}
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <div class="pub-field" style="margin-bottom:16px">
+            <label class="pub-label">What can we help with?</label>
+            <div class="topic-select-group">
+              <div class="topic-opt"><input type="radio" name="topic" id="t1" value="general" checked><label for="t1">General question</label></div>
+              <div class="topic-opt"><input type="radio" name="topic" id="t2" value="demo"><label for="t2">Request a demo</label></div>
+              <div class="topic-opt"><input type="radio" name="topic" id="t3" value="pricing"><label for="t3">Pricing inquiry</label></div>
+              <div class="topic-opt"><input type="radio" name="topic" id="t4" value="support"><label for="t4">Technical support</label></div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="pub-field">
+              <label class="pub-label" for="contact_name">Your Name <span style="color:var(--red)">*</span></label>
+              <input class="pub-input" type="text" id="contact_name" name="name" placeholder="Kwame Mensah" required value="{{ form_data.name|default:'' }}">
+            </div>
+            <div class="pub-field">
+              <label class="pub-label" for="contact_email">Email Address <span style="color:var(--red)">*</span></label>
+              <input class="pub-input" type="email" id="contact_email" name="email" placeholder="kwame@company.com" required value="{{ form_data.email|default:'' }}">
+            </div>
+          </div>
+
+          <div class="pub-field" style="margin-top:16px">
+            <label class="pub-label" for="contact_company">Company / Organisation</label>
+            <input class="pub-input" type="text" id="contact_company" name="company" placeholder="Acme Micro-Credit Ltd" value="{{ form_data.company|default:'' }}">
+          </div>
+
+          <div class="pub-field" style="margin-top:16px">
+            <label class="pub-label" for="contact_message">Your Message <span style="color:var(--red)">*</span></label>
+            <textarea class="pub-input pub-textarea" id="contact_message" name="message" rows="5" placeholder="Tell us about your situation — number of borrowers, current pain points, what you're looking for…" required>{{ form_data.message|default:'' }}</textarea>
+          </div>
+
+          {% if form_errors %}
+          <div style="background:var(--red-50);border:1px solid #fca5a5;border-radius:var(--r);padding:12px 16px;margin:16px 0;font-size:14px;color:var(--red)">{{ form_errors }}</div>
+          {% endif %}
+
+          <button type="submit" class="btn-navy btn btn--full" style="margin-top:24px;padding:15px;font-size:16px">
+            Send Message
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

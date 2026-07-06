@@ -1,0 +1,383 @@
+{% extends "public/base.html" %}
+
+{% block title %}Features — {{ saas_name }}{% endblock %}
+{% block meta_description %}Explore every feature of {{ saas_name }}: loan management, borrower portal, public website, agent management, repayment tracking, financial reports, SMS notifications and more.{% endblock %}
+{% block header_class %}pub-header--solid{% endblock %}
+{% block logo_class %}{% endblock %}
+
+{% block head_styles %}
+.page-hero { padding: calc(var(--header-h) + 64px) 0 64px; text-align:center; background:var(--gray-50); border-bottom:1px solid var(--gray-200); }
+
+.features-toc { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin-top:36px; }
+.toc-link { padding:8px 18px; border-radius:var(--r-pill); font-size:14px; font-weight:600; color:var(--gray-600); border:1.5px solid var(--gray-200); background:#fff; transition:all .2s; }
+.toc-link:hover { border-color:var(--navy); color:var(--navy); background:var(--navy-50); }
+
+/* Feature blocks */
+.feature-block { padding: clamp(64px,8vw,96px) 0; }
+.feature-block:nth-child(even) { background:var(--gray-50); }
+.feature-block__inner { display:grid; grid-template-columns:1fr 1fr; gap:72px; align-items:center; }
+.feature-block__inner--rev > :first-child { order:2; }
+.feature-block__inner--rev > :last-child  { order:1; }
+.feature-block__label { font-family:var(--font-head); font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-dark); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+.feature-block__label::before { content:''; width:20px; height:2px; background:currentColor; border-radius:2px; }
+.feature-block__title { font-family:var(--font-head); font-size:clamp(24px,3vw,36px); font-weight:800; color:var(--gray-900); line-height:1.2; margin-bottom:16px; }
+.feature-block__desc { font-size:16px; color:var(--gray-500); line-height:1.75; margin-bottom:28px; }
+.feature-list { display:flex; flex-direction:column; gap:14px; }
+.feature-list li { display:flex; align-items:flex-start; gap:12px; font-size:15px; color:var(--gray-700); line-height:1.6; }
+.fl-icon { width:22px; height:22px; border-radius:50%; background:var(--green-100); display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+.fl-icon svg { color:var(--green); }
+
+/* Capability panels */
+.cap-panel { background:#fff; border:1px solid var(--gray-200); border-radius:var(--r-xl); padding:24px; box-shadow:var(--sh-sm); }
+.cap-row { display:flex; align-items:center; gap:14px; padding:14px; background:var(--gray-50); border-radius:var(--r); margin-bottom:10px; }
+.cap-row:last-child { margin-bottom:0; }
+.cap-icon-sm { width:40px; height:40px; border-radius:var(--r-sm); background:var(--navy-50); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--navy); }
+.cap-row-text strong { display:block; font-size:14px; font-weight:700; color:var(--gray-900); }
+.cap-row-text span   { font-size:12.5px; color:var(--gray-500); }
+.cap-badge { margin-left:auto; font-size:11px; font-weight:700; padding:3px 10px; border-radius:var(--r-pill); white-space:nowrap; flex-shrink:0; }
+.cap-badge--green  { background:var(--green-100); color:var(--green); }
+.cap-badge--gold   { background:var(--gold-50); color:var(--gold-dark); }
+.cap-badge--navy   { background:var(--navy-50); color:var(--navy); }
+
+/* Metrics bar */
+.metrics-bar { display:grid; grid-template-columns:repeat(4,1fr); gap:24px; margin-top:48px; }
+.metric-card { text-align:center; padding:28px 16px; background:#fff; border:1px solid var(--gray-200); border-radius:var(--r-lg); }
+.metric-card__value { font-family:var(--font-head); font-size:36px; font-weight:800; color:var(--navy); margin-bottom:6px; }
+.metric-card__value span { color:var(--gold); }
+.metric-card__label { font-size:13.5px; color:var(--gray-500); }
+
+/* CTA bottom */
+.features-cta { background:var(--navy); padding:clamp(48px,6vw,80px) 0; text-align:center; }
+
+@media (max-width:900px) {
+  .feature-block__inner { grid-template-columns:1fr; gap:40px; }
+  .feature-block__inner--rev > * { order:unset; }
+  .metrics-bar { grid-template-columns:repeat(2,1fr); }
+}
+@media (max-width:540px) {
+  .metrics-bar { grid-template-columns:1fr; }
+}
+{% endblock %}
+
+{% block content %}
+
+<div class="page-hero">
+  <div class="pub-container">
+    <div class="pub-badge pub-badge--gold" style="margin-bottom:20px">Platform Capabilities</div>
+    <h1 class="pub-h2">Everything a micro-credit company needs</h1>
+    <p class="pub-subtitle" style="margin:14px auto 0;max-width:600px">
+      Every feature is purpose-built for micro-credit operations — not adapted from generic banking software. Built by people who understand how micro-lending actually works.
+    </p>
+    <nav class="features-toc">
+      <a href="#loans"     class="toc-link">Loan Management</a>
+      <a href="#borrowers" class="toc-link">Borrower Portal</a>
+      <a href="#website"   class="toc-link">Public Website</a>
+      <a href="#agents"    class="toc-link">Agent Management</a>
+      <a href="#payments"  class="toc-link">Repayment Tracking</a>
+      <a href="#reports"   class="toc-link">Financial Reports</a>
+      <a href="#sms"       class="toc-link">SMS &amp; Notifications</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ── Loan Management ── -->
+<div class="feature-block" id="loans">
+  <div class="pub-container">
+    <div class="feature-block__inner fade-in">
+      <div>
+        <div class="feature-block__label">Loan Management</div>
+        <h2 class="feature-block__title">Full loan lifecycle, from application to closure</h2>
+        <p class="feature-block__desc">
+          Create any loan product — personal, business, group, emergency — with custom interest rates, tenors, and repayment cycles. Every disbursement and collection is tracked with a full audit trail.
+        </p>
+        <ul class="feature-list">
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Multiple loan products with individual interest, tenor, and fee settings</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Daily, weekly, bi-weekly, monthly, and custom repayment cycles</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Automatic penalty, late fee, and grace period enforcement</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Loan rollover, restructuring, and early settlement workflows</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Group / cooperative loans with shared liability and split repayment tracking</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Printable repayment schedules and borrower loan statements</li>
+        </ul>
+      </div>
+      <div>
+        <div class="cap-panel">
+          <div class="cap-row">
+            <div class="cap-icon-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <div class="cap-row-text"><strong>Personal Loan — Ama Owusu</strong><span>GHS 2,500 · 12 months · Weekly repayment</span></div>
+            <span class="cap-badge cap-badge--green">Active</span>
+          </div>
+          <div class="cap-row">
+            <div class="cap-icon-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <div class="cap-row-text"><strong>Business Loan — Kwame Asante</strong><span>GHS 8,000 · 6 months · Monthly repayment</span></div>
+            <span class="cap-badge cap-badge--green">Active</span>
+          </div>
+          <div class="cap-row">
+            <div class="cap-icon-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></svg></div>
+            <div class="cap-row-text"><strong>Group Loan — Adum Market Women</strong><span>GHS 15,000 · 8 members · Weekly repayment</span></div>
+            <span class="cap-badge cap-badge--green">Active</span>
+          </div>
+          <div class="cap-row">
+            <div class="cap-icon-sm" style="background:var(--gold-50);color:var(--gold-dark)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+            <div class="cap-row-text"><strong>Emergency Loan — Abena Mensah</strong><span>GHS 500 · Pending disbursement approval</span></div>
+            <span class="cap-badge cap-badge--gold">Pending</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Borrower Portal ── -->
+<div class="feature-block" id="borrowers">
+  <div class="pub-container">
+    <div class="feature-block__inner feature-block__inner--rev fade-in">
+      <div>
+        <div class="cap-panel">
+          <div style="background:var(--navy-50);border-radius:var(--r);padding:16px;margin-bottom:12px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--navy);margin-bottom:10px">Borrower Profile — Ama Owusu</div>
+            <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
+              <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--gold));flex-shrink:0"></div>
+              <div><div style="font-size:15px;font-weight:700;color:var(--gray-900)">Ama Owusu</div><div style="font-size:12px;color:var(--gray-500)">ID: BRW-00234 · Joined Jan 2024</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div style="font-size:12px;color:var(--gray-500)">Phone <br><strong style="color:var(--gray-800)">+233 24 123 4567</strong></div>
+              <div style="font-size:12px;color:var(--gray-500)">Active Loans <br><strong style="color:var(--green)">2 loans</strong></div>
+              <div style="font-size:12px;color:var(--gray-500)">Repayment Rate <br><strong style="color:var(--green)">97.4%</strong></div>
+              <div style="font-size:12px;color:var(--gray-500)">Total Borrowed <br><strong style="color:var(--navy)">GHS 12,500</strong></div>
+            </div>
+          </div>
+          <div class="cap-row">
+            <div class="cap-icon-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+            <div class="cap-row-text"><strong>Borrower self-service portal</strong><span>View loans, make payments, download statements</span></div>
+            <span class="cap-badge cap-badge--navy">Live</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="feature-block__label">Borrower Management</div>
+        <h2 class="feature-block__title">Complete borrower records and self-service portal</h2>
+        <p class="feature-block__desc">
+          Maintain rich KYC records for every borrower with photos, guarantors, and employment history. Give borrowers their own portal to check balances, view repayment schedules, and make payments.
+        </p>
+        <ul class="feature-list">
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Full KYC with photos, ID documents, and guarantor records</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Borrower credit history and repayment behaviour score</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Self-service portal — borrowers can view their own loan status</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Bulk borrower import via CSV for migration from spreadsheets</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Borrower analytics — portfolio health per segment, region, or agent</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Public Website ── -->
+<div class="feature-block" id="website">
+  <div class="pub-container">
+    <div class="feature-block__inner fade-in">
+      <div>
+        <div class="feature-block__label">Public Website</div>
+        <h2 class="feature-block__title">Launch a professional lending website without leaving your workspace</h2>
+        <p class="feature-block__desc">
+          Every plan includes a public-facing website so your institution can present its services, team, branches, FAQs, testimonials, and contact details with the same polish as the back-office platform.
+        </p>
+        <ul class="feature-list">
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Branded homepage, About, Services, Team, Contact, and Pricing pages</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Company Settings controls for hero banners, carousel slides, contact info, FAQs, testimonials, and working hours</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Built-in lead capture and marketing popup support for campaign-driven landing experiences</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Responsive layouts designed for mobile borrowers, agents, and partner institutions</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Ready for white-label branding and custom domains on higher-tier plans</li>
+        </ul>
+      </div>
+      <div>
+        <div class="cap-panel">
+          <div style="background:linear-gradient(135deg,var(--navy) 0%, var(--navy-800) 100%);border-radius:var(--r-lg);padding:18px;margin-bottom:12px;color:#fff;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:8px">Live Website Preview</div>
+            <div style="font-family:var(--font-head);font-size:20px;font-weight:800;line-height:1.2;margin-bottom:8px">Trusted loans for ambitious businesses</div>
+            <div style="font-size:13px;line-height:1.6;color:rgba(255,255,255,.7);margin-bottom:12px">Showcase your products, collect leads, answer customer questions, and direct borrowers into your digital service channels.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <span class="cap-badge cap-badge--gold" style="margin-left:0">Homepage</span>
+              <span class="cap-badge cap-badge--navy" style="margin-left:0;background:rgba(255,255,255,.12);color:#fff">Contact</span>
+              <span class="cap-badge cap-badge--navy" style="margin-left:0;background:rgba(255,255,255,.12);color:#fff">Testimonials</span>
+            </div>
+          </div>
+          <div class="cap-row">
+            <div class="cap-icon-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18"/><path d="M3 6h18"/><path d="M3 18h18"/></svg></div>
+            <div class="cap-row-text"><strong>Content managed from Company Settings</strong><span>Update your public pages without touching code</span></div>
+            <span class="cap-badge cap-badge--green">Included</span>
+          </div>
+          <div class="cap-row">
+            <div class="cap-icon-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-6"/></svg></div>
+            <div class="cap-row-text"><strong>Marketing-ready pages</strong><span>Pair your website with forms, CTAs, and campaign messaging</span></div>
+            <span class="cap-badge cap-badge--navy">Growth</span>
+          </div>
+          <div class="cap-row">
+            <div class="cap-icon-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 20h8"/></svg></div>
+            <div class="cap-row-text"><strong>Responsive across devices</strong><span>Clean presentation on desktop, tablet, and phone</span></div>
+            <span class="cap-badge cap-badge--green">Mobile Ready</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Agent Management ── -->
+<div class="feature-block" id="agents">
+  <div class="pub-container">
+    <div class="feature-block__inner fade-in">
+      <div>
+        <div class="feature-block__label">Agent Management</div>
+        <h2 class="feature-block__title">Manage your field team with confidence</h2>
+        <p class="feature-block__desc">
+          Assign portfolios to agents, track their collection performance, and run payroll with commission calculations — all without spreadsheets.
+        </p>
+        <ul class="feature-list">
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Agent profiles with dedicated borrower portfolio assignments</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Individual performance reports — disbursements, collections, overdue rate</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Payroll processing with configurable salary and commission structures</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Role-based access — agents see only their own assigned borrowers</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> PAYE, SSNIT, and statutory deduction support for Ghanaian payroll</li>
+        </ul>
+      </div>
+      <div>
+        <div class="cap-panel">
+          <div class="cap-row">
+            <div class="cap-icon-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <div class="cap-row-text"><strong>Kofi Agyeman</strong><span>48 borrowers · GHS 85,000 portfolio · 94% collection</span></div>
+            <span class="cap-badge cap-badge--green">Top</span>
+          </div>
+          <div class="cap-row">
+            <div class="cap-icon-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <div class="cap-row-text"><strong>Akosua Boateng</strong><span>35 borrowers · GHS 62,000 portfolio · 89% collection</span></div>
+            <span class="cap-badge cap-badge--green">Good</span>
+          </div>
+          <div class="cap-row">
+            <div class="cap-icon-sm" style="background:var(--gold-50);color:var(--gold-dark)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <div class="cap-row-text"><strong>Yaw Darko</strong><span>22 borrowers · GHS 31,000 portfolio · 76% collection</span></div>
+            <span class="cap-badge cap-badge--gold">Review</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Reports & Accounting ── -->
+<div class="feature-block" id="reports">
+  <div class="pub-container">
+    <div class="feature-block__inner feature-block__inner--rev fade-in">
+      <div>
+        <div class="cap-panel">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div style="background:var(--navy-50);border-radius:var(--r);padding:14px;text-align:center">
+              <div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--navy)">91.4%</div>
+              <div style="font-size:11.5px;color:var(--gray-500);margin-top:4px">Repayment Rate</div>
+            </div>
+            <div style="background:var(--red-50);border-radius:var(--r);padding:14px;text-align:center">
+              <div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--red)">8.6%</div>
+              <div style="font-size:11.5px;color:var(--gray-500);margin-top:4px">PAR &gt; 30 days</div>
+            </div>
+            <div style="background:var(--green-50);border-radius:var(--r);padding:14px;text-align:center">
+              <div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--green)">GHS 847K</div>
+              <div style="font-size:11.5px;color:var(--gray-500);margin-top:4px">Total Outstanding</div>
+            </div>
+            <div style="background:var(--gold-50);border-radius:var(--r);padding:14px;text-align:center">
+              <div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--gold-dark)">GHS 42K</div>
+              <div style="font-size:11.5px;color:var(--gray-500);margin-top:4px">Collected This Month</div>
+            </div>
+          </div>
+          <div class="cap-row">
+            <div class="cap-icon-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+            <div class="cap-row-text"><strong>Double-entry accounting</strong><span>Auto-generated journals for every transaction</span></div>
+            <span class="cap-badge cap-badge--navy">Built-in</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="feature-block__label">Reports &amp; Accounting</div>
+        <h2 class="feature-block__title">Real-time intelligence for better decisions</h2>
+        <p class="feature-block__desc">
+          From live portfolio dashboards to audit-ready financial statements, {{ saas_name }} gives you the numbers you need — when you need them.
+        </p>
+        <ul class="feature-list">
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Live dashboard — portfolio value, at-risk loans, today's collections</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Loan aging report — 30 / 60 / 90+ day overdue breakdown</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Double-entry accounting with automatic journal entries</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Profit &amp; loss, balance sheet, and cash flow statements</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Export all reports to PDF or Excel for auditors and stakeholders</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SMS Notifications ── -->
+<div class="feature-block" id="sms">
+  <div class="pub-container">
+    <div class="feature-block__inner fade-in">
+      <div>
+        <div class="feature-block__label">SMS &amp; Notifications</div>
+        <h2 class="feature-block__title">Automated reminders that actually get paid</h2>
+        <p class="feature-block__desc">
+          Reduce late payments significantly with automated SMS reminders. Send disbursement confirmations, repayment reminders, and marketing campaigns without manual effort.
+        </p>
+        <ul class="feature-list">
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Automatic disbursement and payment confirmation SMS</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Scheduled repayment reminders (1 day before, day of, day after)</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Overdue loan escalation notifications</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Bulk SMS marketing campaigns to your borrower base</li>
+          <li><div class="fl-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div> Custom sender ID with your company name</li>
+        </ul>
+      </div>
+      <div>
+        <div class="cap-panel" style="background:var(--navy);border:none">
+          {% for msg in "123"|make_list %}
+          <div style="background:rgba(255,255,255,.08);border-radius:var(--r);padding:14px;margin-bottom:10px;border:1px solid rgba(255,255,255,.1)">
+            {% if forloop.first %}
+            <div style="font-size:12px;color:var(--gold);font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em">Repayment Reminder</div>
+            <div style="font-size:13.5px;color:rgba(255,255,255,.85);line-height:1.6">Dear Ama, your weekly repayment of GHS 208.33 is due tomorrow. Pay via MoMo to 0241234567. Ref: LN-0234. — SikaFriend</div>
+            {% elif forloop.counter == 2 %}
+            <div style="font-size:12px;color:var(--green-100);font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em">Payment Confirmed</div>
+            <div style="font-size:13.5px;color:rgba(255,255,255,.85);line-height:1.6">Hi Kwame, your payment of GHS 1,333.33 has been received. Balance outstanding: GHS 5,333.33. Thank you! — SikaFriend</div>
+            {% else %}
+            <div style="font-size:12px;color:#fca5a5;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em">Overdue Notice</div>
+            <div style="font-size:13.5px;color:rgba(255,255,255,.85);line-height:1.6">Dear Yaw, your loan payment of GHS 416.67 is 3 days overdue. Please contact your agent immediately. — SikaFriend</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Metrics -->
+<div class="pub-section pub-section--gray">
+  <div class="pub-container">
+    <div class="section-head section-head--center fade-in">
+      <div class="pub-kicker">By the numbers</div>
+      <h2 class="pub-h2">Proven results for micro-credit businesses</h2>
+    </div>
+    <div class="metrics-bar fade-in">
+      <div class="metric-card"><div class="metric-card__value">40<span>%</span></div><div class="metric-card__label">Reduction in late payments with SMS reminders</div></div>
+      <div class="metric-card"><div class="metric-card__value">8<span>hrs</span></div><div class="metric-card__label">Saved per week on manual reporting tasks</div></div>
+      <div class="metric-card"><div class="metric-card__value">&lt;1<span>day</span></div><div class="metric-card__label">Average time from signup to first loan disbursed</div></div>
+      <div class="metric-card"><div class="metric-card__value">99.9<span>%</span></div><div class="metric-card__label">Platform uptime SLA</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="features-cta">
+  <div class="pub-container">
+    <h2 style="font-family:var(--font-head);font-size:clamp(26px,3.5vw,40px);font-weight:800;color:#fff;margin-bottom:14px">See it all in action — free for 14 days</h2>
+    <p style="font-size:17px;color:rgba(255,255,255,.6);margin-bottom:32px;max-width:500px;margin-left:auto;margin-right:auto">No credit card required. Your data stays yours. Cancel anytime.</p>
+    <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="/signup/" class="btn btn-gold btn--lg">Start Free Trial →</a>
+      <a href="/pricing/" class="btn btn-outline btn--lg">See Pricing</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

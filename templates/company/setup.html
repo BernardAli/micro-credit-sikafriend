@@ -1,0 +1,2580 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  /* ─── Setup page layout ─── */
+  .setup-shell {
+    display: grid;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .setup-shell, .setup-shell * { box-sizing:border-box; }
+
+  /* ─── Hero / intro ─── */
+  .setup-hero {
+    border-radius: 26px; overflow: hidden;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--primary-2) 35%, #000) 0%, var(--primary-2) 45%, var(--primary-3) 75%, var(--gold-2) 100%);
+    color: #fff; padding: 30px 32px; position: relative;
+  }
+  [data-theme="dark"] .setup-hero {
+    background: linear-gradient(145deg, color-mix(in srgb, var(--primary-2) 20%, #000) 0%, color-mix(in srgb, var(--primary-2) 38%, #000) 45%, color-mix(in srgb, var(--primary) 48%, #000) 75%, color-mix(in srgb, var(--gold-2) 30%, #000) 100%);
+  }
+  .setup-hero::before {
+    content:""; position:absolute; top:-40px; right:-40px;
+    width:200px; height:200px; border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+  .setup-hero-body { position:relative; z-index:1; }
+  .setup-hero-kicker {
+    font-size:10px; text-transform:uppercase; letter-spacing:.5em;
+    color:var(--gold); font-weight:700; margin-bottom:8px;
+  }
+  .setup-hero h1 {
+    margin:0; font-family:var(--font-serif);
+    font-size:26px; font-weight:400; line-height:1.12;
+  }
+  .setup-hero p {
+    margin:8px 0 0; font-size:13.5px; opacity:.84; line-height:1.7; max-width:640px;
+  }
+
+  /* Progress steps (setup only) */
+  .setup-steps {
+    display:flex; gap:0; margin-top:22px; flex-wrap:wrap;
+  }
+  .setup-step {
+    display:flex; align-items:center; gap:8px;
+    font-size:12px; font-weight:700; opacity:.68;
+    padding:0 14px 0 0;
+  }
+  .setup-step.active { opacity:1; }
+  .setup-step-num {
+    width:24px; height:24px; border-radius:50%;
+    border:1.5px solid rgba(255,255,255,.30);
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:800;
+  }
+  .setup-step.active .setup-step-num {
+    background:var(--gold); border-color:var(--gold); color:#1a1f14;
+  }
+  .setup-step-sep {
+    width:24px; height:1px; background:rgba(255,255,255,.20);
+    margin-right:14px; flex-shrink:0;
+  }
+
+  /* ─── Tab navigation ─── */
+  .tab-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 6px;
+    box-shadow: var(--shadow-sm);
+  }
+  .tab-btn {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 10px 16px;
+    border-radius: 13px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .18s, color .18s, box-shadow .18s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover {
+    background: var(--bg-soft);
+    color: var(--text);
+  }
+  .tab-btn.active {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-3) 60%, var(--gold) 100%);
+    color: #fff;
+    box-shadow: 0 4px 12px var(--primary-glow);
+  }
+  .tab-btn .tab-badge {
+    background: rgba(255,255,255,.25);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    border-radius: 6px;
+    padding: 1px 5px;
+    display: none;
+  }
+  .tab-btn.has-error .tab-badge { display: inline-block; background: var(--danger); }
+
+  /* ─── Tab panels ─── */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: grid; gap: 20px; }
+
+  /* ─── Section cards ─── */
+  .section-card {
+    border:1px solid var(--border);
+    border-radius:22px;
+    background:var(--panel);
+    box-shadow:var(--shadow-sm);
+    overflow:hidden;
+  }
+  .section-header {
+    padding:18px 22px 14px;
+    border-bottom:1px solid var(--border-soft);
+    display:flex; align-items:center; gap:12px;
+    position:relative;
+  }
+  .section-header::after {
+    content:""; position:absolute; bottom:0; left:0; right:0; height:1.5px;
+    background:linear-gradient(90deg, var(--gold), var(--primary), transparent 60%);
+  }
+  .section-icon {
+    width:36px; height:36px; border-radius:11px;
+    background:linear-gradient(135deg, var(--primary) 0%, var(--primary-3) 60%, var(--gold) 100%);
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; flex-shrink:0;
+    box-shadow:0 4px 12px var(--primary-glow);
+  }
+  .section-header-copy {}
+  .section-header-copy,
+  .section-body,
+  .profile-info,
+  .upload-copy,
+  .field,
+  .field > *,
+  .toggle-row > div { min-width:0; }
+  .section-title {
+    font-family:var(--font-serif);
+    font-size:17px; font-weight:400; color:var(--text); margin:0;
+  }
+  .section-desc { font-size:12px; color:var(--muted); margin-top:2px; }
+  .section-body { padding:22px; display:grid; gap:18px; }
+
+  /* ─── Form fields ─── */
+  .field-grid-2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+  .field-grid-3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+  .field-span-2 { grid-column:span 2; }
+
+  .field { display:grid; gap:6px; }
+
+  .field label {
+    font-size:11px; font-weight:700; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.06em; margin:0;
+  }
+
+  .field .help {
+    font-size:11.5px; color:var(--muted-2); margin-top:3px; line-height:1.5;
+  }
+
+  .field input,
+  .field select,
+  .field textarea {
+    width:100%; border-radius:13px;
+    max-width:100%;
+    border:1px solid var(--border);
+    background:var(--bg);
+    padding:10px 13px; font-size:13.5px; color:var(--text);
+    transition:border-color .2s, box-shadow .2s;
+  }
+  [data-theme="dark"] .field input,
+  [data-theme="dark"] .field select,
+  [data-theme="dark"] .field textarea {
+    background:rgba(26,36,16,.7);
+  }
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    outline:none;
+    border-color:var(--primary);
+    box-shadow:0 0 0 3px var(--primary-glow);
+  }
+  .field textarea { resize:vertical; min-height:70px; }
+
+  /* Logo upload area */
+  .upload-area {
+    border:1.5px dashed var(--border-accent);
+    border-radius:13px; padding:14px 16px;
+    display:flex; align-items:center; gap:14px;
+    background:var(--bg);
+    cursor:pointer;
+    transition:border-color .2s, background .2s;
+  }
+  .upload-area:hover {
+    border-color:var(--primary); background:var(--gold-pale);
+  }
+  .upload-icon {
+    width:38px; height:38px; border-radius:10px;
+    background:linear-gradient(135deg, var(--primary), var(--gold));
+    display:flex; align-items:center; justify-content:center;
+    font-size:17px; flex-shrink:0;
+  }
+  .upload-copy .label { font-size:12.5px; font-weight:700; color:var(--text); }
+  .upload-copy .hint  { font-size:11px; color:var(--muted); margin-top:2px; }
+  .upload-area input[type="file"] { display:none; }
+  .current-upload{
+    margin-top:8px;
+    display:grid;
+    grid-template-columns:56px minmax(0,1fr);
+    gap:10px;
+    align-items:center;
+    padding:8px 10px;
+    border:1px solid var(--border-soft);
+    border-radius:12px;
+    background:var(--bg-soft);
+    max-width:100%;
+  }
+  .current-upload-thumb{
+    width:56px;
+    height:44px;
+    border-radius:9px;
+    overflow:hidden;
+    background:rgba(58,90,30,.08);
+    border:1px solid var(--border-soft);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--primary);
+    font-size:16px;
+  }
+  .current-upload-thumb img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .current-upload-copy{min-width:0}
+  .current-upload-label{
+    font-size:10px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--muted);
+    margin-bottom:2px;
+  }
+  .current-upload-link{
+    display:block;
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--primary);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .document-grid{display:grid;gap:12px}
+  .document-row{
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:var(--bg);
+    padding:14px;
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:12px;
+  }
+  .document-row-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .document-row-title{
+    font-size:12px;
+    font-weight:800;
+    color:var(--text);
+  }
+  .document-row-meta{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:2px;
+  }
+  .document-flags{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+  }
+  .document-flag{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:12px;
+    color:var(--muted);
+    font-weight:700;
+  }
+  .document-flag input{
+    width:16px;
+    height:16px;
+    accent-color:var(--primary);
+  }
+
+  /* ─── Theme selector ─── */
+  .theme-grid {
+    display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;
+  }
+  .theme-option {
+    position:relative; cursor:pointer;
+  }
+  .theme-option input[type="radio"] {
+    position:absolute; opacity:0; width:0; height:0;
+  }
+  .theme-swatch {
+    border:2px solid var(--border);
+    border-radius:14px; padding:12px 14px;
+    display:flex; align-items:center; gap:10px;
+    transition:border-color .18s, box-shadow .18s;
+    background:var(--panel);
+  }
+  .theme-option input:checked + .theme-swatch {
+    border-color:var(--primary);
+    box-shadow:0 0 0 3px var(--primary-glow);
+  }
+  .theme-dot {
+    width:28px; height:28px; border-radius:8px; flex-shrink:0;
+  }
+  .theme-label { font-size:12.5px; font-weight:700; color:var(--text); }
+
+  /* Tier + language editor */
+  .tier-editor {
+    display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px;
+  }
+
+  /* ─── Action bar ─── */
+  .action-bar {
+    display:flex; align-items:center; justify-content:flex-end;
+    gap:12px; flex-wrap:wrap;
+    padding:20px 22px;
+    border-top:1px solid var(--border-soft);
+    background:var(--bg-soft);
+  }
+
+  /* ─── Current profile summary ─── */
+  .profile-summary {
+    border:1px solid var(--border);
+    border-radius:20px; background:var(--panel);
+    padding:18px 20px;
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    box-shadow:var(--shadow-xs);
+  }
+  .profile-logo {
+    width:52px; height:52px; border-radius:14px; overflow:hidden;
+    background:linear-gradient(140deg,var(--primary),var(--gold));
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; color:#fff; font-weight:800; flex-shrink:0;
+    font-family:var(--font-serif);
+    box-shadow:0 6px 16px var(--primary-glow);
+  }
+  .profile-logo img { width:100%; height:100%; object-fit:contain; }
+  .profile-info {}
+  .profile-name {
+    font-family:var(--font-serif);
+    font-size:20px; font-weight:400; color:var(--text);
+  }
+  .profile-meta { font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .profile-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+
+  /* Responsive */
+  @media (max-width:720px) {
+    .field-grid-2, .field-grid-3, .tier-editor { grid-template-columns:1fr; }
+    .field-span-2 { grid-column:span 1; }
+    .theme-grid { grid-template-columns:1fr 1fr; }
+    .tab-btn { font-size:12px; padding:9px 10px; }
+  }
+</style>
+
+<div class="setup-shell">
+
+  {% if not is_setup and profile %}
+  <!-- Current profile summary card -->
+  <div class="profile-summary">
+    <div class="profile-logo">
+      {% if profile.logo %}
+        <img src="{{ profile.logo.url }}" alt="{{ company_name }}">
+      {% else %}
+        {{ company_name|slice:":1" }}
+      {% endif %}
+    </div>
+    <div class="profile-info">
+      <div class="profile-name">{{ company_name }}</div>
+      <div class="profile-meta">{{ company_tagline }} · {{ profile.country }}</div>
+      <div class="profile-chips">
+        <span class="chip chip-forest">{{ company_currency }}</span>
+        <span class="chip chip-gold">{{ profile.get_repayment_cycle_display }}</span>
+        <span class="chip chip-slate">{{ profile.get_color_theme_display }}</span>
+        <span class="chip chip-slate">{{ profile.tiers_for_template|length }} Tiers</span>
+      </div>
+    </div>
+    <div style="margin-left:auto;">
+      <a href="{% url 'loans:dashboard' %}" class="btn btn-ghost">← Back to Dashboard</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Hero -->
+  <div class="setup-hero">
+    <div class="setup-hero-body">
+      <div class="setup-hero-kicker">✦ {% if is_setup %}First-Time Setup{% else %}Company Settings{% endif %}</div>
+      <h1>{{ title }}</h1>
+      <p>
+        {% if is_setup %}
+          Configure your micro-credit business identity, currency, loan tiers, and operating preferences.
+          This takes about two minutes and unlocks the full platform.
+        {% else %}
+          Update your branding, operational settings, loan tier structure, and platform appearance.
+          Changes take effect immediately across all pages.
+        {% endif %}
+      </p>
+      {% if is_setup %}
+      <div class="setup-steps">
+        <div class="setup-step active">
+          <div class="setup-step-num">1</div>
+          <span>Identity</span>
+        </div>
+        <div class="setup-step-sep"></div>
+        <div class="setup-step active">
+          <div class="setup-step-num">2</div>
+          <span>Currency</span>
+        </div>
+        <div class="setup-step-sep"></div>
+        <div class="setup-step active">
+          <div class="setup-step-num">3</div>
+          <span>Loan Tiers</span>
+        </div>
+        <div class="setup-step-sep"></div>
+        <div class="setup-step active">
+          <div class="setup-step-num">4</div>
+          <span>Appearance</span>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Tab navigation -->
+  <div class="tab-nav" role="tablist">
+    <button class="tab-btn active" data-tab="company" role="tab" aria-selected="true" aria-controls="tab-company" type="button">
+      🏢 Company
+      <span class="tab-badge">!</span>
+    </button>
+    <button class="tab-btn" data-tab="operations" role="tab" aria-selected="false" aria-controls="tab-operations" type="button">
+      ⚙️ Operations
+      <span class="tab-badge">!</span>
+    </button>
+    <button class="tab-btn" data-tab="website" role="tab" aria-selected="false" aria-controls="tab-website" type="button">
+      🌐 Website
+      <span class="tab-badge">!</span>
+    </button>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <!-- ══════════════════ TAB: COMPANY ══════════════════ -->
+    <div class="tab-panel active" id="tab-company" role="tabpanel">
+
+      <!-- ① Identity -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon">🏢</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Business Identity</h2>
+            <div class="section-desc">Your brand name, tagline, and description that appear across the platform.</div>
+          </div>
+        </div>
+        <div class="section-body">
+
+          <div class="field-grid-2">
+            <div class="field">
+              <label for="{{ form.company_name.id_for_label }}">Business Name *</label>
+              {{ form.company_name }}
+              {% if form.company_name.errors %}
+                <div class="help" style="color:var(--danger);">{{ form.company_name.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="field">
+              <label for="{{ form.tagline.id_for_label }}">Tagline</label>
+              {{ form.tagline }}
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="{{ form.description.id_for_label }}">Platform Description</label>
+            {{ form.description }}
+            <div class="help">Shown on the dashboard hero. Keep it short and operational.</div>
+          </div>
+
+          <!-- Logo upload -->
+          <div class="field-grid-2">
+            <div class="field">
+              <label>Logo Image</label>
+              <label class="upload-area" for="{{ form.logo.id_for_label }}">
+                <div class="upload-icon">🖼</div>
+                <div class="upload-copy">
+                  <div class="label">Upload Logo</div>
+                  <div class="hint">PNG, SVG or JPEG · Max 2 MB · Shown in topbar</div>
+                </div>
+                {{ form.logo }}
+              </label>
+              {% if profile and profile.logo %}
+                <div class="current-upload">
+                  <div class="current-upload-thumb"><img src="{{ profile.logo.url }}" alt="{{ company_name }} logo"></div>
+                  <div class="current-upload-copy">
+                    <div class="current-upload-label">Current Image</div>
+                    <a class="current-upload-link" href="{{ profile.logo.url }}" target="_blank">{{ profile.logo.name }}</a>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+            <div class="field">
+              <label>Favicon</label>
+              <label class="upload-area" for="{{ form.favicon.id_for_label }}">
+                <div class="upload-icon">🔖</div>
+                <div class="upload-copy">
+                  <div class="label">Upload Favicon</div>
+                  <div class="hint">ICO or PNG · 32×32 recommended</div>
+                </div>
+                {{ form.favicon }}
+              </label>
+              {% if profile and profile.favicon %}
+                <div class="current-upload">
+                  <div class="current-upload-thumb"><img src="{{ profile.favicon.url }}" alt="{{ company_name }} favicon"></div>
+                  <div class="current-upload-copy">
+                    <div class="current-upload-label">Current Image</div>
+                    <a class="current-upload-link" href="{{ profile.favicon.url }}" target="_blank">{{ profile.favicon.name }}</a>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ② Contact -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon">📞</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Contact & Location</h2>
+            <div class="section-desc">Optional contact details shown on statements and reports.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field-grid-2">
+            <div class="field">
+              <label for="{{ form.phone.id_for_label }}">Phone</label>
+              {{ form.phone }}
+            </div>
+            <div class="field">
+              <label for="{{ form.email.id_for_label }}">Email</label>
+              {{ form.email }}
+            </div>
+            <div class="field">
+              <label for="{{ form.website.id_for_label }}">Website</label>
+              {{ form.website }}
+            </div>
+            <div class="field">
+              <label for="{{ form.country.id_for_label }}">Country</label>
+              {{ form.country }}
+            </div>
+          </div>
+          <div class="field">
+            <label for="{{ form.address.id_for_label }}">Address</label>
+            {{ form.address }}
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon">📡</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Tenant Channel Integrations</h2>
+            <div class="section-desc">Tenant-specific email, SMS, and USSD credentials for this isolated workspace. Leave fields blank to fall back to the platform-wide configuration used for subscriptions and shared SaaS flows.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:2px">Email Delivery</div>
+          <div class="field-grid-2">
+            <div class="field">
+              <label for="{{ form.tenant_email_from_address.id_for_label }}">From Email Address</label>
+              {{ form.tenant_email_from_address }}
+            </div>
+            <div class="field">
+              <label for="{{ form.tenant_email_host.id_for_label }}">SMTP Host</label>
+              {{ form.tenant_email_host }}
+            </div>
+            <div class="field">
+              <label for="{{ form.tenant_email_port.id_for_label }}">SMTP Port</label>
+              {{ form.tenant_email_port }}
+            </div>
+            <div class="field">
+              <label for="{{ form.tenant_email_host_user.id_for_label }}">SMTP Username</label>
+              {{ form.tenant_email_host_user }}
+            </div>
+            <div class="field field-span-2">
+              <label for="{{ form.tenant_email_host_password.id_for_label }}">SMTP Password / Secret</label>
+              {{ form.tenant_email_host_password }}
+            </div>
+          </div>
+          <div class="field-grid-2">
+            <div class="field">
+              <label for="{{ form.tenant_email_use_tls.id_for_label }}">Use TLS</label>
+              {{ form.tenant_email_use_tls }}
+              <div class="help">Check this when your tenant email provider requires STARTTLS. Leave unchanged to inherit platform behavior.</div>
+            </div>
+            <div class="field">
+              <label for="{{ form.tenant_email_use_ssl.id_for_label }}">Use SSL</label>
+              {{ form.tenant_email_use_ssl }}
+              <div class="help">Use this only when your provider expects SSL on connect, typically port 465.</div>
+            </div>
+          </div>
+
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:8px 0 2px">SMS Delivery</div>
+          <div class="field-grid-2">
+            <div class="field">
+              <label for="{{ form.tenant_sms_provider.id_for_label }}">SMS Provider</label>
+              {{ form.tenant_sms_provider }}
+              <div class="help">Current app flow actively supports <code>ARKESEL</code>. Other values are stored for tenant isolation and future provider expansion.</div>
+            </div>
+            <div class="field">
+              <label for="{{ form.tenant_sms_sender_id.id_for_label }}">Sender ID</label>
+              {{ form.tenant_sms_sender_id }}
+            </div>
+            <div class="field field-span-2">
+              <label for="{{ form.tenant_sms_api_key.id_for_label }}">SMS API Key</label>
+              {{ form.tenant_sms_api_key }}
+            </div>
+            <div class="field field-span-2">
+              <label for="{{ form.tenant_sms_base_url.id_for_label }}">SMS Base URL</label>
+              {{ form.tenant_sms_base_url }}
+            </div>
+          </div>
+
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:8px 0 2px">USSD Integration</div>
+          <div class="field-grid-2">
+            <div class="field">
+              <label for="{{ form.tenant_ussd_provider.id_for_label }}">USSD Provider</label>
+              {{ form.tenant_ussd_provider }}
+            </div>
+            <div class="field">
+              <label for="{{ form.tenant_ussd_shortcode.id_for_label }}">Shortcode / Service Code</label>
+              {{ form.tenant_ussd_shortcode }}
+            </div>
+            <div class="field">
+              <label for="{{ form.tenant_ussd_username.id_for_label }}">Provider Username / Client ID</label>
+              {{ form.tenant_ussd_username }}
+            </div>
+            <div class="field">
+              <label for="{{ form.tenant_ussd_api_key.id_for_label }}">USSD API Key</label>
+              {{ form.tenant_ussd_api_key }}
+            </div>
+            <div class="field field-span-2">
+              <label for="{{ form.tenant_ussd_callback_token.id_for_label }}">USSD Callback Token</label>
+              {{ form.tenant_ussd_callback_token }}
+              <div class="help">If set, inbound USSD routes for this tenant will require the same token in the request headers or payload.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="action-bar">
+          {% if not is_setup %}
+            <a href="{% url 'loans:dashboard' %}" class="btn btn-ghost">Cancel</a>
+          {% endif %}
+          <button type="submit" class="btn btn-primary" style="min-width:180px;">
+            {% if is_setup %}🚀 Launch Platform{% else %}💾 Save Settings{% endif %}
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /tab-company -->
+
+    <!-- ══════════════════ TAB: OPERATIONS ══════════════════ -->
+    <div class="tab-panel" id="tab-operations" role="tabpanel">
+
+      <!-- ③ Currency & Locale -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon">💱</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Currency & Locale</h2>
+            <div class="section-desc">Controls how all monetary amounts are displayed and which timezone is used.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field-grid-3">
+            <div class="field">
+              <label for="{{ form.currency_code.id_for_label }}">Currency</label>
+              {{ form.currency_code }}
+            </div>
+            <div class="field">
+              <label for="{{ form.currency_symbol.id_for_label }}">Display Symbol / Prefix</label>
+              {{ form.currency_symbol }}
+              <div class="help">E.g. <code>₵</code>, <code>GHS</code>, <code>$</code></div>
+            </div>
+            <div class="field">
+              <label for="{{ form.timezone_name.id_for_label }}">Timezone</label>
+              {{ form.timezone_name }}
+              <div class="help">E.g. <code>Africa/Accra</code>, <code>Africa/Lagos</code></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ④ Operations -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon">⚙️</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Operational Defaults</h2>
+            <div class="section-desc">Default repayment cycle, loan duration, overdue thresholds, and borrower languages.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field-grid-3">
+            <div class="field">
+              <label for="{{ form.repayment_cycle.id_for_label }}">Repayment Cycle</label>
+              {{ form.repayment_cycle }}
+              <div class="help">Default cadence for new loans.</div>
+            </div>
+            <div class="field">
+              <label for="{{ form.default_loan_duration.id_for_label }}">Default Duration (periods)</label>
+              {{ form.default_loan_duration }}
+              <div class="help">Pre-filled when creating a new loan.</div>
+            </div>
+            <div class="field">
+              <label for="{{ form.overdue_grace_periods.id_for_label }}">Overdue Grace Periods</label>
+              {{ form.overdue_grace_periods }}
+              <div class="help">Missed periods before a loan becomes DEFAULT.</div>
+            </div>
+          </div>
+
+          <!-- Borrower languages -->
+          <div class="field">
+            <label for="{{ form.languages_text.id_for_label }}">Borrower Languages</label>
+            {{ form.languages_text }}
+            <div class="help">{{ form.languages_text.help_text }}</div>
+            {% if form.languages_text.errors %}
+              <div class="help" style="color:var(--danger);">{{ form.languages_text.errors.0 }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon">🧾</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Payroll Statutory Rules</h2>
+            <div class="section-desc">Control automatic PAYE, pension, welfare deductions, and the ledger mapping payroll uses when runs are posted into accounting.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">Automatic Payroll Controls</div>
+          <div class="toggle-grid" style="margin-bottom:18px">
+            <div class="toggle-row"><div><div class="toggle-label">Automatic PAYE</div><div class="toggle-sublabel">Calculate employee income tax from the configured monthly tax bands.</div></div>{{ form.payroll_tax_enabled }}</div>
+            <div class="toggle-row"><div><div class="toggle-label">Employee Pension Deduction</div><div class="toggle-sublabel">Deduct employee pension from base salary during payroll generation.</div></div>{{ form.payroll_employee_pension_enabled }}</div>
+            <div class="toggle-row"><div><div class="toggle-label">Employer Pension Accrual</div><div class="toggle-sublabel">Accrue employer statutory pension as an extra payroll cost and liability.</div></div>{{ form.payroll_employer_pension_enabled }}</div>
+            <div class="toggle-row"><div><div class="toggle-label">Automatic Welfare Deduction</div><div class="toggle-sublabel">Apply staff welfare or union deductions automatically based on the settings below.</div></div>{{ form.payroll_welfare_enabled }}</div>
+          </div>
+
+          <div class="field-grid-3">
+            <div class="field">
+              <label for="{{ form.payroll_personal_relief_amount.id_for_label }}">Monthly Personal Relief</label>
+              {{ form.payroll_personal_relief_amount }}
+              <div class="help">{{ form.payroll_personal_relief_amount.help_text }}</div>
+            </div>
+            <div class="field">
+              <label for="{{ form.payroll_employee_pension_rate.id_for_label }}">Employee Pension Rate (%)</label>
+              {{ form.payroll_employee_pension_rate }}
+              <div class="help">{{ form.payroll_employee_pension_rate.help_text }}</div>
+            </div>
+            <div class="field">
+              <label for="{{ form.payroll_employer_pension_rate.id_for_label }}">Employer Pension Rate (%)</label>
+              {{ form.payroll_employer_pension_rate }}
+              <div class="help">{{ form.payroll_employer_pension_rate.help_text }}</div>
+            </div>
+            <div class="field">
+              <label for="{{ form.payroll_welfare_deduction_rate.id_for_label }}">Welfare Rate (%)</label>
+              {{ form.payroll_welfare_deduction_rate }}
+              <div class="help">{{ form.payroll_welfare_deduction_rate.help_text }}</div>
+            </div>
+            <div class="field">
+              <label for="{{ form.payroll_welfare_fixed_amount.id_for_label }}">Welfare Fixed Amount</label>
+              {{ form.payroll_welfare_fixed_amount }}
+              <div class="help">{{ form.payroll_welfare_fixed_amount.help_text }}</div>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:18px">
+            <label for="{{ form.payroll_tax_brackets_text.id_for_label }}">Monthly Payroll Tax Bands</label>
+            {{ form.payroll_tax_brackets_text }}
+            <div class="help">{{ form.payroll_tax_brackets_text.help_text }}</div>
+            {% if form.payroll_tax_brackets_text.errors %}
+              <div class="help" style="color:var(--danger);">{{ form.payroll_tax_brackets_text.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 0 10px">Payroll Ledger Mapping</div>
+          <div class="field-grid-3">
+            <div class="field">
+              <label for="{{ form.paye_payable_account_code.id_for_label }}">PAYE Payable Account</label>
+              {{ form.paye_payable_account_code }}
+            </div>
+            <div class="field">
+              <label for="{{ form.employee_pension_payable_account_code.id_for_label }}">Employee Pension Payable</label>
+              {{ form.employee_pension_payable_account_code }}
+            </div>
+            <div class="field">
+              <label for="{{ form.employer_pension_payable_account_code.id_for_label }}">Employer Pension Payable</label>
+              {{ form.employer_pension_payable_account_code }}
+            </div>
+            <div class="field">
+              <label for="{{ form.welfare_payable_account_code.id_for_label }}">Welfare Payable</label>
+              {{ form.welfare_payable_account_code }}
+            </div>
+            <div class="field">
+              <label for="{{ form.employer_statutory_expense_account_code.id_for_label }}">Employer Statutory Expense</label>
+              {{ form.employer_statutory_expense_account_code }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon">🏛️</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Business Tax Reference</h2>
+            <div class="section-desc">Keep your key indirect and corporate tax assumptions in one place for finance, reporting, and accounting reference.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field-grid-3">
+            <div class="field">
+              <label for="{{ form.vat_rate.id_for_label }}">VAT Rate (%)</label>
+              {{ form.vat_rate }}
+            </div>
+            <div class="field">
+              <label for="{{ form.nhil_rate.id_for_label }}">NHIL Rate (%)</label>
+              {{ form.nhil_rate }}
+            </div>
+            <div class="field">
+              <label for="{{ form.getfund_rate.id_for_label }}">GETFund Rate (%)</label>
+              {{ form.getfund_rate }}
+            </div>
+            <div class="field">
+              <label for="{{ form.withholding_tax_rate.id_for_label }}">Withholding Tax Rate (%)</label>
+              {{ form.withholding_tax_rate }}
+            </div>
+            <div class="field">
+              <label for="{{ form.corporate_income_tax_rate.id_for_label }}">Corporate Income Tax (%)</label>
+              {{ form.corporate_income_tax_rate }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑤ Loan Tiers -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-icon">🏅</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Loan Tier Structure</h2>
+            <div class="section-desc">Define your loan categories by name and maximum principal amount.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="tier-editor">
+            <div class="field">
+              <label for="{{ form.tier_labels.id_for_label }}">Tier Names (one per line)</label>
+              {{ form.tier_labels }}
+              <div class="help">{{ form.tier_labels.help_text }}</div>
+              {% if form.tier_labels.errors %}
+                <div class="help" style="color:var(--danger);">{{ form.tier_labels.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="field">
+              <label for="{{ form.tier_maxes.id_for_label }}">Max Amounts (one per line, same order)</label>
+              {{ form.tier_maxes }}
+              <div class="help">{{ form.tier_maxes.help_text }}</div>
+              {% if form.tier_maxes.errors %}
+                <div class="help" style="color:var(--danger);">{{ form.tier_maxes.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if profile and profile.tiers_for_template %}
+          <!-- Live preview of current tiers -->
+          <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:10px;">Current Tier Structure</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              {% for tier in profile.tiers_for_template %}
+                <div style="border:1px solid var(--border-accent);border-radius:12px;padding:10px 14px;background:var(--gold-pale);">
+                  <div style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--gold);font-weight:700;">{{ tier.label }}</div>
+                  <div style="font-size:12px;color:var(--muted);margin-top:2px;">up to {{ company_currency }} {{ tier.max|floatformat:0 }}</div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          {% if form.non_field_errors %}
+            {% for error in form.non_field_errors %}
+              <div style="padding:12px 14px;border-radius:12px;background:rgba(184,50,50,.06);border:1px solid rgba(184,50,50,.16);color:var(--danger);font-size:13px;font-weight:600;">{{ error }}</div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+
+      {{ form.color_theme.as_hidden }}
+
+      <div class="section-card">
+
+        <div class="action-bar">
+          {% if not is_setup %}
+            <a href="{% url 'loans:dashboard' %}" class="btn btn-ghost">Cancel</a>
+          {% endif %}
+          <button type="submit" class="btn btn-primary" style="min-width:180px;">
+            {% if is_setup %}🚀 Launch Platform{% else %}💾 Save Settings{% endif %}
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /tab-operations -->
+
+    <!-- ══════════════════ TAB: WEBSITE ══════════════════ -->
+    <div class="tab-panel" id="tab-website" role="tabpanel">
+    <style>
+    /* ── Website tab inner layout ── */
+    .ws-layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:22px;align-items:start}
+    .ws-sidenav{position:sticky;top:76px;border:1px solid var(--border);border-radius:18px;background:var(--panel);padding:14px;box-shadow:var(--shadow-sm);overflow:hidden}
+    .ws-sidenav-title{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:2px 8px 10px;border-bottom:1px solid var(--border-soft);margin-bottom:8px}
+    .ws-navlink{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;font-size:12.5px;font-weight:600;color:var(--muted);transition:background .15s,color .15s;cursor:pointer;text-decoration:none;white-space:nowrap}
+    .ws-navlink:hover{background:var(--bg);color:var(--text)}
+    .ws-navlink.ws-active{background:rgba(58,90,30,.08);color:var(--primary)}
+    .ws-navlink .ws-ico{font-size:14px;flex-shrink:0}
+    .ws-content{display:grid;gap:20px;min-width:0}
+    .ws-section{scroll-margin-top:96px}
+    .ws-save-bar{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:18px 22px;border-top:1px solid var(--border-soft);background:var(--bg-soft);border-radius:0 0 22px 22px}
+    .toggle-grid{display:grid;gap:10px}
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 16px;border:1px solid var(--border);border-radius:13px;background:var(--bg);transition:border-color .18s}
+    .toggle-row:hover{border-color:var(--border-accent)}
+    .toggle-label{font-size:13.5px;font-weight:600;color:var(--text)}
+    .toggle-sublabel{font-size:11.5px;color:var(--muted);margin-top:2px}
+    .json-hint{font-size:11px;color:var(--muted-2);margin-top:4px;line-height:1.5;font-family:monospace;background:var(--bg);padding:8px 10px;border-radius:8px;border:1px solid var(--border-soft)}
+
+    /* ── Card Builder ───────────────────────────────── */
+    .cb-label{font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px;display:block}
+    .cb-sublabel{font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.55}
+    .cb-wrap{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;min-width:0}
+    .cb-card{
+      background:var(--bg);border:1.5px solid var(--border);border-radius:14px;
+      padding:14px 12px 14px 16px;display:grid;
+      grid-template-columns:minmax(0,1fr) 30px;gap:12px;align-items:start;
+      transition:border-color .18s;
+      min-width:0;
+    }
+    .cb-card:hover{border-color:var(--border-accent)}
+    .cb-fields{display:grid;gap:10px;min-width:0}
+    .cb-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+    .cb-field>label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-2)}
+    .cb-field input[type="text"],
+    .cb-field input[type="number"],
+    .cb-field input[type="url"],
+    .cb-field input[type="email"],
+    .cb-field textarea,
+    .cb-field select{
+      padding:7px 10px;border:1px solid var(--border);border-radius:8px;
+      font-size:13px;color:var(--text);background:var(--panel);width:100%;max-width:100%;min-width:0;
+    }
+    .cb-field input:focus,.cb-field textarea:focus,.cb-field select:focus{outline:none;border-color:var(--primary)}
+    .cb-field textarea{resize:vertical;min-height:60px;font-family:inherit}
+    .cb-field input[readonly]{background:var(--bg);cursor:default;color:var(--text2);font-weight:700}
+    .cb-check-row{display:flex;align-items:center;gap:7px;cursor:pointer;padding-top:18px}
+    .cb-check-row input[type="checkbox"]{width:15px;height:15px;accent-color:var(--primary);cursor:pointer;flex-shrink:0}
+    .cb-check-row>span{font-size:12.5px;color:var(--text)}
+    .cb-remove{
+      width:30px;height:30px;border-radius:50%;
+      background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.15);
+      color:#dc2626;font-size:18px;line-height:1;
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;flex-shrink:0;transition:background .15s;align-self:start;
+    }
+    .cb-remove:hover{background:rgba(220,38,38,.18)}
+    .cb-add{
+      display:flex;align-items:center;justify-content:center;gap:7px;
+      width:100%;padding:10px;border-radius:12px;
+      border:1.5px dashed var(--border-soft);background:transparent;
+      color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;
+      transition:border-color .18s,background .18s;margin-top:2px;
+    }
+    .cb-add:hover:not(:disabled){border-color:var(--primary);background:rgba(58,90,30,.05)}
+    .cb-add:disabled{opacity:.4;cursor:not-allowed}
+    .cb-slide-num{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px}
+    .cb-card-full{grid-template-columns:minmax(0,1fr)} /* slide cards: no remove button column */
+    @media(max-width:1000px){
+      .cb-fields{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+    }
+    @media(max-width:800px){
+      .ws-layout{grid-template-columns:1fr}
+      .ws-sidenav{position:static}
+      .toggle-row{align-items:flex-start;flex-direction:column}
+    }
+    @media(max-width:640px){
+      .cb-card{grid-template-columns:minmax(0,1fr)}
+      .cb-remove{justify-self:end}
+      .cb-fields{grid-template-columns:minmax(0,1fr) !important}
+      .cb-check-row{padding-top:4px}
+    }
+
+    /* ── Colour picker ── */
+    .color-input-wrap{display:flex;align-items:center;gap:8px}
+    .color-swatch-picker{
+      width:38px;height:38px;border-radius:8px;border:1.5px solid var(--border);
+      padding:2px;cursor:pointer;flex-shrink:0;background:none;
+    }
+    .color-swatch-picker::-webkit-color-swatch-wrapper{padding:0;border-radius:6px}
+    .color-swatch-picker::-webkit-color-swatch{border:none;border-radius:5px}
+    .color-swatch-picker::-moz-color-swatch{border:none;border-radius:5px}
+    .color-input-wrap input[type="text"].hex-input{flex:1;font-family:monospace;font-size:13px;letter-spacing:.04em}
+
+    /* ── Preset palette buttons ── */
+    .palette-btn{
+      display:flex;align-items:center;gap:9px;
+      padding:8px 13px 8px 8px;border-radius:10px;
+      border:1.5px solid var(--border);background:var(--bg);
+      font-size:12px;font-weight:600;color:var(--text);
+      cursor:pointer;transition:border-color .18s,background .18s,box-shadow .18s;
+    }
+    .palette-btn:hover{border-color:var(--primary);background:var(--panel);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+    .palette-btn.active{border-color:var(--primary);background:rgba(58,90,30,.06)}
+    .pal-swatches{display:flex;border-radius:6px;overflow:hidden;flex-shrink:0;border:1px solid rgba(0,0,0,.10)}
+    .pal-swatches span{width:18px;height:28px;display:block}
+    .pal-name{white-space:nowrap}
+
+    /* ── Font preview cards ── */
+    .font-preview-card{
+      border:2px solid var(--border);border-radius:14px;padding:18px 18px 14px;
+      background:var(--panel);cursor:pointer;transition:border-color .18s,box-shadow .18s;
+      position:relative;
+    }
+    .font-preview-card:hover{border-color:var(--primary);box-shadow:0 4px 16px rgba(58,90,30,.10)}
+    .font-preview-card.fp-active{border-color:var(--primary);background:rgba(58,90,30,.04)}
+    .fp-serif{font-size:18px;font-weight:600;color:var(--text);line-height:1.2;margin-bottom:3px}
+    .fp-sans{font-size:11.5px;color:var(--muted);margin-bottom:10px}
+    .fp-sample{font-size:15px;color:var(--muted);line-height:1.5;font-style:italic}
+    .fp-tag{
+      position:absolute;top:10px;right:10px;
+      font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+      background:var(--bg2,var(--bg));color:var(--muted);
+      padding:3px 8px;border-radius:99px;border:1px solid var(--border);
+    }
+    .font-preview-card.fp-active .fp-tag{background:var(--primary);color:#fff;border-color:var(--primary)}
+    </style>
+
+    <div class="ws-layout">
+
+      <!-- ── Sidebar nav ── -->
+      <div class="ws-sidenav" id="wsNav">
+        <div class="ws-sidenav-title">Website Sections</div>
+        <a class="ws-navlink ws-active" href="#ws-hero"     ><span class="ws-ico">🏠</span>Homepage Hero</a>
+        <a class="ws-navlink"           href="#ws-content"  ><span class="ws-ico">📝</span>Homepage Content</a>
+        <a class="ws-navlink"           href="#ws-about"    ><span class="ws-ico">📖</span>About Page</a>
+        <a class="ws-navlink"           href="#ws-services" ><span class="ws-ico">💼</span>Services Page</a>
+        <a class="ws-navlink"           href="#ws-team"     ><span class="ws-ico">👥</span>Team Page</a>
+        <a class="ws-navlink"           href="#ws-contact"  ><span class="ws-ico">📞</span>Contact Page</a>
+        <a class="ws-navlink"           href="#ws-social"   ><span class="ws-ico">📱</span>Social Media</a>
+        <a class="ws-navlink"           href="#ws-trust"    ><span class="ws-ico">🏅</span>Trust & Credibility</a>
+        <a class="ws-navlink"           href="#ws-documents"><span class="ws-ico">📄</span>Documents</a>
+        <a class="ws-navlink"           href="#ws-toggles"  ><span class="ws-ico">👁</span>Visibility</a>
+        <a class="ws-navlink"           href="#ws-brand"    ><span class="ws-ico">🎨</span>Brand & SEO</a>
+        <a class="ws-navlink"           href="#ws-images"   ><span class="ws-ico">🖼</span>Page Images</a>
+        <a class="ws-navlink"           href="#ws-gallery"  ><span class="ws-ico">🗂</span>Gallery</a>
+      </div>
+
+      <!-- ── Main content ── -->
+      <div class="ws-content">
+
+      <!-- ①  HOMEPAGE HERO ─────────────────────────────── -->
+      <div class="section-card ws-section" id="ws-hero">
+        <div class="section-header">
+          <div class="section-icon">🏠</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Homepage Hero</h2>
+            <div class="section-desc">Layout, headline, sub-text, CTA button, and feature image for the top of your homepage.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field">
+            <label for="{{ form.hero_layout.id_for_label }}">Hero Layout</label>
+            {{ form.hero_layout }}
+            <div class="help">Split puts text left + card right. Centered is full-width. Full Screen fills the viewport with your image.</div>
+          </div>
+          <div class="field-grid-2">
+            <div class="field field-span-2">
+              <label for="{{ form.hero_headline.id_for_label }}">Hero Headline</label>
+              {{ form.hero_headline }}
+            </div>
+            <div class="field field-span-2">
+              <label for="{{ form.hero_subheadline.id_for_label }}">Hero Sub-Headline</label>
+              {{ form.hero_subheadline }}
+            </div>
+            <div class="field">
+              <label for="{{ form.hero_cta_text.id_for_label }}">CTA Button Text</label>
+              {{ form.hero_cta_text }}
+            </div>
+            <div class="field">
+              <label for="{{ form.hero_cta_url.id_for_label }}">CTA Button URL</label>
+              {{ form.hero_cta_url }}
+              <div class="help">Leave blank to link to the Contact page.</div>
+            </div>
+            <div class="field">
+              <label>Hero Image</label>
+              <label class="upload-area" for="{{ form.hero_image.id_for_label }}">
+                <div class="upload-icon">🖼</div>
+                <div class="upload-copy">
+                  <div class="label">Upload Hero Image</div>
+                  <div class="hint">Recommended min 1400×700px — used as background when layout = Full Screen</div>
+                </div>
+                {{ form.hero_image }}
+              </label>
+              {% if profile and profile.hero_image %}
+              <div class="current-upload">
+                <div class="current-upload-thumb"><img src="{{ profile.hero_image.url }}" alt="Current hero image"></div>
+                <div class="current-upload-copy">
+                  <div class="current-upload-label">Current Image</div>
+                  <a class="current-upload-link" href="{{ profile.hero_image.url }}" target="_blank">{{ profile.hero_image.name }}</a>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+            <div class="field">
+              <label for="{{ form.hero_overlay_opacity.id_for_label }}">Image Overlay Opacity (0.0 – 0.9)</label>
+              {{ form.hero_overlay_opacity }}
+              <div class="help">Dark overlay over hero image. 0 = transparent, 0.7 = strong dark overlay.</div>
+            </div>
+          </div>
+
+          <!-- ── Carousel ───────────────────────── -->
+          <div style="border-top:1px solid var(--border-soft);padding-top:24px;margin-top:8px">
+            <div class="toggle-row" style="margin-bottom:20px">
+              <div>
+                <div style="font-size:14px;font-weight:700;color:var(--text)">Enable Hero Carousel</div>
+                <div class="help" style="margin-top:3px">Replace the static hero with an auto-advancing 3-slide carousel. Slide 1 uses the hero image above as its background, slides 2 and 3 use the extra background uploads below, and each slide can now show a separate image beside its text.</div>
+              </div>
+              <label class="toggle-switch">
+                {{ form.show_hero_carousel }}
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="field-grid-2">
+              <!-- Slide 2 image -->
+              <div class="field">
+                <label>Carousel Slide 2 — Image</label>
+                <label class="upload-area" for="{{ form.hero_slide_2_image.id_for_label }}">
+                  <div class="upload-icon">🖼</div>
+                  <div class="upload-copy">
+                    <div class="label">Slide 2 Background</div>
+                    <div class="hint">Min 1400×700px recommended</div>
+                  </div>
+                  {{ form.hero_slide_2_image }}
+                </label>
+                {% if profile and profile.hero_slide_2_image %}
+                <div class="current-upload">
+                  <div class="current-upload-thumb"><img src="{{ profile.hero_slide_2_image.url }}" alt="Current slide 2 background"></div>
+                  <div class="current-upload-copy">
+                    <div class="current-upload-label">Current Image</div>
+                    <a class="current-upload-link" href="{{ profile.hero_slide_2_image.url }}" target="_blank">{{ profile.hero_slide_2_image.name }}</a>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+              <!-- Slide 3 image -->
+              <div class="field">
+                <label>Carousel Slide 3 — Image</label>
+                <label class="upload-area" for="{{ form.hero_slide_3_image.id_for_label }}">
+                  <div class="upload-icon">🖼</div>
+                  <div class="upload-copy">
+                    <div class="label">Slide 3 Background</div>
+                    <div class="hint">Min 1400×700px recommended</div>
+                  </div>
+                  {{ form.hero_slide_3_image }}
+                </label>
+                {% if profile and profile.hero_slide_3_image %}
+                <div class="current-upload">
+                  <div class="current-upload-thumb"><img src="{{ profile.hero_slide_3_image.url }}" alt="Current slide 3 background"></div>
+                  <div class="current-upload-copy">
+                    <div class="current-upload-label">Current Image</div>
+                    <a class="current-upload-link" href="{{ profile.hero_slide_3_image.url }}" target="_blank">{{ profile.hero_slide_3_image.name }}</a>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="field-grid-3" style="margin-top:16px">
+              <div class="field">
+                <label>Slide 1 Side Image</label>
+                <label class="upload-area" for="{{ form.hero_slide_1_feature_image.id_for_label }}">
+                  <div class="upload-icon">🖼</div>
+                  <div class="upload-copy">
+                    <div class="label">Upload Slide 1 Side Image</div>
+                    <div class="hint">Shown beside the text content</div>
+                  </div>
+                  {{ form.hero_slide_1_feature_image }}
+                </label>
+                {% if profile and profile.hero_slide_1_feature_image %}
+                <div class="current-upload">
+                  <div class="current-upload-thumb"><img src="{{ profile.hero_slide_1_feature_image.url }}" alt="Current slide 1 side image"></div>
+                  <div class="current-upload-copy">
+                    <div class="current-upload-label">Current Image</div>
+                    <a class="current-upload-link" href="{{ profile.hero_slide_1_feature_image.url }}" target="_blank">{{ profile.hero_slide_1_feature_image.name }}</a>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+              <div class="field">
+                <label>Slide 2 Side Image</label>
+                <label class="upload-area" for="{{ form.hero_slide_2_feature_image.id_for_label }}">
+                  <div class="upload-icon">🖼</div>
+                  <div class="upload-copy">
+                    <div class="label">Upload Slide 2 Side Image</div>
+                    <div class="hint">Shown beside the text content</div>
+                  </div>
+                  {{ form.hero_slide_2_feature_image }}
+                </label>
+                {% if profile and profile.hero_slide_2_feature_image %}
+                <div class="current-upload">
+                  <div class="current-upload-thumb"><img src="{{ profile.hero_slide_2_feature_image.url }}" alt="Current slide 2 side image"></div>
+                  <div class="current-upload-copy">
+                    <div class="current-upload-label">Current Image</div>
+                    <a class="current-upload-link" href="{{ profile.hero_slide_2_feature_image.url }}" target="_blank">{{ profile.hero_slide_2_feature_image.name }}</a>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+              <div class="field">
+                <label>Slide 3 Side Image</label>
+                <label class="upload-area" for="{{ form.hero_slide_3_feature_image.id_for_label }}">
+                  <div class="upload-icon">🖼</div>
+                  <div class="upload-copy">
+                    <div class="label">Upload Slide 3 Side Image</div>
+                    <div class="hint">Shown beside the text content</div>
+                  </div>
+                  {{ form.hero_slide_3_feature_image }}
+                </label>
+                {% if profile and profile.hero_slide_3_feature_image %}
+                <div class="current-upload">
+                  <div class="current-upload-thumb"><img src="{{ profile.hero_slide_3_feature_image.url }}" alt="Current slide 3 side image"></div>
+                  <div class="current-upload-copy">
+                    <div class="current-upload-label">Current Image</div>
+                    <a class="current-upload-link" href="{{ profile.hero_slide_3_feature_image.url }}" target="_blank">{{ profile.hero_slide_3_feature_image.name }}</a>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Slide text config -->
+            <div style="margin-top:16px">
+              <div class="cb-label">Slide Content</div>
+              <div class="cb-sublabel">Headline, sub-headline, and CTA button for each of the 3 slides. Overlay: 0.0 = no tint · 0.90 = very dark. Leave CTA URL blank to link to the Contact page.</div>
+              <div class="cb-wrap" id="cb-slides-wrap" style="gap:14px"></div>
+              <div style="display:none">{{ form.hero_slides_text }}</div>
+            </div>
+          </div>
+          <!-- ── /Carousel ──────────────────────── -->
+
+        </div>
+      </div>
+
+      <!-- ② HOMEPAGE CONTENT ───────────────────────────── -->
+      <div class="section-card ws-section" id="ws-content">
+        <div class="section-header">
+          <div class="section-icon">📝</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Homepage Content</h2>
+            <div class="section-desc">Configurable services, process steps, and the bottom call-to-action section.</div>
+          </div>
+        </div>
+        <div class="section-body">
+
+          <div class="field">
+            <div class="cb-label">Website Services &amp; Products</div>
+            <div class="cb-sublabel">Each card appears on the homepage and Services page. Check "Feature this card" to give one product the dark highlight style.</div>
+            <div class="cb-wrap" id="cb-services-wrap"></div>
+            <button type="button" class="cb-add" id="cb-services-add">+ Add Service / Product</button>
+            <div style="display:none">{{ form.services_text }}</div>
+          </div>
+
+          <div class="field">
+            <div class="cb-label">How It Works — Steps</div>
+            <div class="cb-sublabel">Recommended: exactly 4 steps shown as a connected process. Add an icon emoji to each step.</div>
+            <div class="cb-wrap" id="cb-how-wrap"></div>
+            <button type="button" class="cb-add" id="cb-how-add">+ Add Step</button>
+            <div style="display:none">{{ form.how_steps_text }}</div>
+          </div>
+
+          <div style="border:1px solid var(--border-soft);border-radius:14px;padding:18px;background:var(--bg)">
+            <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">Bottom CTA Section</div>
+            <div class="field-grid-2">
+              <div class="field field-span-2">
+                <label for="{{ form.cta_headline.id_for_label }}">CTA Headline</label>
+                {{ form.cta_headline }}
+                <div class="help">e.g. "Ready to grow with {{ profile.company_name|default:"us" }}?"</div>
+              </div>
+              <div class="field field-span-2">
+                <label for="{{ form.cta_body.id_for_label }}">CTA Body Text</label>
+                {{ form.cta_body }}
+              </div>
+              <div class="field">
+                <label for="{{ form.cta_button_text.id_for_label }}">CTA Button Text</label>
+                {{ form.cta_button_text }}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ③ ABOUT PAGE ──────────────────────────────────── -->
+      <div class="section-card ws-section" id="ws-about">
+        <div class="section-header">
+          <div class="section-icon">📖</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">About Page</h2>
+            <div class="section-desc">Headline, mission/vision, key stats, images, goals, management team, and company values.</div>
+          </div>
+        </div>
+        <div class="section-body">
+
+          <div class="field-grid-2">
+            <div class="field field-span-2">
+              <label for="{{ form.about_headline.id_for_label }}">Page Headline</label>
+              {{ form.about_headline }}
+              <div class="help">Defaults to "About {{ profile.company_name|default:"us" }}" if blank.</div>
+            </div>
+            <div class="field field-span-2">
+              <label for="{{ form.about_subheadline.id_for_label }}">Page Sub-Headline</label>
+              {{ form.about_subheadline }}
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="{{ form.mission_statement.id_for_label }}">Mission Statement</label>
+            {{ form.mission_statement }}
+          </div>
+          <div class="field">
+            <label for="{{ form.vision_statement.id_for_label }}">Vision Statement</label>
+            {{ form.vision_statement }}
+          </div>
+
+          <div class="field-grid-3">
+            <div class="field">
+              <label for="{{ form.founded_year.id_for_label }}">Year Founded</label>
+              {{ form.founded_year }}
+              <div class="help">Shown as "Est. XXXX" trust signal.</div>
+            </div>
+            <div class="field">
+              <label for="{{ form.years_in_business.id_for_label }}">Years in Business</label>
+              {{ form.years_in_business }}
+              <div class="help">0 to hide</div>
+            </div>
+            <div class="field">
+              <label for="{{ form.clients_served.id_for_label }}">Clients Served</label>
+              {{ form.clients_served }}
+              <div class="help">0 to hide</div>
+            </div>
+            <div class="field field-span-2">
+              <label for="{{ form.loans_disbursed_display.id_for_label }}">Loans Disbursed (display text)</label>
+              {{ form.loans_disbursed_display }}
+              <div class="help">e.g. GHS 12.5M (blank to hide)</div>
+            </div>
+          </div>
+
+          <div class="field-grid-2">
+            <div class="field">
+              <label>Primary About Image</label>
+              <label class="upload-area" for="{{ form.about_image.id_for_label }}">
+                <div class="upload-icon">📸</div>
+                <div class="upload-copy"><div class="label">Upload Main Image</div><div class="hint">Office, team, or operations photo</div></div>
+                {{ form.about_image }}
+              </label>
+              {% if profile and profile.about_image %}
+              <div class="current-upload">
+                <div class="current-upload-thumb"><img src="{{ profile.about_image.url }}" alt="Current primary about image"></div>
+                <div class="current-upload-copy">
+                  <div class="current-upload-label">Current Image</div>
+                  <a class="current-upload-link" href="{{ profile.about_image.url }}" target="_blank">{{ profile.about_image.name }}</a>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+            <div class="field">
+              <label>About Image 2</label>
+              <label class="upload-area" for="{{ form.about_image_2.id_for_label }}">
+                <div class="upload-icon">📸</div>
+                <div class="upload-copy"><div class="label">Upload Image 2</div><div class="hint">Shown in the image grid</div></div>
+                {{ form.about_image_2 }}
+              </label>
+              {% if profile and profile.about_image_2 %}
+              <div class="current-upload">
+                <div class="current-upload-thumb"><img src="{{ profile.about_image_2.url }}" alt="Current about image 2"></div>
+                <div class="current-upload-copy">
+                  <div class="current-upload-label">Current Image</div>
+                  <a class="current-upload-link" href="{{ profile.about_image_2.url }}" target="_blank">{{ profile.about_image_2.name }}</a>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+            <div class="field">
+              <label>About Image 3</label>
+              <label class="upload-area" for="{{ form.about_image_3.id_for_label }}">
+                <div class="upload-icon">📸</div>
+                <div class="upload-copy"><div class="label">Upload Image 3</div><div class="hint">Shown in the image grid</div></div>
+                {{ form.about_image_3 }}
+              </label>
+              {% if profile and profile.about_image_3 %}
+              <div class="current-upload">
+                <div class="current-upload-thumb"><img src="{{ profile.about_image_3.url }}" alt="Current about image 3"></div>
+                <div class="current-upload-copy">
+                  <div class="current-upload-label">Current Image</div>
+                  <a class="current-upload-link" href="{{ profile.about_image_3.url }}" target="_blank">{{ profile.about_image_3.name }}</a>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="cb-label">Strategic Goals</div>
+            <div class="cb-sublabel">High-level objectives shown on the About page. Add an emoji icon for each goal.</div>
+            <div class="cb-wrap" id="cb-goals-wrap"></div>
+            <button type="button" class="cb-add" id="cb-goals-add">+ Add Goal</button>
+            <div style="display:none">{{ form.goals_text }}</div>
+          </div>
+
+          <div class="field">
+            <div class="cb-label">Core Values</div>
+            <div class="cb-sublabel">The principles that guide your organisation — shown on the homepage and About page.</div>
+            <div class="cb-wrap" id="cb-values-wrap"></div>
+            <button type="button" class="cb-add" id="cb-values-add">+ Add Value</button>
+            <div style="display:none">{{ form.core_values_text }}</div>
+          </div>
+
+          <div class="field">
+            <div class="cb-label">Management Team</div>
+            <div class="cb-sublabel">Senior leadership shown on the Team page. Initials appear as an avatar if no photo is uploaded.</div>
+            <div class="cb-wrap" id="cb-mgmt-wrap"></div>
+            <button type="button" class="cb-add" id="cb-mgmt-add">+ Add Team Member</button>
+            <div style="display:none">{{ form.management_team_text }}</div>
+          </div>
+
+          <div class="field">
+            <div class="cb-label">Client Testimonials</div>
+            <div class="cb-sublabel">Up to 3 testimonials shown on the homepage. The first card gets the featured dark style.</div>
+            <div class="cb-wrap" id="cb-testi-wrap"></div>
+            <button type="button" class="cb-add" id="cb-testi-add">+ Add Testimonial</button>
+            <div style="display:none">{{ form.testimonials_text }}</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ④ SERVICES PAGE ──────────────────────────────── -->
+      <div class="section-card ws-section" id="ws-services">
+        <div class="section-header">
+          <div class="section-icon">💼</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Services / Loans Page</h2>
+            <div class="section-desc">Page headline and FAQ content shown on the Loan Products page.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field-grid-2">
+            <div class="field field-span-2">
+              <label for="{{ form.services_headline.id_for_label }}">Page Headline</label>
+              {{ form.services_headline }}
+              <div class="help">Defaults to "Our Loan Products" if blank.</div>
+            </div>
+            <div class="field field-span-2">
+              <label for="{{ form.services_subheadline.id_for_label }}">Page Sub-Headline</label>
+              {{ form.services_subheadline }}
+            </div>
+          </div>
+          <div class="field">
+            <div class="cb-label">Frequently Asked Questions</div>
+            <div class="cb-sublabel">Shown in the accordion on the Services / Loans page when FAQs are enabled.</div>
+            <div class="cb-wrap" id="cb-faqs-wrap"></div>
+            <button type="button" class="cb-add" id="cb-faqs-add">+ Add FAQ</button>
+            <div style="display:none">{{ form.faqs_text }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑤ TEAM PAGE ───────────────────────────────────── -->
+      <div class="section-card ws-section" id="ws-team">
+        <div class="section-header">
+          <div class="section-icon">👥</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Team Page</h2>
+            <div class="section-desc">Headline and configuration for who appears on the public Team page.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field-grid-2">
+            <div class="field field-span-2">
+              <label for="{{ form.team_headline.id_for_label }}">Page Headline</label>
+              {{ form.team_headline }}
+              <div class="help">Defaults to "Meet Our Team" if blank.</div>
+            </div>
+            <div class="field field-span-2">
+              <label for="{{ form.team_subheadline.id_for_label }}">Page Sub-Headline</label>
+              {{ form.team_subheadline }}
+            </div>
+          </div>
+          <div class="toggle-grid">
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">Show Field Agents on Team Page</div>
+                <div class="toggle-sublabel">Displays your registered agents with photo, name, and location.</div>
+              </div>
+              {{ form.show_agents_on_team }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑥ CONTACT PAGE ───────────────────────────────── -->
+      <div class="section-card ws-section" id="ws-contact">
+        <div class="section-header">
+          <div class="section-icon">📞</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Contact Page</h2>
+            <div class="section-desc">Headline, intro text, business hours, branches, and Google Maps embed.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field-grid-2">
+            <div class="field field-span-2">
+              <label for="{{ form.contact_headline.id_for_label }}">Page Headline</label>
+              {{ form.contact_headline }}
+              <div class="help">Defaults to "Get in Touch" if blank.</div>
+            </div>
+            <div class="field field-span-2">
+              <label for="{{ form.contact_subheadline.id_for_label }}">Page Sub-Headline</label>
+              {{ form.contact_subheadline }}
+            </div>
+            <div class="field field-span-2">
+              <label for="{{ form.contact_intro.id_for_label }}">Contact Page Intro Text</label>
+              {{ form.contact_intro }}
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="cb-label">Business Hours</div>
+            <div class="cb-sublabel">Opening times shown on the Contact page. Check "Closed" for days you are not open.</div>
+            <div class="cb-wrap" id="cb-hours-wrap"></div>
+            <div style="display:none">{{ form.business_hours_text }}</div>
+          </div>
+
+          <div class="field">
+            <div class="cb-label">Branches &amp; Locations</div>
+            <div class="cb-sublabel">Each branch appears on the Contact page. Mark one as Head Office. Lat/Lng are optional for map pins.</div>
+            <div class="cb-wrap" id="cb-branches-wrap"></div>
+            <button type="button" class="cb-add" id="cb-branches-add">+ Add Branch</button>
+            <div style="display:none">{{ form.branches_text }}</div>
+          </div>
+
+          <div class="field">
+            <label for="{{ form.maps_embed_url.id_for_label }}">Google Maps Embed URL</label>
+            {{ form.maps_embed_url }}
+            <div class="help">In Google Maps → Share → Embed a map → copy only the src="..." URL.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑦ SOCIAL MEDIA ───────────────────────────────── -->
+      <div class="section-card ws-section" id="ws-social">
+        <div class="section-header">
+          <div class="section-icon">📱</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Social Media</h2>
+            <div class="section-desc">Links shown in the footer, contact section, and top info bar.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field-grid-2">
+            <div class="field">
+              <label for="{{ form.whatsapp_number.id_for_label }}">WhatsApp Number</label>
+              {{ form.whatsapp_number }}
+              <div class="help">Include country code — e.g. +233244123456. Powers the floating chat button.</div>
+            </div>
+            <div class="field">
+              <label for="{{ form.facebook_url.id_for_label }}">Facebook URL</label>
+              {{ form.facebook_url }}
+            </div>
+            <div class="field">
+              <label for="{{ form.instagram_url.id_for_label }}">Instagram URL</label>
+              {{ form.instagram_url }}
+            </div>
+            <div class="field">
+              <label for="{{ form.twitter_url.id_for_label }}">Twitter / X URL</label>
+              {{ form.twitter_url }}
+            </div>
+            <div class="field">
+              <label for="{{ form.youtube_url.id_for_label }}">YouTube URL</label>
+              {{ form.youtube_url }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑧ TRUST & CREDIBILITY ────────────────────────── -->
+      <div class="section-card ws-section" id="ws-trust">
+        <div class="section-header">
+          <div class="section-icon">🏅</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Trust & Credibility</h2>
+            <div class="section-desc">Licence numbers, partners, certifications, and awards — all displayed as trust signals on your website.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field-grid-2">
+            <div class="field">
+              <label for="{{ form.license_number.id_for_label }}">Regulatory Licence Number</label>
+              {{ form.license_number }}
+              <div class="help">e.g. BOG/MFI/2019/0045 — shown as a footer trust signal.</div>
+            </div>
+            <div class="field">
+              <label for="{{ form.registration_number.id_for_label }}">Business Registration Number</label>
+              {{ form.registration_number }}
+              <div class="help">e.g. CS-12345-2016 — shown in the footer.</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="cb-label">Certifications &amp; Memberships</div>
+            <div class="cb-sublabel">Regulatory licences and industry memberships. Enable the Certifications Section toggle in Visibility to show these on the website.</div>
+            <div class="cb-wrap" id="cb-certs-wrap"></div>
+            <button type="button" class="cb-add" id="cb-certs-add">+ Add Certification</button>
+            <div style="display:none">{{ form.certifications_text }}</div>
+          </div>
+
+          <div class="field">
+            <div class="cb-label">Awards &amp; Recognition</div>
+            <div class="cb-sublabel">Industry awards and honours. Enable the Awards toggle in Visibility to show these on the website.</div>
+            <div class="cb-wrap" id="cb-awards-wrap"></div>
+            <button type="button" class="cb-add" id="cb-awards-add">+ Add Award</button>
+            <div style="display:none">{{ form.awards_text }}</div>
+          </div>
+
+          <div class="field">
+            <div class="cb-label">Partners &amp; Sponsors</div>
+            <div class="cb-sublabel">Funding partners and institutional sponsors shown as a logo grid. Enable the Partners toggle in Visibility to display them.</div>
+            <div class="cb-wrap" id="cb-partners-wrap"></div>
+            <button type="button" class="cb-add" id="cb-partners-add">+ Add Partner</button>
+            <div style="display:none">{{ form.partners_text }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTS ───────────────────────────────────── -->
+      <div class="section-card ws-section" id="ws-documents">
+        <div class="section-header">
+          <div class="section-icon">📄</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Website Documents</h2>
+            <div class="section-desc">Upload public forms, policies, brochures, fee schedules, and other files visitors can download from the website.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          {{ document_formset.management_form }}
+          {% if document_formset.non_form_errors %}
+            <div class="help" style="color:var(--danger);">{{ document_formset.non_form_errors.0 }}</div>
+          {% endif %}
+          <div class="document-grid">
+            {% for doc_form in document_formset.forms %}
+              <div class="document-row">
+                {% for hidden in doc_form.hidden_fields %}{{ hidden }}{% endfor %}
+                <div class="document-row-head">
+                  <div>
+                    <div class="document-row-title">
+                      {% if doc_form.instance.pk %}{{ doc_form.instance.title }}{% else %}New Document {{ forloop.counter }}{% endif %}
+                    </div>
+                    <div class="document-row-meta">
+                      {% if doc_form.instance.pk and doc_form.instance.file %}
+                        Current file:
+                        <a href="{{ doc_form.instance.file.url }}" target="_blank" style="color:var(--primary);font-weight:800">{{ doc_form.instance.file.name }}</a>
+                      {% else %}
+                        Add a file and title to publish a new downloadable document.
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="document-flags">
+                    <label class="document-flag">{{ doc_form.is_public }} Public</label>
+                    {% if doc_form.instance.pk and doc_form.DELETE %}
+                      <label class="document-flag" style="color:var(--danger);">{{ doc_form.DELETE }} Delete</label>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="field-grid-2">
+                  <div class="field">
+                    <label for="{{ doc_form.title.id_for_label }}">Title</label>
+                    {{ doc_form.title }}
+                    {% if doc_form.title.errors %}<div class="help" style="color:var(--danger);">{{ doc_form.title.errors.0 }}</div>{% endif %}
+                  </div>
+                  <div class="field">
+                    <label for="{{ doc_form.sort_order.id_for_label }}">Sort Order</label>
+                    {{ doc_form.sort_order }}
+                    {% if doc_form.sort_order.errors %}<div class="help" style="color:var(--danger);">{{ doc_form.sort_order.errors.0 }}</div>{% endif %}
+                  </div>
+                  <div class="field field-span-2">
+                    <label for="{{ doc_form.description.id_for_label }}">Description</label>
+                    {{ doc_form.description }}
+                    {% if doc_form.description.errors %}<div class="help" style="color:var(--danger);">{{ doc_form.description.errors.0 }}</div>{% endif %}
+                  </div>
+                  <div class="field field-span-2">
+                    <label for="{{ doc_form.file.id_for_label }}">Document File</label>
+                    {{ doc_form.file }}
+                    <div class="help">PDF, Word, Excel, CSV, text, or image files can be uploaded.</div>
+                    {% if doc_form.file.errors %}<div class="help" style="color:var(--danger);">{{ doc_form.file.errors.0 }}</div>{% endif %}
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑨ VISIBILITY TOGGLES ─────────────────────────── -->
+      <div class="section-card ws-section" id="ws-toggles">
+        <div class="section-header">
+          <div class="section-icon">👁</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Section Visibility</h2>
+            <div class="section-desc">Control exactly which sections appear on your public website. Hide sections that aren't relevant to your business.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">Homepage</div>
+          <div class="toggle-grid" style="margin-bottom:20px">
+            <div class="toggle-row"><div><div class="toggle-label">Hero Carousel</div><div class="toggle-sublabel">Auto-advancing 3-slide hero (configured in Homepage Hero above)</div></div>{{ form.show_hero_carousel }}</div>
+            <div class="toggle-row"><div><div class="toggle-label">Stats Band</div><div class="toggle-sublabel">Clients served, years, loans disbursed</div></div>{{ form.show_stats_band }}</div>
+            <div class="toggle-row"><div><div class="toggle-label">How It Works</div><div class="toggle-sublabel">4-step process section</div></div>{{ form.show_how_section }}</div>
+            <div class="toggle-row"><div><div class="toggle-label">Testimonials Section</div><div class="toggle-sublabel">Client quotes and stories</div></div>{{ form.show_testimonials }}</div>
+          </div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">Services Page</div>
+          <div class="toggle-grid" style="margin-bottom:20px">
+            <div class="toggle-row"><div><div class="toggle-label">Loan Calculator</div><div class="toggle-sublabel">Interactive repayment estimator</div></div>{{ form.show_loan_calculator }}</div>
+            <div class="toggle-row"><div><div class="toggle-label">FAQ Section</div><div class="toggle-sublabel">Common questions answered</div></div>{{ form.show_faqs }}</div>
+          </div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">About Page</div>
+          <div class="toggle-grid" style="margin-bottom:20px">
+            <div class="toggle-row"><div><div class="toggle-label">Gallery Section</div><div class="toggle-sublabel">Photo gallery from the gallery images below</div></div>{{ form.show_gallery_section }}</div>
+          </div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">Trust & Partner Sections</div>
+          <div class="toggle-grid" style="margin-bottom:20px">
+            <div class="toggle-row"><div><div class="toggle-label">Trust Signals Bar</div><div class="toggle-sublabel">4-item strip below the hero (Licensed, Fast, Secure, No Hidden Fees)</div></div>{{ form.show_trust_strip }}</div>
+            <div class="toggle-row"><div><div class="toggle-label">Partners / Sponsors</div><div class="toggle-sublabel">Logo grid — add partner data in Trust & Credibility section above</div></div>{{ form.show_partners_section }}</div>
+            <div class="toggle-row"><div><div class="toggle-label">Certifications Section</div><div class="toggle-sublabel">Accreditation badges — add data in Trust & Credibility above</div></div>{{ form.show_certifications_section }}</div>
+            <div class="toggle-row"><div><div class="toggle-label">Awards & Recognition</div><div class="toggle-sublabel">Trophy cards — add data in Trust & Credibility above</div></div>{{ form.show_awards_section }}</div>
+          </div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">Navigation</div>
+          <div class="toggle-grid">
+            <div class="toggle-row"><div><div class="toggle-label">Top Info Bar</div><div class="toggle-sublabel">Phone, email & social links bar above the navbar</div></div>{{ form.show_topbar }}</div>
+            <div class="toggle-row"><div><div class="toggle-label">Field Agents on Team Page</div><div class="toggle-sublabel">Show registered agents publicly</div></div>{{ form.show_agents_on_team }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑩ BRAND & SEO ────────────────────────────────── -->
+      <div class="section-card ws-section" id="ws-brand">
+        <div class="section-header">
+          <div class="section-icon">🎨</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Brand Colours, Typography &amp; SEO</h2>
+            <div class="section-desc">Set your public website's colour palette, font pairing, and search meta tags. Colours auto-generate light/dark variants — leave blank to use the platform theme.</div>
+          </div>
+        </div>
+        <div class="section-body">
+
+          <!-- ── Preset Palettes ──────────────────────────── -->
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px">Quick Palette Presets</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px" id="palettePresets">
+            <button type="button" class="palette-btn" data-primary="#3a5a1e" data-secondary="#b88620" data-bg="#f7f8fa" data-text="#0f1923" data-nav="#ffffff" data-footer="#0d1f0a" data-alt="#f0f4f8">
+              <span class="pal-swatches"><span style="background:#3a5a1e"></span><span style="background:#b88620"></span><span style="background:#f7f8fa"></span></span>
+              <span class="pal-name">Forest (Default)</span>
+            </button>
+            <button type="button" class="palette-btn" data-primary="#1e4da0" data-secondary="#f0a030" data-bg="#f4f7fb" data-text="#0d1e35" data-nav="#ffffff" data-footer="#0a1525" data-alt="#eaf0f9">
+              <span class="pal-swatches"><span style="background:#1e4da0"></span><span style="background:#f0a030"></span><span style="background:#f4f7fb"></span></span>
+              <span class="pal-name">Ocean Blue</span>
+            </button>
+            <button type="button" class="palette-btn" data-primary="#1a2b4a" data-secondary="#c8a856" data-bg="#f5f6f8" data-text="#111827" data-nav="#ffffff" data-footer="#0d1728" data-alt="#edf0f5">
+              <span class="pal-swatches"><span style="background:#1a2b4a"></span><span style="background:#c8a856"></span><span style="background:#f5f6f8"></span></span>
+              <span class="pal-name">Corporate Navy</span>
+            </button>
+            <button type="button" class="palette-btn" data-primary="#136f63" data-secondary="#e9b44c" data-bg="#f5faf9" data-text="#0d2821" data-nav="#ffffff" data-footer="#051a15" data-alt="#eaf4f2">
+              <span class="pal-swatches"><span style="background:#136f63"></span><span style="background:#e9b44c"></span><span style="background:#f5faf9"></span></span>
+              <span class="pal-name">Teal &amp; Gold</span>
+            </button>
+            <button type="button" class="palette-btn" data-primary="#7c3aed" data-secondary="#f59e0b" data-bg="#f9f7ff" data-text="#1a0d2b" data-nav="#ffffff" data-footer="#120a1e" data-alt="#f2eeff">
+              <span class="pal-swatches"><span style="background:#7c3aed"></span><span style="background:#f59e0b"></span><span style="background:#f9f7ff"></span></span>
+              <span class="pal-name">Violet</span>
+            </button>
+            <button type="button" class="palette-btn" data-primary="#8b1e1e" data-secondary="#d4a843" data-bg="#faf5f5" data-text="#1a0808" data-nav="#ffffff" data-footer="#1a0505" data-alt="#f7eded">
+              <span class="pal-swatches"><span style="background:#8b1e1e"></span><span style="background:#d4a843"></span><span style="background:#faf5f5"></span></span>
+              <span class="pal-name">Crimson</span>
+            </button>
+            <button type="button" class="palette-btn" data-primary="#0f4c75" data-secondary="#1b9aaa" data-bg="#f4fafc" data-text="#0a1e2a" data-nav="#ffffff" data-footer="#071525" data-alt="#e8f5f9">
+              <span class="pal-swatches"><span style="background:#0f4c75"></span><span style="background:#1b9aaa"></span><span style="background:#f4fafc"></span></span>
+              <span class="pal-name">Midnight Blue</span>
+            </button>
+            <button type="button" class="palette-btn" data-primary="#2d6a4f" data-secondary="#d4ac0d" data-bg="#f5fbf7" data-text="#0d2219" data-nav="#ffffff" data-footer="#061510" data-alt="#eaf6ee">
+              <span class="pal-swatches"><span style="background:#2d6a4f"></span><span style="background:#d4ac0d"></span><span style="background:#f5fbf7"></span></span>
+              <span class="pal-name">Emerald</span>
+            </button>
+          </div>
+
+          <!-- ── Individual colour pickers ────────────────── -->
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px">Custom Colours <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(hex — blank = theme default)</span></div>
+          <div class="field-grid-3" style="margin-bottom:24px">
+
+            <div class="field">
+              <label for="{{ form.site_primary_color.id_for_label }}">Primary Colour</label>
+              <div class="color-input-wrap">
+                <input type="color" class="color-swatch-picker" data-target="{{ form.site_primary_color.id_for_label }}" value="#3a5a1e">
+                {{ form.site_primary_color }}
+              </div>
+              <div class="help">Buttons, links, active states, hero gradient</div>
+            </div>
+
+            <div class="field">
+              <label for="{{ form.site_secondary_color.id_for_label }}">Accent / Gold</label>
+              <div class="color-input-wrap">
+                <input type="color" class="color-swatch-picker" data-target="{{ form.site_secondary_color.id_for_label }}" value="#b88620">
+                {{ form.site_secondary_color }}
+              </div>
+              <div class="help">Eyebrows, badges, hover accents</div>
+            </div>
+
+            <div class="field">
+              <label for="{{ form.site_bg_color.id_for_label }}">Page Background</label>
+              <div class="color-input-wrap">
+                <input type="color" class="color-swatch-picker" data-target="{{ form.site_bg_color.id_for_label }}" value="#f7f8fa">
+                {{ form.site_bg_color }}
+              </div>
+              <div class="help">Main page background</div>
+            </div>
+
+            <div class="field">
+              <label for="{{ form.site_text_color.id_for_label }}">Body Text</label>
+              <div class="color-input-wrap">
+                <input type="color" class="color-swatch-picker" data-target="{{ form.site_text_color.id_for_label }}" value="#0f1923">
+                {{ form.site_text_color }}
+              </div>
+              <div class="help">Main body text colour</div>
+            </div>
+
+            <div class="field">
+              <label for="{{ form.site_nav_bg.id_for_label }}">Navbar Background</label>
+              <div class="color-input-wrap">
+                <input type="color" class="color-swatch-picker" data-target="{{ form.site_nav_bg.id_for_label }}" value="#ffffff">
+                {{ form.site_nav_bg }}
+              </div>
+              <div class="help">Top navigation bar fill</div>
+            </div>
+
+            <div class="field">
+              <label for="{{ form.site_footer_bg.id_for_label }}">Footer Background</label>
+              <div class="color-input-wrap">
+                <input type="color" class="color-swatch-picker" data-target="{{ form.site_footer_bg.id_for_label }}" value="#0d1f0a">
+                {{ form.site_footer_bg }}
+              </div>
+              <div class="help">Page footer dark section</div>
+            </div>
+
+            <div class="field">
+              <label for="{{ form.site_section_alt_bg.id_for_label }}">Alternate Section BG</label>
+              <div class="color-input-wrap">
+                <input type="color" class="color-swatch-picker" data-target="{{ form.site_section_alt_bg.id_for_label }}" value="#f0f4f8">
+                {{ form.site_section_alt_bg }}
+              </div>
+              <div class="help">Every other section background</div>
+            </div>
+
+            <div class="field">
+              <label for="{{ form.primary_cta_color.id_for_label }}">CTA Button Override</label>
+              <div class="color-input-wrap">
+                <input type="color" class="color-swatch-picker" data-target="{{ form.primary_cta_color.id_for_label }}" value="#3a5a1e">
+                {{ form.primary_cta_color }}
+              </div>
+              <div class="help">Overrides primary for CTA buttons only</div>
+            </div>
+
+          </div>
+
+          <!-- ── Typography ───────────────────────────────── -->
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px">Typography — Font Pairing</div>
+          <div class="field" style="margin-bottom:8px">
+            <label for="{{ form.site_font.id_for_label }}">Select a font pair for headings + body text</label>
+            {{ form.site_font }}
+          </div>
+
+          <!-- Font preview cards -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:28px" id="fontPreviews">
+
+            <div class="font-preview-card" data-font="dm_sans">
+              <div class="fp-serif" style="font-family:'DM Serif Display',Georgia,serif">DM Serif Display</div>
+              <div class="fp-sans" style="font-family:'DM Sans',sans-serif">DM Sans — body &amp; UI</div>
+              <div class="fp-sample" style="font-family:'DM Serif Display',Georgia,serif;font-style:italic">"Fast, fair lending."</div>
+              <div class="fp-tag">Default</div>
+            </div>
+
+            <div class="font-preview-card" data-font="inter">
+              <div class="fp-serif" style="font-family:'Playfair Display',Georgia,serif">Playfair Display</div>
+              <div class="fp-sans" style="font-family:'Inter',sans-serif">Inter — body &amp; UI</div>
+              <div class="fp-sample" style="font-family:'Playfair Display',Georgia,serif;font-style:italic">"Sharp &amp; editorial."</div>
+              <div class="fp-tag">Professional</div>
+            </div>
+
+            <div class="font-preview-card" data-font="poppins">
+              <div class="fp-serif" style="font-family:'Cormorant Garamond',Georgia,serif">Cormorant Garamond</div>
+              <div class="fp-sans" style="font-family:'Poppins',sans-serif">Poppins — body &amp; UI</div>
+              <div class="fp-sample" style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic">"Friendly &amp; elegant."</div>
+              <div class="fp-tag">Popular</div>
+            </div>
+
+            <div class="font-preview-card" data-font="montserrat">
+              <div class="fp-serif" style="font-family:'Merriweather',Georgia,serif">Merriweather</div>
+              <div class="fp-sans" style="font-family:'Montserrat',sans-serif">Montserrat — body &amp; UI</div>
+              <div class="fp-sample" style="font-family:'Merriweather',Georgia,serif;font-style:italic">"Strong &amp; bold."</div>
+              <div class="fp-tag">Bold</div>
+            </div>
+
+            <div class="font-preview-card" data-font="raleway">
+              <div class="fp-serif" style="font-family:'Lora',Georgia,serif">Lora</div>
+              <div class="fp-sans" style="font-family:'Raleway',sans-serif">Raleway — body &amp; UI</div>
+              <div class="fp-sample" style="font-family:'Lora',Georgia,serif;font-style:italic">"Geometric &amp; literary."</div>
+              <div class="fp-tag">Classic</div>
+            </div>
+
+            <div class="font-preview-card" data-font="opensans">
+              <div class="fp-serif" style="font-family:'Georgia',serif">Source Serif 4</div>
+              <div class="fp-sans" style="font-family:'Arial',sans-serif">Open Sans — body &amp; UI</div>
+              <div class="fp-sample" style="font-family:'Georgia',serif;font-style:italic">"Highly readable."</div>
+              <div class="fp-tag">Corporate</div>
+            </div>
+
+            <div class="font-preview-card" data-font="nunito">
+              <div class="fp-serif" style="font-family:'Georgia',serif">Libre Baskerville</div>
+              <div class="fp-sans" style="font-family:'Trebuchet MS',sans-serif">Nunito — body &amp; UI</div>
+              <div class="fp-sample" style="font-family:'Georgia',serif;font-style:italic">"Approachable &amp; warm."</div>
+              <div class="fp-tag">Friendly</div>
+            </div>
+
+            <div class="font-preview-card" data-font="outfit">
+              <div class="fp-serif" style="font-family:'Georgia',serif">Fraunces</div>
+              <div class="fp-sans" style="font-family:'Trebuchet MS',sans-serif">Outfit — body &amp; UI</div>
+              <div class="fp-sample" style="font-family:'Georgia',serif;font-style:italic">"Contemporary &amp; fresh."</div>
+              <div class="fp-tag">Modern</div>
+            </div>
+
+            <div class="font-preview-card" data-font="josefin">
+              <div class="fp-serif" style="font-family:'Georgia',serif">Spectral</div>
+              <div class="fp-sans" style="font-family:'Arial Narrow',sans-serif">Josefin Sans — body &amp; UI</div>
+              <div class="fp-sample" style="font-family:'Georgia',serif;font-style:italic">"Authoritative &amp; sharp."</div>
+              <div class="fp-tag">Geometric</div>
+            </div>
+
+            <div class="font-preview-card" data-font="quicksand">
+              <div class="fp-serif" style="font-family:'Georgia',serif">Crimson Pro</div>
+              <div class="fp-sans" style="font-family:'Trebuchet MS',sans-serif">Quicksand — body &amp; UI</div>
+              <div class="fp-sample" style="font-family:'Georgia',serif;font-style:italic">"Soft &amp; welcoming."</div>
+              <div class="fp-tag">Warm</div>
+            </div>
+
+            <div class="font-preview-card" data-font="plus_jakarta">
+              <div class="fp-serif" style="font-family:'Georgia',serif">Playfair Display</div>
+              <div class="fp-sans" style="font-family:'Trebuchet MS',sans-serif">Plus Jakarta Sans</div>
+              <div class="fp-sample" style="font-family:'Georgia',serif;font-style:italic">"Premium &amp; polished."</div>
+              <div class="fp-tag">Premium</div>
+            </div>
+
+            <div class="font-preview-card" data-font="space_grotesk">
+              <div class="fp-serif" style="font-family:'Georgia',serif">Fraunces</div>
+              <div class="fp-sans" style="font-family:'Arial',sans-serif">Space Grotesk — UI</div>
+              <div class="fp-sample" style="font-family:'Georgia',serif;font-style:italic">"Techy &amp; high-impact."</div>
+              <div class="fp-tag">Techy</div>
+            </div>
+
+            <div class="font-preview-card" data-font="figtree">
+              <div class="fp-serif" style="font-family:'Georgia',serif">Bitter</div>
+              <div class="fp-sans" style="font-family:'Trebuchet MS',sans-serif">Figtree — body &amp; UI</div>
+              <div class="fp-sample" style="font-family:'Georgia',serif;font-style:italic">"Balanced &amp; clean."</div>
+              <div class="fp-tag">Balanced</div>
+            </div>
+
+            <div class="font-preview-card" data-font="manrope">
+              <div class="fp-serif" style="font-family:'Georgia',serif">Libre Baskerville</div>
+              <div class="fp-sans" style="font-family:'Trebuchet MS',sans-serif">Manrope — body &amp; UI</div>
+              <div class="fp-sample" style="font-family:'Georgia',serif;font-style:italic">"Versatile &amp; modern."</div>
+              <div class="fp-tag">Versatile</div>
+            </div>
+
+            <div class="font-preview-card" data-font="cabinet">
+              <div class="fp-serif" style="font-family:'Lora',Georgia,serif">Lora</div>
+              <div class="fp-sans" style="font-family:'Arial',sans-serif">Cabinet Grotesk — UI</div>
+              <div class="fp-sample" style="font-family:'Lora',Georgia,serif;font-style:italic">"Bold &amp; confident."</div>
+              <div class="fp-tag">Confident</div>
+            </div>
+
+          </div>
+
+          <!-- ── SEO ──────────────────────────────────────── -->
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px">Search Engine Optimisation (SEO)</div>
+          <div class="field-grid-2">
+            <div class="field field-span-2">
+              <label for="{{ form.meta_title.id_for_label }}">SEO Title / Browser Tab Title</label>
+              {{ form.meta_title }}
+              <div class="help">Defaults to "Company Name — Tagline" if blank. Max 60 characters recommended.</div>
+            </div>
+            <div class="field field-span-2">
+              <label for="{{ form.meta_description.id_for_label }}">Meta Description</label>
+              {{ form.meta_description }}
+              <div class="help">Shown in search engine results. 150–160 characters recommended.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ⑪ PAGE HERO IMAGES ───────────────────────────── -->
+      <div class="section-card ws-section" id="ws-images">
+        <div class="section-header">
+          <div class="section-icon">🖼</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Page Hero Images</h2>
+            <div class="section-desc">Banner images for each interior page. Wide landscape images (min 1400×500px) look best.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field-grid-2">
+            <div class="field">
+              <label>About Page Banner</label>
+              <label class="upload-area" for="{{ form.about_hero_image.id_for_label }}"><div class="upload-icon">📸</div><div class="upload-copy"><div class="label">Upload About Banner</div><div class="hint">About page top image</div></div>{{ form.about_hero_image }}</label>
+              {% if profile and profile.about_hero_image %}
+              <div class="current-upload">
+                <div class="current-upload-thumb"><img src="{{ profile.about_hero_image.url }}" alt="Current about page banner"></div>
+                <div class="current-upload-copy">
+                  <div class="current-upload-label">Current Image</div>
+                  <a class="current-upload-link" href="{{ profile.about_hero_image.url }}" target="_blank">{{ profile.about_hero_image.name }}</a>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+            <div class="field">
+              <label>Services Page Banner</label>
+              <label class="upload-area" for="{{ form.services_hero_image.id_for_label }}"><div class="upload-icon">📸</div><div class="upload-copy"><div class="label">Upload Services Banner</div><div class="hint">Loan Products page top image</div></div>{{ form.services_hero_image }}</label>
+              {% if profile and profile.services_hero_image %}
+              <div class="current-upload">
+                <div class="current-upload-thumb"><img src="{{ profile.services_hero_image.url }}" alt="Current services page banner"></div>
+                <div class="current-upload-copy">
+                  <div class="current-upload-label">Current Image</div>
+                  <a class="current-upload-link" href="{{ profile.services_hero_image.url }}" target="_blank">{{ profile.services_hero_image.name }}</a>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+            <div class="field">
+              <label>Team Page Banner</label>
+              <label class="upload-area" for="{{ form.team_hero_image.id_for_label }}"><div class="upload-icon">📸</div><div class="upload-copy"><div class="label">Upload Team Banner</div><div class="hint">Team page top image</div></div>{{ form.team_hero_image }}</label>
+              {% if profile and profile.team_hero_image %}
+              <div class="current-upload">
+                <div class="current-upload-thumb"><img src="{{ profile.team_hero_image.url }}" alt="Current team page banner"></div>
+                <div class="current-upload-copy">
+                  <div class="current-upload-label">Current Image</div>
+                  <a class="current-upload-link" href="{{ profile.team_hero_image.url }}" target="_blank">{{ profile.team_hero_image.name }}</a>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+            <div class="field">
+              <label>Contact Page Banner</label>
+              <label class="upload-area" for="{{ form.contact_hero_image.id_for_label }}"><div class="upload-icon">📸</div><div class="upload-copy"><div class="label">Upload Contact Banner</div><div class="hint">Contact page top image</div></div>{{ form.contact_hero_image }}</label>
+              {% if profile and profile.contact_hero_image %}
+              <div class="current-upload">
+                <div class="current-upload-thumb"><img src="{{ profile.contact_hero_image.url }}" alt="Current contact page banner"></div>
+                <div class="current-upload-copy">
+                  <div class="current-upload-label">Current Image</div>
+                  <a class="current-upload-link" href="{{ profile.contact_hero_image.url }}" target="_blank">{{ profile.contact_hero_image.name }}</a>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑫ GALLERY ─────────────────────────────────────── -->
+      <div class="section-card ws-section" id="ws-gallery">
+        <div class="section-header">
+          <div class="section-icon">🗂</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Gallery Images (up to 10)</h2>
+            <div class="section-desc">Photo gallery displayed on the About page. Add a caption to each image for context.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field-grid-2">
+            {% for n in "1234567890" %}{% with idx=forloop.counter %}
+            <div class="field">
+              <label>Gallery Image {{ idx }}</label>
+              <label class="upload-area" for="id_gallery_image_{{ idx }}">
+                <div class="upload-icon">🖼</div>
+                <div class="upload-copy">
+                  <div class="label">Upload Image {{ idx }}</div>
+                  <div class="hint">JPG / PNG / WebP</div>
+                </div>
+                <input type="file" name="gallery_image_{{ idx }}" id="id_gallery_image_{{ idx }}" accept="image/*">
+              </label>
+              <label for="id_gallery_caption_{{ idx }}" style="margin-top:8px">Caption {{ idx }}</label>
+              <input type="text" name="gallery_caption_{{ idx }}" id="id_gallery_caption_{{ idx }}" placeholder="Optional caption..." style="margin-top:4px">
+            </div>
+            {% endwith %}{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="ws-save-bar">
+          {% if not is_setup %}
+            <a href="{% url 'loans:dashboard' %}" class="btn btn-ghost">Cancel</a>
+          {% endif %}
+          <button type="submit" class="btn btn-primary" style="min-width:180px;">
+            {% if is_setup %}🚀 Launch Platform{% else %}💾 Save Settings{% endif %}
+          </button>
+        </div>
+      </div>
+
+      </div><!-- /ws-content -->
+    </div><!-- /ws-layout -->
+
+    </div><!-- /tab-website -->
+
+  </form>
+</div>
+
+<script>
+/* Website tab inner sidebar active link tracking */
+(function(){
+  const links = document.querySelectorAll('.ws-navlink');
+  const sections = document.querySelectorAll('.ws-section');
+  if(!links.length || !sections.length) return;
+  const activate = id => {
+    links.forEach(l => l.classList.toggle('ws-active', l.getAttribute('href') === '#' + id));
+  };
+  links.forEach(l => l.addEventListener('click', e => {
+    const target = document.getElementById(l.getAttribute('href').slice(1));
+    if(target){ e.preventDefault(); target.scrollIntoView({behavior:'smooth',block:'start'}); activate(l.getAttribute('href').slice(1)); }
+  }));
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting) activate(e.target.id); });
+  }, {rootMargin:'-30% 0px -60% 0px'});
+  sections.forEach(s => io.observe(s));
+})();
+</script>
+
+
+<script>
+(function () {
+  const STORAGE_KEY = 'settings-active-tab';
+  const btns  = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.tab-panel');
+
+  function activate(tabId) {
+    btns.forEach(b => {
+      const on = b.dataset.tab === tabId;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on);
+    });
+    panels.forEach(p => p.classList.toggle('active', p.id === 'tab-' + tabId));
+    try { sessionStorage.setItem(STORAGE_KEY, tabId); } catch (_) {}
+  }
+
+  btns.forEach(btn => btn.addEventListener('click', () => activate(btn.dataset.tab)));
+
+  /* Mark tabs that contain validation errors */
+  panels.forEach(panel => {
+    const hasError = panel.querySelector('[style*="color:var(--danger)"]');
+    if (hasError) {
+      const tabId = panel.id.replace('tab-', '');
+      const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+      if (btn) btn.classList.add('has-error');
+    }
+  });
+
+  /* Restore last tab, but prefer a tab with errors */
+  const errorBtn = document.querySelector('.tab-btn.has-error');
+  if (errorBtn) {
+    activate(errorBtn.dataset.tab);
+  } else {
+    const stored = sessionStorage.getItem(STORAGE_KEY);
+    const valid = stored && document.querySelector(`.tab-btn[data-tab="${stored}"]`);
+    if (valid) activate(stored);
+  }
+})();
+</script>
+
+<script>
+/* ── Brand Colours: colour picker ↔ hex text sync ── */
+(function(){
+  /* Sync colour picker → text field */
+  document.querySelectorAll('.color-swatch-picker').forEach(picker => {
+    const targetId = picker.dataset.target;
+    const textInput = document.getElementById(targetId);
+    if(!textInput) return;
+
+    /* Initialise picker from current text value */
+    const initVal = textInput.value.trim();
+    if(initVal && /^#[0-9a-fA-F]{3,6}$/.test(initVal)){
+      picker.value = initVal;
+    }
+
+    picker.addEventListener('input', () => {
+      textInput.value = picker.value;
+    });
+    textInput.addEventListener('input', () => {
+      const v = textInput.value.trim();
+      if(/^#[0-9a-fA-F]{3,6}$/.test(v)) picker.value = v;
+    });
+  });
+
+  /* Preset palette buttons */
+  document.querySelectorAll('.palette-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const map = {
+        'site_primary_color':   btn.dataset.primary,
+        'site_secondary_color': btn.dataset.secondary,
+        'site_bg_color':        btn.dataset.bg,
+        'site_text_color':      btn.dataset.text,
+        'site_nav_bg':          btn.dataset.nav,
+        'site_footer_bg':       btn.dataset.footer,
+        'site_section_alt_bg':  btn.dataset.alt,
+      };
+      for(const [name, val] of Object.entries(map)){
+        if(!val) continue;
+        const textInput = document.querySelector(`input[name="${name}"]`);
+        if(textInput){
+          textInput.value = val;
+          /* Sync picker */
+          const wrap = textInput.closest('.color-input-wrap');
+          const picker = wrap?.querySelector('.color-swatch-picker');
+          if(picker && /^#[0-9a-fA-F]{3,6}$/.test(val)) picker.value = val;
+        }
+      }
+      document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+})();
+
+/* ── Font preview cards: click → set select ── */
+(function(){
+  const sel = document.getElementById('{{ form.site_font.id_for_label }}');
+  const cards = document.querySelectorAll('.font-preview-card');
+  if(!sel) return;
+
+  function syncCards(){
+    cards.forEach(c => c.classList.toggle('fp-active', c.dataset.font === sel.value));
+  }
+  syncCards();
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      sel.value = card.dataset.font;
+      syncCards();
+    });
+  });
+
+  sel.addEventListener('change', syncCards);
+})();
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   CARD BUILDER — replaces all JSON textarea sections
+   ═══════════════════════════════════════════════════ */
+(function(){
+
+/* ── Generic reusable builder ── */
+class CardBuilder {
+  constructor({ wrapperId, hiddenId, addBtnId, fields, maxItems, colCount }) {
+    this.wrap     = document.getElementById(wrapperId);
+    this.hidden   = document.getElementById(hiddenId);
+    this.addBtn   = addBtnId ? document.getElementById(addBtnId) : null;
+    this.fields   = fields;
+    this.maxItems = maxItems || 50;
+    this.colCount = colCount || 'auto';
+    if (!this.wrap || !this.hidden) return;
+
+    let data = [];
+    try { data = JSON.parse(this.hidden.value || '[]'); } catch(e) {}
+    data.forEach(item => this._addCard(item));
+    if (!data.length) this._addCard({});
+
+    if (this.addBtn) {
+      this.addBtn.addEventListener('click', () => {
+        if (this.wrap.children.length < this.maxItems) { this._addCard({}); this._syncBtn(); }
+      });
+    }
+    const form = this.hidden.closest('form');
+    if (form) form.addEventListener('submit', () => this._serialize());
+    this._syncBtn();
+  }
+
+  _cols() {
+    if (this.colCount !== 'auto') return this.colCount;
+    const visible = this.fields.filter(f => f.type !== 'checkbox');
+    return visible.length <= 2 ? 2 : 3;
+  }
+
+  _addCard(data) {
+    const card = document.createElement('div');
+    card.className = 'cb-card';
+    const cols = this._cols();
+    const fhtml = this.fields.map(f => {
+      const raw = data[f.key];
+      const val = (raw !== undefined && raw !== null) ? String(raw) : '';
+      const esc = val.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+      const span = f.span ? `grid-column:span ${Math.min(f.span, cols)}` : '';
+      if (f.type === 'checkbox') {
+        const chk = (raw===true||raw==='true'||raw===1) ? 'checked' : '';
+        return `<label class="cb-check-row" style="${span}"><input type="checkbox" data-key="${f.key}" data-bool="1" ${chk}><span>${f.label}</span></label>`;
+      }
+      if (f.type === 'textarea') {
+        return `<div class="cb-field" style="${span}"><label>${f.label}</label><textarea data-key="${f.key}" rows="${f.rows||3}" placeholder="${f.placeholder||''}">${esc}</textarea></div>`;
+      }
+      return `<div class="cb-field" style="${span}"><label>${f.label}</label><input type="${f.type||'text'}" data-key="${f.key}" value="${esc}" placeholder="${f.placeholder||''}"></div>`;
+    }).join('');
+
+    card.innerHTML = `<div class="cb-fields" style="grid-template-columns:repeat(${cols},1fr)">${fhtml}</div>
+      <button type="button" class="cb-remove" title="Remove">×</button>`;
+    card.querySelector('.cb-remove').addEventListener('click', () => { card.remove(); this._syncBtn(); });
+    this.wrap.appendChild(card);
+    this._syncBtn();
+  }
+
+  _serialize() {
+    const items = [];
+    this.wrap.querySelectorAll('.cb-card').forEach(card => {
+      const item = {}; let hasVal = false;
+      card.querySelectorAll('[data-key]').forEach(el => {
+        if (el.dataset.bool) { item[el.dataset.key] = el.checked; if(el.checked) hasVal=true; }
+        else { item[el.dataset.key] = el.value.trim(); if(el.value.trim()) hasVal=true; }
+      });
+      if (hasVal) items.push(item);
+    });
+    this.hidden.value = JSON.stringify(items);
+  }
+
+  _syncBtn() {
+    if (this.addBtn) this.addBtn.disabled = this.wrap.children.length >= this.maxItems;
+  }
+}
+
+/* ── HERO SLIDES: fixed 3 cards, no add/remove ── */
+(function(){
+  const wrap   = document.getElementById('cb-slides-wrap');
+  const hidden = document.getElementById('id_hero_slides_text');
+  if (!wrap || !hidden) return;
+  const FIELDS = [
+    {key:'headline',    label:'Headline',     placeholder:'Fast Loans. Real Lives Changed.', span:2},
+    {key:'subheadline', label:'Sub-headline', type:'textarea', rows:2, placeholder:'Brief supportive text under the headline.', span:2},
+    {key:'cta_text',    label:'Button Text',  placeholder:'Apply Now'},
+    {key:'cta_url',     label:'Button URL',   type:'url', placeholder:'Leave blank → Contact page'},
+    {key:'overlay',     label:'Overlay 0–0.9',placeholder:'0.65'},
+  ];
+  let data = [];
+  try { data = JSON.parse(hidden.value||'[]'); } catch(e) {}
+  while (data.length < 3) data.push({});
+
+  data.slice(0,3).forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'cb-card cb-card-full';
+    const fhtml = FIELDS.map(f => {
+      const raw = item[f.key]; const val = raw!=null ? String(raw) : '';
+      const esc = val.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+      const span = f.span ? `grid-column:span ${Math.min(f.span,2)}` : '';
+      if (f.type==='textarea') return `<div class="cb-field" style="${span}"><label>${f.label}</label><textarea data-key="${f.key}" rows="${f.rows||2}" placeholder="${f.placeholder||''}">${esc}</textarea></div>`;
+      return `<div class="cb-field" style="${span}"><label>${f.label}</label><input type="${f.type||'text'}" data-key="${f.key}" value="${esc}" placeholder="${f.placeholder||''}"></div>`;
+    }).join('');
+    card.innerHTML = `<div><div class="cb-slide-num">Slide ${i+1}</div><div class="cb-fields" style="grid-template-columns:repeat(2,1fr)">${fhtml}</div></div>`;
+    wrap.appendChild(card);
+  });
+
+  hidden.closest('form').addEventListener('submit', () => {
+    const items = [];
+    wrap.querySelectorAll('.cb-card').forEach(card => {
+      const item = {}; let has = false;
+      card.querySelectorAll('[data-key]').forEach(el => { item[el.dataset.key]=el.value.trim(); if(el.value.trim()) has=true; });
+      if(has) items.push(item);
+    });
+    hidden.value = JSON.stringify(items);
+  });
+})();
+
+/* ── SERVICES ── */
+new CardBuilder({ wrapperId:'cb-services-wrap', hiddenId:'id_services_text', addBtnId:'cb-services-add',
+  fields:[
+    {key:'icon',        label:'Icon (emoji)',  placeholder:'💰'},
+    {key:'title',       label:'Title',         placeholder:'Quick Personal Loans'},
+    {key:'description', label:'Description',   type:'textarea', span:2, rows:2, placeholder:'Brief description of this product...'},
+    {key:'highlight',   label:'Feature this card (dark style)', type:'checkbox'},
+  ], maxItems:12 });
+
+/* ── HOW IT WORKS ── */
+new CardBuilder({ wrapperId:'cb-how-wrap', hiddenId:'id_how_steps_text', addBtnId:'cb-how-add',
+  fields:[
+    {key:'icon',        label:'Icon (emoji)', placeholder:'📋'},
+    {key:'title',       label:'Step Title',   placeholder:'Register'},
+    {key:'description', label:'Description',  type:'textarea', span:2, rows:2, placeholder:'Describe this step...'},
+  ], maxItems:4, colCount:2 });
+
+/* ── STRATEGIC GOALS ── */
+new CardBuilder({ wrapperId:'cb-goals-wrap', hiddenId:'id_goals_text', addBtnId:'cb-goals-add',
+  fields:[
+    {key:'icon',        label:'Icon (emoji)', placeholder:'🎯'},
+    {key:'title',       label:'Goal Title',   placeholder:'Financial Inclusion'},
+    {key:'description', label:'Description',  type:'textarea', span:2, rows:2, placeholder:'Describe this goal...'},
+  ] });
+
+/* ── CORE VALUES ── */
+new CardBuilder({ wrapperId:'cb-values-wrap', hiddenId:'id_core_values_text', addBtnId:'cb-values-add',
+  fields:[
+    {key:'icon',        label:'Icon (emoji)', placeholder:'🤝'},
+    {key:'title',       label:'Value Name',   placeholder:'Integrity'},
+    {key:'description', label:'Description',  type:'textarea', span:2, rows:2, placeholder:'What this value means in practice...'},
+  ] });
+
+/* ── MANAGEMENT TEAM ── */
+new CardBuilder({ wrapperId:'cb-mgmt-wrap', hiddenId:'id_management_team_text', addBtnId:'cb-mgmt-add',
+  fields:[
+    {key:'name',     label:'Full Name',    placeholder:'Jane Doe'},
+    {key:'title',    label:'Job Title',    placeholder:'Chief Executive Officer'},
+    {key:'initials', label:'Initials',     placeholder:'JD'},
+    {key:'bio',      label:'Short Bio',    type:'textarea', span:3, rows:2, placeholder:'15 years in microfinance...'},
+  ], colCount:3 });
+
+/* ── TESTIMONIALS ── */
+new CardBuilder({ wrapperId:'cb-testi-wrap', hiddenId:'id_testimonials_text', addBtnId:'cb-testi-add',
+  fields:[
+    {key:'name',            label:'Client Name',     placeholder:'Ama Owusu'},
+    {key:'role',            label:'Role / Location', placeholder:'Trader, Kumasi'},
+    {key:'avatar_initials', label:'Initials',        placeholder:'AO'},
+    {key:'quote',           label:'Quote',           type:'textarea', span:3, rows:3, placeholder:'This loan transformed my business...'},
+  ], colCount:3 });
+
+/* ── FAQs ── */
+new CardBuilder({ wrapperId:'cb-faqs-wrap', hiddenId:'id_faqs_text', addBtnId:'cb-faqs-add',
+  fields:[
+    {key:'question', label:'Question', placeholder:'How do I apply for a loan?', span:2},
+    {key:'answer',   label:'Answer',   type:'textarea', span:2, rows:3, placeholder:'Visit our nearest branch or apply online...'},
+  ], colCount:2 });
+
+/* ── BUSINESS HOURS: fixed 7-day rows ── */
+(function(){
+  const wrap   = document.getElementById('cb-hours-wrap');
+  const hidden = document.getElementById('id_business_hours_text');
+  if (!wrap || !hidden) return;
+  const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  let data = [];
+  try { data = JSON.parse(hidden.value||'[]'); } catch(e) {}
+  const byDay = {};
+  data.forEach(d => { byDay[d.day] = d; });
+  DAYS.forEach(day => {
+    if (!byDay[day]) byDay[day] = {day, open:'8:00 AM', close:'5:00 PM', closed: day==='Sunday'};
+  });
+  DAYS.forEach(day => {
+    const item = byDay[day];
+    const row  = document.createElement('div');
+    row.className = 'cb-card cb-card-full';
+    const isClosed = (item.closed===true||item.closed==='true');
+    row.innerHTML = `<div class="cb-fields" style="grid-template-columns:130px 1fr 1fr auto;align-items:center">
+      <div class="cb-field"><label>Day</label><input type="text" data-key="day" value="${day}" readonly></div>
+      <div class="cb-field"><label>Opens</label><input type="text" data-key="open" value="${item.open||''}" placeholder="8:00 AM"></div>
+      <div class="cb-field"><label>Closes</label><input type="text" data-key="close" value="${item.close||''}" placeholder="5:00 PM"></div>
+      <label class="cb-check-row" style="flex-direction:column;gap:3px;align-items:center;padding-top:16px">
+        <input type="checkbox" data-key="closed" data-bool="1" ${isClosed?'checked':''}><span style="font-size:11px;white-space:nowrap">Closed</span>
+      </label>
+    </div>`;
+    wrap.appendChild(row);
+  });
+  hidden.closest('form').addEventListener('submit', () => {
+    const items = [];
+    wrap.querySelectorAll('.cb-card').forEach(card => {
+      const item = {};
+      card.querySelectorAll('[data-key]').forEach(el => {
+        item[el.dataset.key] = el.dataset.bool ? el.checked : el.value.trim();
+      });
+      items.push(item);
+    });
+    hidden.value = JSON.stringify(items);
+  });
+})();
+
+/* ── BRANCHES ── */
+new CardBuilder({ wrapperId:'cb-branches-wrap', hiddenId:'id_branches_text', addBtnId:'cb-branches-add',
+  fields:[
+    {key:'name',          label:'Branch Name',  placeholder:'Head Office'},
+    {key:'address',       label:'Address',      placeholder:'123 Main St, Accra'},
+    {key:'phone',         label:'Phone',        placeholder:'+233 20 000 0000'},
+    {key:'email',         label:'Email',        type:'email', placeholder:'hq@company.com'},
+    {key:'lat',           label:'Latitude',     placeholder:'5.6037'},
+    {key:'lng',           label:'Longitude',    placeholder:'-0.1870'},
+    {key:'is_head_office',label:'Head Office',  type:'checkbox'},
+  ], colCount:3 });
+
+/* ── CERTIFICATIONS ── */
+new CardBuilder({ wrapperId:'cb-certs-wrap', hiddenId:'id_certifications_text', addBtnId:'cb-certs-add',
+  fields:[
+    {key:'icon',        label:'Icon (emoji)', placeholder:'🏅'},
+    {key:'name',        label:'Name',         placeholder:'Ghana Microfinance Association'},
+    {key:'issuer',      label:'Issuer',       placeholder:'GMA Secretariat'},
+    {key:'year',        label:'Since Year',   placeholder:'2019'},
+    {key:'description', label:'Description',  type:'textarea', span:2, rows:2, placeholder:'Brief note about this certification...'},
+  ] });
+
+/* ── AWARDS ── */
+new CardBuilder({ wrapperId:'cb-awards-wrap', hiddenId:'id_awards_text', addBtnId:'cb-awards-add',
+  fields:[
+    {key:'icon',        label:'Icon (emoji)', placeholder:'🏆'},
+    {key:'title',       label:'Award Title',  placeholder:'Best MFI of the Year 2023'},
+    {key:'issuer',      label:'Issuer',       placeholder:'Finance Awards Ghana'},
+    {key:'year',        label:'Year',         placeholder:'2023'},
+    {key:'description', label:'Description',  type:'textarea', span:2, rows:2, placeholder:'Brief note about this award...'},
+  ] });
+
+/* ── PARTNERS ── */
+new CardBuilder({ wrapperId:'cb-partners-wrap', hiddenId:'id_partners_text', addBtnId:'cb-partners-add',
+  fields:[
+    {key:'name',        label:'Partner Name',    placeholder:'Acme Bank'},
+    {key:'website',     label:'Website URL',     type:'url', placeholder:'https://acmebank.com'},
+    {key:'logo',        label:'Logo URL',        type:'url', placeholder:'https://acmebank.com/logo.png'},
+    {key:'description', label:'Short Description', placeholder:'Funding partner since 2019'},
+  ] });
+
+})();
+</script>
+
+{% endblock %}

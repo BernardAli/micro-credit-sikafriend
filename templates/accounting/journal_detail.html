@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load currency %}
+{% block content %}
+<style>
+  .journal-shell{max-width:1000px;margin:0 auto;display:grid;gap:18px}
+  .journal-card{border:1px solid var(--border);border-radius:28px;background:var(--panel);box-shadow:0 20px 48px rgba(20,26,20,.05);overflow:hidden}
+  .section{padding:20px 22px;border-bottom:1px solid var(--border-soft)}
+  .section:last-child{border-bottom:none}
+  .meta-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .meta-box{padding:16px;border-radius:20px;background:var(--panel-strong);border:1px solid var(--border)}
+  .meta-label{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:900}
+  .meta-value{margin-top:8px;font-size:18px;font-weight:900}
+  .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:20px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:12px 14px;border-bottom:1px solid var(--border-soft);text-align:left}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--bg-soft)}
+  .right{text-align:right}
+  @media(max-width:900px){.meta-grid{grid-template-columns:1fr 1fr}}
+</style>
+
+<div class="journal-shell">
+  <section class="journal-card">
+    <div class="section">
+      <h2 style="margin:0 0 8px;">{{ entry.entry_no }}</h2>
+      <div style="color:var(--muted);line-height:1.7;">{{ entry.memo }}</div>
+    </div>
+    <div class="section">
+      <div class="meta-grid">
+        <div class="meta-box"><div class="meta-label">Date</div><div class="meta-value">{{ entry.entry_date }}</div></div>
+        <div class="meta-box"><div class="meta-label">Source</div><div class="meta-value">{{ entry.get_source_type_display }}</div></div>
+        <div class="meta-box"><div class="meta-label">Reference</div><div class="meta-value">{{ entry.reference|default:"-" }}</div></div>
+        <div class="meta-box"><div class="meta-label">Status</div><div class="meta-value">{{ entry.get_status_display }}</div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Account</th>
+              <th>Description</th>
+              <th class="right">Debit</th>
+              <th class="right">Credit</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in entry.lines.all %}
+              <tr>
+                <td>{{ line.account.code }} - {{ line.account.name }}</td>
+                <td>{{ line.description|default:"-" }}</td>
+                <td class="right">{{ line.debit|currency }}</td>
+                <td class="right">{{ line.credit|currency }}</td>
+              </tr>
+            {% endfor %}
+            <tr>
+              <td colspan="2"><strong>Totals</strong></td>
+              <td class="right"><strong>{{ entry.total_debits|currency }}</strong></td>
+              <td class="right"><strong>{{ entry.total_credits|currency }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

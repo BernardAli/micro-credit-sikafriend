@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+{% load currency %}
+{% load humanize %}
+{% block content %}
+
+<style>
+  .portal-shell { display:grid; gap:20px; }
+
+  /* Welcome hero */
+  .welcome-hero {
+    border-radius:26px; overflow:hidden;
+    background:linear-gradient(145deg,color-mix(in srgb, var(--primary-2) 35%, #000) 0%,var(--primary-2) 42%,var(--primary-3) 72%,var(--gold-2) 100%);
+    color:#fff; padding:28px 30px; position:relative;
+  }
+  [data-theme="dark"] .welcome-hero {
+    background:linear-gradient(145deg,color-mix(in srgb, var(--primary-2) 20%, #000) 0%,color-mix(in srgb, var(--primary-2) 38%, #000) 42%,color-mix(in srgb, var(--primary) 48%, #000) 72%,color-mix(in srgb, var(--gold-2) 30%, #000) 100%);
+  }
+  .welcome-hero::before {
+    content:"";position:absolute;top:-40px;right:-40px;
+    width:200px;height:200px;border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);pointer-events:none;
+  }
+  .wh-body { position:relative;z-index:1; }
+  .wh-kicker { font-size:10px;text-transform:uppercase;letter-spacing:.5em;color:var(--gold);font-weight:700;margin-bottom:7px; }
+  .wh-name { font-family:var(--font-serif);font-size:26px;font-weight:400;line-height:1.1; }
+  .wh-id   { font-size:12.5px;opacity:.78;margin-top:4px; }
+  .wh-mini-grid {
+    display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px;
+  }
+  .wh-metric {
+    border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.07);
+    backdrop-filter:blur(8px);border-radius:14px;padding:12px 14px;
+  }
+  .wh-metric .lbl { font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;opacity:.74;font-weight:700; }
+  .wh-metric .val { font-size:18px;font-weight:700;margin-top:4px;line-height:1.1; }
+
+  /* Status badge */
+  .status-badge {
+    display:inline-flex;align-items:center;gap:6px;
+    padding:5px 12px;border-radius:999px;
+    font-size:11.5px;font-weight:700;margin-top:12px;
+  }
+  .status-active  { background:rgba(45,107,62,.20);color:#a8f0b8;border:1px solid rgba(45,107,62,.30); }
+  .status-bad     { background:rgba(184,50,50,.20);color:#ffa8a8;border:1px solid rgba(184,50,50,.30); }
+  .status-closed  { background:rgba(255,255,255,.12);color:rgba(255,255,255,.80);border:1px solid rgba(255,255,255,.18); }
+
+  /* Loan cards */
+  .loans-grid { display:grid; gap:14px; }
+
+  .loan-card {
+    border:1px solid var(--border); border-radius:22px;
+    background:var(--panel); box-shadow:var(--shadow-sm); overflow:hidden;
+    transition:transform .16s,box-shadow .16s,border-color .16s;
+  }
+  .loan-card:hover { transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--border-accent); }
+
+  .loan-card-head {
+    padding:16px 18px 12px; border-bottom:1px solid var(--border-soft);
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    flex-wrap:wrap; position:relative;
+  }
+  .loan-card-head::after {
+    content:"";position:absolute;bottom:0;left:0;right:0;height:1.5px;
+    background:linear-gradient(90deg,var(--gold),var(--primary),transparent 60%);
+  }
+  .loan-num {
+    font-family:var(--font-serif);
+    font-size:16px;font-weight:400;color:var(--text);
+  }
+  .loan-cat {
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--muted);font-weight:700;margin-top:2px;
+  }
+
+  .loan-metrics {
+    display:grid;grid-template-columns:repeat(3,1fr);gap:0;
+    border-top:1px solid var(--border-soft);
+  }
+  .loan-metric {
+    padding:14px 16px;
+    border-right:1px solid var(--border-soft);
+  }
+  .loan-metric:last-child { border-right:none; }
+  .lm-label { font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700; }
+  .lm-value { font-size:17px;font-weight:700;color:var(--text);margin-top:5px; }
+  .lm-sub   { font-size:11px;color:var(--muted);margin-top:2px; }
+
+  .loan-progress-wrap { padding:14px 18px 16px; }
+  .progress-label {
+    display:flex;justify-content:space-between;
+    font-size:11.5px;color:var(--muted);margin-bottom:7px;font-weight:600;
+  }
+  .progress-bar-bg {
+    height:6px;border-radius:99px;background:var(--bg-soft);overflow:hidden;
+  }
+  .progress-bar-fill {
+    height:100%;border-radius:99px;
+    background:linear-gradient(90deg,var(--primary),var(--gold));
+    transition:width .4s ease;
+  }
+
+  /* Payment history */
+  .payments-card {
+    border:1px solid var(--border);border-radius:22px;
+    background:var(--panel);box-shadow:var(--shadow-sm);overflow:hidden;
+  }
+  .payments-head {
+    padding:16px 20px 12px;border-bottom:1px solid var(--border-soft);position:relative;
+  }
+  .payments-head::after {
+    content:"";position:absolute;bottom:0;left:0;right:0;height:1.5px;
+    background:linear-gradient(90deg,var(--gold),var(--primary),transparent 60%);
+  }
+  .payments-title {
+    font-family:var(--font-serif);font-size:17px;font-weight:400;color:var(--text);margin:0;
+  }
+  .payment-row {
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;padding:12px 20px;border-bottom:1px solid var(--border-soft);flex-wrap:wrap;
+    transition:background .15s;
+  }
+  .payment-row:last-child { border-bottom:none; }
+  .payment-row:hover { background:var(--bg-soft); }
+  .payment-date { font-size:12.5px;color:var(--muted);font-weight:600; }
+  .payment-ref  { font-size:11.5px;color:var(--muted-2);margin-top:1px; }
+  .payment-amount { font-size:15px;font-weight:800;color:var(--success); }
+
+  /* Contact card */
+  .info-card {
+    border:1px solid var(--border);border-radius:20px;
+    background:var(--panel);box-shadow:var(--shadow-xs);padding:18px 20px;
+  }
+  .info-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+  .info-item .lbl { font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700; }
+  .info-item .val { font-size:13.5px;color:var(--text);font-weight:600;margin-top:3px; }
+
+  @media(max-width:720px) {
+    .wh-mini-grid { grid-template-columns:1fr 1fr; }
+    .loan-metrics { grid-template-columns:1fr; }
+    .loan-metric { border-right:none;border-bottom:1px solid var(--border-soft); }
+    .info-grid { grid-template-columns:1fr; }
+  }
+</style>
+
+<div class="portal-shell">
+
+  <!-- Welcome hero -->
+  <section class="welcome-hero">
+    <div class="wh-body">
+      <div class="wh-kicker">✦ My Loan Account</div>
+      <div class="wh-name">{{ borrower.full_name }}</div>
+      <div class="wh-id">ID: {{ borrower.borrower_id }} · {{ borrower.location }}</div>
+
+      <div class="status-badge status-{{ borrower.status|lower }}">
+        <span style="width:6px;height:6px;border-radius:50%;background:currentColor;"></span>
+        {% if borrower.status == "ACTIVE" %}Active Borrower
+        {% elif borrower.status == "BAD" %}Account Flagged
+        {% else %}Account Closed{% endif %}
+      </div>
+
+      <div class="wh-mini-grid">
+        <div class="wh-metric">
+          <div class="lbl">Total Loans</div>
+          <div class="val">{{ loans|length }}</div>
+        </div>
+        <div class="wh-metric">
+          <div class="lbl">Amount Borrowed</div>
+          <div class="val">{{ total_disbursed|ghs }}</div>
+        </div>
+        <div class="wh-metric">
+          <div class="lbl">Amount Paid</div>
+          <div class="val">{{ total_paid|ghs }}</div>
+        </div>
+        <div class="wh-metric">
+          <div class="lbl">Outstanding</div>
+          <div class="val">{{ total_outstanding|ghs }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Security CTA -->
+  <div style="border:1px solid var(--border-accent);border-radius:18px;background:var(--gold-pale);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:20px;">🔑</span>
+      <div>
+        <div style="font-weight:700;color:var(--text);font-size:13.5px;">Secure your account</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">If you received a temporary password, please change it now.</div>
+      </div>
+    </div>
+    <a href="{% url 'borrower:change_password' %}" class="btn btn-gold" style="min-height:36px;font-size:12.5px;white-space:nowrap;">
+      Change Password
+    </a>
+  </div>
+
+  <!-- My Loans -->
+  <div class="loans-grid">
+    {% for loan in loans %}
+      {% with rate=loan.total_paid_amount %}
+      <div class="loan-card">
+        <div class="loan-card-head">
+          <div>
+            <div class="loan-num">Loan #{{ loan.id }}</div>
+            <div class="loan-cat">{{ loan.get_loan_category_display }} · Started {{ loan.start_date|date:"d M Y" }}</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <span class="chip {% if loan.status == 'ACTIVE' %}chip-gold{% elif loan.status == 'DEFAULT' %}chip-red{% else %}chip-green{% endif %}">
+              {{ loan.status }}
+            </span>
+            <a href="{% url 'borrower:loan_detail' loan.pk %}" class="btn btn-gold" style="min-height:34px;padding:7px 14px;font-size:12px;">
+              Details
+            </a>
+            {% if loan.status == "ACTIVE" or loan.status == "DEFAULT" %}
+            <a href="{% url 'borrower:make_payment' loan.pk %}" class="btn btn-primary" style="min-height:34px;padding:7px 14px;font-size:12px;">
+              💳 Pay
+            </a>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="loan-metrics">
+          <div class="loan-metric">
+            <div class="lm-label">Principal</div>
+            <div class="lm-value">{{ loan.amount|ghs }}</div>
+            <div class="lm-sub">Disbursed amount</div>
+          </div>
+          <div class="loan-metric">
+            <div class="lm-label">Total Repayment</div>
+            <div class="lm-value">{{ loan.total_expected_amount|ghs }}</div>
+            <div class="lm-sub">{{ loan.duration_weeks }} weeks × {{ loan.weekly_payment|ghs }}</div>
+          </div>
+          <div class="loan-metric">
+            <div class="lm-label">Balance Remaining</div>
+            <div class="lm-value">{{ loan.balance_amount|ghs }}</div>
+            <div class="lm-sub">Paid: {{ loan.total_paid_amount|ghs }}</div>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        {% with pct=loan.total_paid_amount|floatformat:2 total=loan.total_expected_amount|floatformat:2 %}
+        <div class="loan-progress-wrap">
+          <div class="progress-label">
+            <span>Repayment Progress</span>
+            <span>{{ loan.actual_payments_count }}/{{ loan.expected_payments_count }} payments</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:{% if loan.total_expected_amount > 0 %}{% widthratio loan.total_paid_amount loan.total_expected_amount 100 %}%{% else %}0%{% endif %};"></div>
+          </div>
+        </div>
+        {% endwith %}
+      </div>
+      {% endwith %}
+    {% empty %}
+      <div class="info-card" style="text-align:center;padding:32px;">
+        <div style="font-size:32px;margin-bottom:10px;">📭</div>
+        <div style="font-family:var(--font-serif);font-size:18px;color:var(--text);">No loans on record yet</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:6px;">Contact your loan officer to get started.</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Recent payments -->
+  {% if recent_payments %}
+  <div class="payments-card">
+    <div class="payments-head">
+      <h3 class="payments-title">Recent Payments</h3>
+    </div>
+    {% for p in recent_payments %}
+      <div class="payment-row">
+        <div>
+          <div class="payment-date">{{ p.payment_date|date:"d M Y" }}</div>
+          <div class="payment-ref">
+            Loan #{{ p.loan.id }}
+            {% if p.reference %} · Ref: {{ p.reference }}{% endif %}
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div class="payment-amount">{{ p.amount|ghs }}</div>
+          <div style="font-size:11px;color:var(--muted);">
+            Principal: {{ p.principal_paid|ghs }} · ROIC: {{ p.roic_paid|ghs }}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Personal Info -->
+  <div class="info-card">
+    <div style="font-family:var(--font-serif);font-size:17px;color:var(--text);margin-bottom:14px;">Your Details</div>
+    <div class="info-grid">
+      <div class="info-item"><div class="lbl">Full Name</div><div class="val">{{ borrower.full_name }}</div></div>
+      <div class="info-item"><div class="lbl">Phone</div><div class="val">{{ borrower.phone }}</div></div>
+      <div class="info-item"><div class="lbl">Location</div><div class="val">{{ borrower.location }}</div></div>
+      <div class="info-item"><div class="lbl">Group</div><div class="val">{{ borrower.group_name }}</div></div>
+      <div class="info-item"><div class="lbl">National ID</div><div class="val">{{ borrower.national_id }}</div></div>
+      <div class="info-item"><div class="lbl">Preferred Language</div><div class="val">{{ borrower.preferred_language }}</div></div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

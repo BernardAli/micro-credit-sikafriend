@@ -1,0 +1,1008 @@
+{% extends "base.html" %}
+{% load currency %}
+{% block content %}
+<style>
+  .accounting-shell{display:grid;gap:18px}
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;padding:28px}
+  .hero-wrap{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap}
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+  .hero-sub{margin-top:10px;max-width:980px;line-height:1.68;opacity:.88}
+  .hero-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .metric-card{
+    padding:18px;border-radius:22px;border:1px solid rgba(255,255,255,.14);
+    background:linear-gradient(180deg,rgba(255,255,255,.12) 0%,rgba(255,255,255,.08) 100%);
+    backdrop-filter:blur(2px);
+  }
+  .metric-label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;opacity:.75;font-weight:800}
+  .metric-value{margin-top:8px;font-size:22px;font-weight:900}
+  .metric-sub{margin-top:6px;font-size:12px;opacity:.82}
+  .tab-card{display:grid;gap:16px}
+  .tabs-shell{display:grid;gap:16px}
+  .tabs-nav{
+    display:flex;flex-wrap:wrap;gap:10px;padding:12px;border:1px solid var(--border);border-radius:24px;
+    background:var(--panel-strong);box-shadow:0 18px 46px rgba(26,31,20,.05);
+  }
+  .tab-btn{
+    display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:999px;
+    border:1px solid var(--border);background:var(--panel);color:var(--text-2);font-size:13px;font-weight:800;
+    cursor:pointer;transition:all .16s ease;
+  }
+  .tab-btn:hover{transform:translateY(-1px);color:var(--text)}
+  .tab-btn.active{
+    background:linear-gradient(135deg,var(--primary) 0%, color-mix(in srgb,var(--primary-2) 82%, #fff) 100%);
+    border-color:var(--primary);color:#fff;box-shadow:0 18px 44px var(--primary-glow);
+  }
+  .tab-panel{display:none}
+  .tab-panel.active{display:block}
+  .section{
+    padding:20px 22px;border:1px solid var(--border);border-radius:24px;background:var(--panel);
+    box-shadow:0 20px 50px rgba(26,31,20,.05);
+  }
+  .section:last-child{border-bottom:none}
+  .section-title{margin:0 0 6px;font-size:20px;font-weight:900}
+  .section-sub{margin-bottom:16px;color:var(--muted);font-size:13px;line-height:1.65}
+  .grid-2,.grid-3,.grid-4{display:grid;gap:16px}
+  .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .card{
+    border:1px solid var(--border);border-radius:22px;padding:18px;
+    background:var(--panel-strong);box-shadow:0 18px 45px rgba(26,31,20,.05);
+  }
+  .card h3{margin:0 0 8px;font-size:16px}
+  .card p{margin:0;color:var(--muted);line-height:1.65;font-size:13px}
+  .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .field-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  .field{display:grid;gap:6px}
+  .field.full{grid-column:1 / -1}
+  .field label{font-size:12px;font-weight:900;color:var(--text);text-transform:uppercase;letter-spacing:.04em}
+  .field input,.field select,.field textarea{width:100%;min-height:46px;border:1px solid var(--border);border-radius:14px;padding:10px 12px;background:var(--panel-strong)}
+  .field .helptext{font-size:12px;color:var(--muted);line-height:1.5}
+  .errorlist,.err{margin:0;font-size:12px;color:var(--danger);font-weight:700;list-style:none;padding:0}
+  .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:18px}
+  table{width:100%;border-collapse:collapse;min-width:760px;background:var(--panel)}
+  th,td{padding:12px 14px;border-bottom:1px solid var(--border-soft);text-align:left;vertical-align:top}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--bg-soft)}
+  td strong{color:var(--text)}
+  .right{text-align:right}
+  .chip{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:900;border:1px solid var(--border);background:var(--panel)}
+  .chip.good{background:rgba(22,163,74,.12);color:#166534}
+  .chip.warn{background:rgba(217,119,6,.12);color:#92400e}
+  .chip.bad{background:rgba(220,38,38,.12);color:#991b1b}
+  .actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .btn-soft{
+    display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border-radius:999px;
+    font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text);
+    transition:all .16s ease;
+  }
+  .btn-soft:hover{color:var(--text);transform:translateY(-1px)}
+  .btn-soft-primary{background:var(--primary);border-color:var(--primary);color:#fff}
+  .inline-form{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+  .inline-form .field{flex:1 1 180px}
+  .summary-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+  .summary-box{
+    padding:14px;border-radius:18px;border:1px solid var(--border);
+    background:var(--panel-strong);
+  }
+  .summary-box .label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:800}
+  .summary-box .value{margin-top:8px;font-size:18px;font-weight:900}
+  @media(max-width:1100px){.hero-grid,.grid-4,.summary-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.field-grid-3,.grid-3{grid-template-columns:1fr}.field-grid,.grid-2{grid-template-columns:1fr}}
+  @media(max-width:720px){.hero-grid,.summary-strip{grid-template-columns:1fr}}
+</style>
+
+<div class="accounting-shell">
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div>
+          <div class="hero-kicker">Finance, Control & Compliance</div>
+          <h1 class="hero-title">Accounting Hub</h1>
+          <div class="hero-sub">Run full micro-credit accounting from one place: chart of accounts, journals, bank and wallet control, receivables, payables, budgeting, payroll postings, loan accounting, cashflow visibility, and board-ready financial reporting.</div>
+        </div>
+      </div>
+      <div class="hero-grid">
+        <div class="metric-card">
+          <div class="metric-label">Net Profit</div>
+          <div class="metric-value">{{ net_profit|currency }}</div>
+          <div class="metric-sub">{{ report_start }} to {{ report_end }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Cash Movement</div>
+          <div class="metric-value">{{ net_cash_movement|currency }}</div>
+          <div class="metric-sub">Cash and bank change in period</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Loan Collections</div>
+          <div class="metric-value">{{ operations.total_collected|currency }}</div>
+          <div class="metric-sub">{{ operations.payment_count }} confirmed repayments</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Outstanding Portfolio</div>
+          <div class="metric-value">{{ operations.active_default_balance|currency }}</div>
+          <div class="metric-sub">Active and default borrower balances</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-card" data-initial-tab="{{ active_tab }}">
+    <div class="tabs-shell">
+      <div class="tabs-nav" role="tablist" aria-label="Accounting sections">
+        <button type="button" class="tab-btn" data-tab-target="overview">Overview</button>
+        <button type="button" class="tab-btn" data-tab-target="chart">Chart & Cashbook</button>
+        <button type="button" class="tab-btn" data-tab-target="journals">Journals</button>
+        <button type="button" class="tab-btn" data-tab-target="receivables">Receivables & Payables</button>
+        <button type="button" class="tab-btn" data-tab-target="controls">Controls & Budgets</button>
+        <button type="button" class="tab-btn" data-tab-target="reports">Reports</button>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="overview">
+      <section class="section">
+        <h2 class="section-title">Executive Finance Snapshot</h2>
+        <div class="section-sub">This roll-up blends the general ledger with loan operations and paid payroll so leadership can see core financial health without jumping across modules.</div>
+        <div class="summary-strip">
+          <div class="summary-box"><div class="label">Loans Disbursed</div><div class="value">{{ operations.total_disbursed|currency }}</div></div>
+          <div class="summary-box"><div class="label">ROIC Expected</div><div class="value">{{ operations.total_roic_expected|currency }}</div></div>
+          <div class="summary-box"><div class="label">Principal Outstanding</div><div class="value">{{ operations.principal_outstanding|currency }}</div></div>
+          <div class="summary-box"><div class="label">ROIC Outstanding</div><div class="value">{{ operations.roic_outstanding|currency }}</div></div>
+          <div class="summary-box"><div class="label">Paid Payroll</div><div class="value">{{ operations.payroll_paid_total|currency }}</div></div>
+        </div>
+        <div class="actions">
+          <form method="post">
+            {% csrf_token %}
+            <button type="submit" name="sync_operations" class="btn-soft btn-soft-primary">Sync Loans, Repayments & Payroll Into Ledger</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="grid-3">
+          <div class="card">
+            <h3>Operational Accounting Coverage</h3>
+            <p>Loan disbursements post into the loan portfolio asset, confirmed repayments split principal and ROIC automatically, and paid payroll runs can be mirrored into salary, allowance, commission, deduction, and bank movement entries.</p>
+          </div>
+          <div class="card">
+            <h3>Control Layers</h3>
+            <p>The module includes accounting periods, default chart setup, dedicated bank and wallet ledgers, customer and vendor counterparties, invoice and bill capture, manual journals, and budget-vs-actual tracking.</p>
+          </div>
+          <div class="card">
+            <h3>Management Reporting</h3>
+            <p>Use the reports tab for trial balance, income statement, balance sheet, cashbook movement, aging of receivables and payables, and budget control views that fit micro-credit operational realities.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Tax & Statutory Position</h2>
+        <div class="section-sub">Accounting now reads the company statutory settings for payroll liabilities and keeps the current business tax posture visible for finance teams.</div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Configured Tax Rates</h3>
+            <div class="table-wrap">
+              <table>
+                <tbody>
+                  <tr><td>VAT</td><td class="right">{{ company_profile.vat_rate }}%</td></tr>
+                  <tr><td>NHIL</td><td class="right">{{ company_profile.nhil_rate }}%</td></tr>
+                  <tr><td>GETFund</td><td class="right">{{ company_profile.getfund_rate }}%</td></tr>
+                  <tr><td>Withholding Tax</td><td class="right">{{ company_profile.withholding_tax_rate }}%</td></tr>
+                  <tr><td>Corporate Income Tax</td><td class="right">{{ company_profile.corporate_income_tax_rate }}%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Statutory Liability Ledgers</h3>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Bucket</th><th>Account</th><th class="right">Balance</th></tr></thead>
+                <tbody>
+                  {% for item in statutory_accounts %}
+                    <tr>
+                      <td>{{ item.label }}</td>
+                      <td>{% if item.account %}{{ item.account.code }} - {{ item.account.name }}{% else %}Missing ledger{% endif %}</td>
+                      <td class="right">{% if item.account %}{{ item.account.current_balance|currency }}{% else %}-{% endif %}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Recent Ledger Activity</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Entry</th>
+                <th>Date</th>
+                <th>Source</th>
+                <th>Memo</th>
+                <th class="right">Debit</th>
+                <th class="right">Credit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for entry in recent_entries %}
+                <tr>
+                  <td><a href="{% url 'accounting:journal_detail' entry.pk %}"><strong>{{ entry.entry_no }}</strong></a></td>
+                  <td>{{ entry.entry_date }}</td>
+                  <td><span class="chip">{{ entry.get_source_type_display }}</span></td>
+                  <td>{{ entry.memo }}</td>
+                  <td class="right">{{ entry.total_debits|currency }}</td>
+                  <td class="right">{{ entry.total_credits|currency }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="6">No journal activity yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="chart">
+      <section class="section">
+        <h2 class="section-title">Chart Of Accounts</h2>
+        <div class="section-sub">Create and maintain the ledger backbone for lending, collections, payroll, treasury, operating expenses, and statutory obligations.</div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Add Ledger Account</h3>
+            <form method="post">
+              {% csrf_token %}
+              <div class="field-grid">
+                {% for field in account_form %}
+                  <div class="field {% if field.name == 'description' %}full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="actions">
+                <button type="submit" name="create_account" class="btn-soft btn-soft-primary">Save Account</button>
+              </div>
+            </form>
+          </div>
+          <div class="card">
+            <h3>Add Bank / Wallet Account</h3>
+            <form method="post">
+              {% csrf_token %}
+              <div class="field-grid">
+                {% for field in bank_account_form %}
+                  <div class="field {% if field.name == 'notes' %}full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}<div class="helptext">{{ field.help_text }}</div>{% endif %}
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="actions">
+                <button type="submit" name="create_bank_account" class="btn-soft btn-soft-primary">Add Cashbook</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="grid-2">
+          <div>
+            <h2 class="section-title">Ledger Accounts</h2>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Flags</th>
+                    <th class="right">Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for account in accounts %}
+                    <tr>
+                      <td><strong>{{ account.code }}</strong></td>
+                      <td>{{ account.name }}</td>
+                      <td>{{ account.get_account_type_display }}</td>
+                      <td>
+                        {% if account.is_cash_account %}<span class="chip">Cash</span>{% endif %}
+                        {% if account.is_bank_account %}<span class="chip">Bank</span>{% endif %}
+                        {% if account.is_receivable %}<span class="chip">AR</span>{% endif %}
+                        {% if account.is_payable %}<span class="chip">AP</span>{% endif %}
+                      </td>
+                      <td class="right">{{ account.current_balance|currency }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h2 class="section-title">Bank & Wallet Controls</h2>
+            <div class="table-wrap" style="margin-bottom:16px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Ledger</th>
+                    <th>Institution</th>
+                    <th class="right">Book Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for account in bank_accounts %}
+                    <tr>
+                      <td><strong>{{ account.name }}</strong></td>
+                      <td>{{ account.linked_account.code }} - {{ account.linked_account.name }}</td>
+                      <td>{{ account.institution }}</td>
+                      <td class="right">{{ account.book_balance|currency }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="4">No bank or wallet accounts created yet.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="card">
+              <h3>Post Bank / Wallet Transaction</h3>
+              <form method="post">
+                {% csrf_token %}
+                <div class="field-grid">
+                  {% for field in bank_transaction_form %}
+                    <div class="field {% if field.name == 'description' %}full{% endif %}">
+                      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                      {{ field }}
+                      {% if field.help_text %}<div class="helptext">{{ field.help_text }}</div>{% endif %}
+                      {{ field.errors }}
+                    </div>
+                  {% endfor %}
+                </div>
+                <div class="actions">
+                  <button type="submit" name="create_bank_transaction" class="btn-soft btn-soft-primary">Post Transaction</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Recent Cashbook Movement</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Account</th>
+                <th>Type</th>
+                <th>Reference</th>
+                <th>Description</th>
+                <th class="right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for tx in bank_transactions %}
+                <tr>
+                  <td>{{ tx.transaction_date }}</td>
+                  <td>{{ tx.bank_account.name }}</td>
+                  <td>{{ tx.get_transaction_type_display }}</td>
+                  <td>{{ tx.reference|default:"-" }}</td>
+                  <td>{{ tx.description|default:"-" }}</td>
+                  <td class="right">{{ tx.amount|currency }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="6">No cashbook activity recorded yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="journals">
+      <section class="section">
+        <h2 class="section-title">General Journal</h2>
+        <div class="section-sub">Use manual journals for accruals, reclasses, month-end adjustments, corrections, and non-standard finance events that sit outside automated loan, payment, and payroll postings.</div>
+        <form method="post">
+          {% csrf_token %}
+          <div class="field-grid-3">
+            {% for field in journal_form %}
+              <div class="field">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {{ field.errors }}
+              </div>
+            {% endfor %}
+          </div>
+
+          <div class="table-wrap" style="margin-top:18px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Account</th>
+                  <th>Description</th>
+                  <th class="right">Debit</th>
+                  <th class="right">Credit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{ journal_line_formset.management_form }}
+                {% for line_form in journal_line_formset %}
+                  <tr>
+                    <td>{{ line_form.account }}{{ line_form.account.errors }}</td>
+                    <td>{{ line_form.description }}{{ line_form.description.errors }}</td>
+                    <td class="right">{{ line_form.debit }}{{ line_form.debit.errors }}</td>
+                    <td class="right">{{ line_form.credit }}{{ line_form.credit.errors }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="actions">
+            <button type="submit" name="create_journal" class="btn-soft btn-soft-primary">Post Journal Entry</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Recent Journals</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Entry</th>
+                <th>Date</th>
+                <th>Reference</th>
+                <th>Memo</th>
+                <th>Status</th>
+                <th class="right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for entry in recent_entries %}
+                <tr>
+                  <td><a href="{% url 'accounting:journal_detail' entry.pk %}"><strong>{{ entry.entry_no }}</strong></a></td>
+                  <td>{{ entry.entry_date }}</td>
+                  <td>{{ entry.reference|default:"-" }}</td>
+                  <td>{{ entry.memo }}</td>
+                  <td><span class="chip {% if entry.status == 'POSTED' %}good{% endif %}">{{ entry.get_status_display }}</span></td>
+                  <td class="right">{{ entry.total_debits|currency }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="receivables">
+      <section class="section">
+        <div class="grid-3">
+          <div class="card">
+            <h3>Counterparties</h3>
+            <form method="post">
+              {% csrf_token %}
+              <div class="field-grid">
+                {% for field in counterparty_form %}
+                  <div class="field {% if field.name == 'notes' %}full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="actions">
+                <button type="submit" name="create_counterparty" class="btn-soft btn-soft-primary">Save Counterparty</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card">
+            <h3>Create Invoice</h3>
+            <form method="post">
+              {% csrf_token %}
+              <div class="field-grid">
+                {% for field in invoice_form %}
+                  <div class="field {% if field.name == 'notes' or field.name == 'description' %}full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="actions">
+                <button type="submit" name="create_invoice" class="btn-soft btn-soft-primary">Post Invoice</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card">
+            <h3>Create Bill</h3>
+            <form method="post">
+              {% csrf_token %}
+              <div class="field-grid">
+                {% for field in bill_form %}
+                  <div class="field {% if field.name == 'notes' or field.name == 'description' %}full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="actions">
+                <button type="submit" name="create_bill" class="btn-soft btn-soft-primary">Post Bill</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="grid-2">
+          <div>
+            <h2 class="section-title">Accounts Receivable Aging</h2>
+            <div class="summary-strip" style="margin-bottom:14px;">
+              <div class="summary-box"><div class="label">Current</div><div class="value">{{ ar_totals.current|currency }}</div></div>
+              <div class="summary-box"><div class="label">1-30</div><div class="value">{{ ar_totals.b1_30|currency }}</div></div>
+              <div class="summary-box"><div class="label">31-60</div><div class="value">{{ ar_totals.b31_60|currency }}</div></div>
+              <div class="summary-box"><div class="label">61-90</div><div class="value">{{ ar_totals.b61_90|currency }}</div></div>
+              <div class="summary-box"><div class="label">90+</div><div class="value">{{ ar_totals.90_plus|currency }}</div></div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Invoice</th>
+                    <th>Customer</th>
+                    <th>Due</th>
+                    <th>Days</th>
+                    <th class="right">Outstanding</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in ar_rows %}
+                    <tr>
+                      <td><strong>{{ row.item.invoice_number }}</strong></td>
+                      <td>{{ row.item.counterparty.name }}</td>
+                      <td>{{ row.item.due_date }}</td>
+                      <td>{{ row.days_past_due }}</td>
+                      <td class="right">{{ row.outstanding|currency }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="5">No open receivables.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="section-title">Accounts Payable Aging</h2>
+            <div class="summary-strip" style="margin-bottom:14px;">
+              <div class="summary-box"><div class="label">Current</div><div class="value">{{ ap_totals.current|currency }}</div></div>
+              <div class="summary-box"><div class="label">1-30</div><div class="value">{{ ap_totals.b1_30|currency }}</div></div>
+              <div class="summary-box"><div class="label">31-60</div><div class="value">{{ ap_totals.b31_60|currency }}</div></div>
+              <div class="summary-box"><div class="label">61-90</div><div class="value">{{ ap_totals.b61_90|currency }}</div></div>
+              <div class="summary-box"><div class="label">90+</div><div class="value">{{ ap_totals.90_plus|currency }}</div></div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Bill</th>
+                    <th>Vendor</th>
+                    <th>Due</th>
+                    <th>Days</th>
+                    <th class="right">Outstanding</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in ap_rows %}
+                    <tr>
+                      <td><strong>{{ row.item.bill_number }}</strong></td>
+                      <td>{{ row.item.counterparty.name }}</td>
+                      <td>{{ row.item.due_date }}</td>
+                      <td>{{ row.days_past_due }}</td>
+                      <td class="right">{{ row.outstanding|currency }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="5">No open payables.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="controls">
+      <section class="section">
+        <div class="grid-3">
+          <div class="card">
+            <h3>Create Accounting Period</h3>
+            <form method="post">
+              {% csrf_token %}
+              <div class="field-grid">
+                {% for field in period_form %}
+                  <div class="field {% if field.name == 'notes' %}full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="actions">
+                <button type="submit" name="create_period" class="btn-soft btn-soft-primary">Save Period</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card">
+            <h3>Create Budget</h3>
+            <form method="post">
+              {% csrf_token %}
+              <div class="field-grid">
+                {% for field in budget_form %}
+                  <div class="field {% if field.name == 'notes' %}full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="actions">
+                <button type="submit" name="create_budget" class="btn-soft btn-soft-primary">Save Budget</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card">
+            <h3>Add Budget Line</h3>
+            <form method="post">
+              {% csrf_token %}
+              <div class="field-grid">
+                {% for field in budget_line_form %}
+                  <div class="field {% if field.name == 'notes' %}full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="actions">
+                <button type="submit" name="create_budget_line" class="btn-soft btn-soft-primary">Add Line</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="grid-2">
+          <div>
+            <h2 class="section-title">Accounting Periods</h2>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Period</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for period in periods %}
+                    <tr>
+                      <td><strong>{{ period.name }}</strong></td>
+                      <td>{{ period.start_date }}</td>
+                      <td>{{ period.end_date }}</td>
+                      <td><span class="chip {% if period.status == 'OPEN' %}good{% elif period.status == 'CLOSED' %}warn{% endif %}">{{ period.get_status_display }}</span></td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h2 class="section-title">Budgets</h2>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Period</th>
+                    <th>Status</th>
+                    <th class="right">Total Budget</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for budget in budgets %}
+                    <tr>
+                      <td><strong>{{ budget.name }}</strong></td>
+                      <td>{{ budget.period.name }}</td>
+                      <td>{{ budget.get_status_display }}</td>
+                      <td class="right">{{ budget.total_budget|currency }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="4">No budgets created yet.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="reports">
+      <section class="section">
+        <h2 class="section-title">Financial Reporting Window</h2>
+        <div class="section-sub">Review the general ledger by any date range. The reports below refresh from the selected reporting window.</div>
+        <form method="get" class="inline-form">
+          <div class="field">
+            <label for="report_start">Report Start</label>
+            <input type="date" id="report_start" name="report_start" value="{{ report_start|date:'Y-m-d' }}">
+          </div>
+          <div class="field">
+            <label for="report_end">Report End</label>
+            <input type="date" id="report_end" name="report_end" value="{{ report_end|date:'Y-m-d' }}">
+          </div>
+          <input type="hidden" name="tab" value="reports">
+          <button type="submit" class="btn-soft btn-soft-primary">Refresh Reports</button>
+        </form>
+      </section>
+
+      <section class="section">
+        <div class="grid-2">
+          <div>
+            <h2 class="section-title">Income Statement</h2>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Account</th>
+                    <th class="right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td colspan="2"><strong>Income</strong></td></tr>
+                  {% for row in income_rows %}
+                    <tr><td>{{ row.account.code }} - {{ row.account.name }}</td><td class="right">{{ row.balance|currency }}</td></tr>
+                  {% empty %}
+                    <tr><td colspan="2">No income lines in this period.</td></tr>
+                  {% endfor %}
+                  <tr><td><strong>Total Income</strong></td><td class="right"><strong>{{ income_total|currency }}</strong></td></tr>
+                  <tr><td colspan="2"><strong>Expenses</strong></td></tr>
+                  {% for row in expense_rows %}
+                    <tr><td>{{ row.account.code }} - {{ row.account.name }}</td><td class="right">{{ row.balance|currency }}</td></tr>
+                  {% empty %}
+                    <tr><td colspan="2">No expense lines in this period.</td></tr>
+                  {% endfor %}
+                  <tr><td><strong>Total Expenses</strong></td><td class="right"><strong>{{ expense_total|currency }}</strong></td></tr>
+                  <tr><td><strong>Net Profit</strong></td><td class="right"><strong>{{ net_profit|currency }}</strong></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="section-title">Balance Sheet</h2>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Account</th>
+                    <th class="right">Closing Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td colspan="2"><strong>Assets</strong></td></tr>
+                  {% for row in asset_rows %}
+                    <tr><td>{{ row.account.code }} - {{ row.account.name }}</td><td class="right">{{ row.balance|currency }}</td></tr>
+                  {% endfor %}
+                  <tr><td><strong>Total Assets</strong></td><td class="right"><strong>{{ asset_total|currency }}</strong></td></tr>
+                  <tr><td colspan="2"><strong>Liabilities</strong></td></tr>
+                  {% for row in liability_rows %}
+                    <tr><td>{{ row.account.code }} - {{ row.account.name }}</td><td class="right">{{ row.balance|currency }}</td></tr>
+                  {% endfor %}
+                  <tr><td><strong>Total Liabilities</strong></td><td class="right"><strong>{{ liability_total|currency }}</strong></td></tr>
+                  <tr><td colspan="2"><strong>Equity</strong></td></tr>
+                  {% for row in equity_rows %}
+                    <tr><td>{{ row.account.code }} - {{ row.account.name }}</td><td class="right">{{ row.balance|currency }}</td></tr>
+                  {% endfor %}
+                  <tr><td><strong>Total Equity</strong></td><td class="right"><strong>{{ equity_total|currency }}</strong></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="grid-2">
+          <div>
+            <h2 class="section-title">Trial Balance</h2>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Account</th>
+                    <th class="right">Debit</th>
+                    <th class="right">Credit</th>
+                    <th class="right">Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in trial_balance_rows %}
+                    <tr>
+                      <td>{{ row.account.code }} - {{ row.account.name }}</td>
+                      <td class="right">{{ row.debit|currency }}</td>
+                      <td class="right">{{ row.credit|currency }}</td>
+                      <td class="right">{{ row.balance|currency }}</td>
+                    </tr>
+                  {% endfor %}
+                  <tr>
+                    <td><strong>Totals</strong></td>
+                    <td class="right"><strong>{{ trial_balance_debits|currency }}</strong></td>
+                    <td class="right"><strong>{{ trial_balance_credits|currency }}</strong></td>
+                    <td class="right"><strong>{% if trial_balance_debits == trial_balance_credits %}Balanced{% else %}Check{% endif %}</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h2 class="section-title">Cashbook & Treasury Movement</h2>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Account</th>
+                    <th class="right">Debits</th>
+                    <th class="right">Credits</th>
+                    <th class="right">Movement</th>
+                    <th class="right">Closing</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in cashbook_rows %}
+                    <tr>
+                      <td>{{ row.account.code }} - {{ row.account.name }}</td>
+                      <td class="right">{{ row.debit|currency }}</td>
+                      <td class="right">{{ row.credit|currency }}</td>
+                      <td class="right">{{ row.movement|currency }}</td>
+                      <td class="right">{{ row.closing_balance|currency }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="5">No cashbook accounts configured yet.</td></tr>
+                  {% endfor %}
+                  <tr><td><strong>Net Cash Movement</strong></td><td colspan="4" class="right"><strong>{{ net_cash_movement|currency }}</strong></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">Budget Vs Actual</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Budget</th>
+                <th>Period</th>
+                <th>Account</th>
+                <th class="right">Budget</th>
+                <th class="right">Actual</th>
+                <th class="right">Variance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in budget_rows %}
+                <tr>
+                  <td><strong>{{ row.budget.name }}</strong></td>
+                  <td>{{ row.budget.period.name }}</td>
+                  <td>{{ row.account.code }} - {{ row.account.name }}</td>
+                  <td class="right">{{ row.budget_amount|currency }}</td>
+                  <td class="right">{{ row.actual_amount|currency }}</td>
+                  <td class="right">{{ row.variance|currency }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="6">No budget comparison data yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </section>
+</div>
+
+<script>
+  (() => {
+    const shell = document.querySelector(".tab-card[data-initial-tab]");
+    if (!shell) return;
+    const tabButtons = Array.from(shell.querySelectorAll("[data-tab-target]"));
+    const tabPanels = Array.from(shell.querySelectorAll("[data-tab-panel]"));
+    const initialTab = shell.dataset.initialTab || "overview";
+
+    const openTab = (tabName, updateHash = true) => {
+      tabButtons.forEach((button) => {
+        const active = button.dataset.tabTarget === tabName;
+        button.classList.toggle("active", active);
+      });
+      tabPanels.forEach((panel) => {
+        panel.classList.toggle("active", panel.dataset.tabPanel === tabName);
+      });
+      if (updateHash) history.replaceState(null, "", `#${tabName}`);
+    };
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => openTab(button.dataset.tabTarget));
+    });
+
+    const hashTab = window.location.hash.replace("#", "");
+    const validHash = tabButtons.find((button) => button.dataset.tabTarget === hashTab);
+    openTab(validHash ? hashTab : initialTab, Boolean(validHash));
+  })();
+</script>
+{% endblock %}

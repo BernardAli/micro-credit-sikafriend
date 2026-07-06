@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% load currency %}
+{% block content %}
+<style>
+  .run-shell{display:grid;gap:16px}
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;padding:28px}
+  .hero-wrap{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+  .hero-sub{margin-top:8px;opacity:.88;line-height:1.65}
+  .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .btn-soft{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text)}
+  .btn-soft-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .metrics-grid,.panel-grid{display:grid;gap:14px}
+  .metrics-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .panel-grid{grid-template-columns:1.1fr .9fr}
+  .stat-card,.panel,.line-card{border:1px solid var(--border);border-radius:24px;background:var(--panel);box-shadow:0 18px 45px rgba(26,31,20,.05)}
+  .stat-card{padding:18px}
+  .stat-label{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .stat-value{margin-top:8px;font-size:24px;font-weight:900;color:var(--text)}
+  .stat-sub{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.55}
+  .panel{overflow:hidden}
+  .panel-head{padding:18px 20px 0}
+  .panel-title{margin:0;font-size:18px;font-weight:900;color:var(--text)}
+  .panel-sub{margin-top:4px;font-size:13px;color:var(--muted)}
+  .panel-body{padding:18px 20px 20px}
+  .detail-list,.list{display:grid;gap:10px}
+  .detail-row{display:flex;justify-content:space-between;gap:14px;padding:12px 14px;border-radius:18px;background:var(--panel-strong);border:1px solid var(--border)}
+  .line-card{padding:14px}
+  .line-title{font-size:15px;font-weight:900;color:var(--text)}
+  .line-meta{margin-top:4px;font-size:13px;color:var(--muted);line-height:1.55}
+  .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:18px}
+  .table{width:100%;border-collapse:collapse;min-width:1100px;background:var(--panel)}
+  .table th,.table td{padding:12px 14px;border-bottom:1px solid var(--border-soft);text-align:left;font-size:13px}
+  .table th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:var(--bg-soft)}
+  @media(max-width:1100px){.metrics-grid,.panel-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:760px){.metrics-grid,.panel-grid{grid-template-columns:1fr}.detail-row{flex-direction:column}}
+</style>
+
+<div class="run-shell">
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div>
+          <div class="hero-kicker">Payroll Run</div>
+          <h1 class="hero-title">{{ run.title }}</h1>
+          <div class="hero-sub">{{ run.period_start }} to {{ run.period_end }} · Pay date {{ run.pay_date }} · {{ run.get_status_display }}</div>
+        </div>
+        <div class="hero-actions">
+          <form method="post">{% csrf_token %}<input type="hidden" name="action" value="export_csv"><button type="submit" class="btn-soft">Export CSV</button></form>
+          <form method="post">{% csrf_token %}<input type="hidden" name="action" value="export_excel"><button type="submit" class="btn-soft">Export Excel</button></form>
+          {% if run.status == "DRAFT" %}
+            <form method="post">{% csrf_token %}<input type="hidden" name="action" value="recalculate"><button type="submit" class="btn-soft">Recalculate</button></form>
+            <form method="post">{% csrf_token %}<input type="hidden" name="action" value="approve"><button type="submit" class="btn-soft btn-soft-primary">Approve Run</button></form>
+          {% endif %}
+          {% if run.status == "APPROVED" or run.status == "DRAFT" %}
+            <form method="post">{% csrf_token %}<input type="hidden" name="action" value="mark_paid"><button type="submit" class="btn-soft btn-soft-primary">Mark Paid</button></form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="metrics-grid">
+    <div class="stat-card"><div class="stat-label">Employees</div><div class="stat-value">{{ total_employees }}</div><div class="stat-sub">Line items generated in this payroll run.</div></div>
+    <div class="stat-card"><div class="stat-label">Total Gross</div><div class="stat-value">{{ total_gross|currency }}</div><div class="stat-sub">Before all deductions are applied.</div></div>
+    <div class="stat-card"><div class="stat-label">Total Deductions</div><div class="stat-value">{{ total_deductions|currency }}</div><div class="stat-sub">Statutory, recovery, and other deductions across the run.</div></div>
+    <div class="stat-card"><div class="stat-label">Total Net</div><div class="stat-value">{{ total_net|currency }}</div><div class="stat-sub">Net amount expected to be paid out to employees.</div></div>
+    <div class="stat-card"><div class="stat-label">Employer Statutory</div><div class="stat-value">{{ total_employer_statutory|currency }}</div><div class="stat-sub">Employer-side pension and statutory cost for this run.</div></div>
+  </section>
+
+  <section class="panel-grid">
+    <div class="panel">
+      <div class="panel-head"><h2 class="panel-title">Run Details</h2><div class="panel-sub">Audit trail and processing configuration for this payroll cycle.</div></div>
+      <div class="panel-body">
+        <div class="detail-list">
+          <div class="detail-row"><strong>Status</strong><span>{{ run.get_status_display }}</span></div>
+          <div class="detail-row"><strong>Created By</strong><span>{{ run.created_by|default:"—" }}</span></div>
+          <div class="detail-row"><strong>Created At</strong><span>{{ run.created_at }}</span></div>
+          <div class="detail-row"><strong>Approved By</strong><span>{{ run.approved_by|default:"—" }}</span></div>
+          <div class="detail-row"><strong>Approved At</strong><span>{{ run.approved_at|default:"—" }}</span></div>
+          <div class="detail-row"><strong>Paid At</strong><span>{{ run.paid_at|default:"—" }}</span></div>
+          <div class="detail-row"><strong>Commissions Included</strong><span>{% if run.include_commissions %}Yes{% else %}No{% endif %}</span></div>
+          <div class="detail-row"><strong>Loan Recovery Included</strong><span>{% if run.include_loan_recovery %}Yes{% else %}No{% endif %}</span></div>
+          <div class="detail-row"><strong>Active Employees Only</strong><span>{% if run.include_active_only %}Yes{% else %}No{% endif %}</span></div>
+          <div class="detail-row"><strong>PAYE / Employee Pension</strong><span>{{ total_tax_deduction|currency }} / {{ total_employee_pension|currency }}</span></div>
+          <div class="detail-row"><strong>Welfare / Manual Statutory</strong><span>{{ total_welfare_deduction|currency }} / {{ total_manual_statutory|currency }}</span></div>
+          <div class="detail-row"><strong>Ledger Mapping</strong><span>{{ company_profile.paye_payable_account_code }}, {{ company_profile.employee_pension_payable_account_code }}, {{ company_profile.employer_pension_payable_account_code }}</span></div>
+          <div class="detail-row"><strong>Notes</strong><span>{{ run.notes|default:"—" }}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2 class="panel-title">Highest Net Pay</h2><div class="panel-sub">Top payroll recipients in this run.</div></div>
+      <div class="panel-body">
+        <div class="list">
+          {% for line in highest_paid %}
+            <div class="line-card">
+              <div class="line-title">{{ line.employee.name }}</div>
+              <div class="line-meta">{{ line.employee.get_workforce_role_display }} · {{ line.employee.department|default:"No department" }}</div>
+              <div class="line-meta">Net {{ line.net_pay|currency }} · Gross {{ line.gross_pay|currency }}</div>
+            </div>
+          {% empty %}
+            <div class="stat-sub">No payroll lines are available yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2 class="panel-title">Payroll Lines</h2><div class="panel-sub">Full employee-level breakdown for salary, commissions, allowances, and deductions.</div></div>
+    <div class="panel-body">
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Role</th>
+              <th>Method</th>
+              <th>Base Salary</th>
+              <th>Allowances</th>
+              <th>Bonus</th>
+              <th>Commission</th>
+              <th>Overtime</th>
+              <th>Other Earnings</th>
+              <th>Gross</th>
+              <th>Tax</th>
+              <th>Emp. Pension</th>
+              <th>Welfare</th>
+              <th>Manual Stat.</th>
+              <th>Statutory</th>
+              <th>Employer Stat.</th>
+              <th>Loan Recovery</th>
+              <th>Other Deductions</th>
+              <th>Total Deductions</th>
+              <th>Net</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in lines %}
+              <tr>
+                <td>{{ line.employee.name }}<br><span style="color:var(--muted)">{{ line.employee.agent_id }}</span></td>
+                <td>{{ line.employee.get_workforce_role_display }}</td>
+                <td>{{ line.get_payment_method_display }}</td>
+                <td>{{ line.base_salary|currency }}</td>
+                <td>{{ line.fixed_allowances|currency }}</td>
+                <td>{{ line.bonus_total|currency }}</td>
+                <td>{{ line.commission_total|currency }}</td>
+                <td>{{ line.overtime_total|currency }}</td>
+                <td>{{ line.other_earnings|currency }}</td>
+                <td>{{ line.gross_pay|currency }}</td>
+                <td>{{ line.tax_deduction|currency }}</td>
+                <td>{{ line.employee_pension_deduction|currency }}</td>
+                <td>{{ line.welfare_deduction|currency }}</td>
+                <td>{{ line.manual_statutory_deductions|currency }}</td>
+                <td>{{ line.statutory_deductions|currency }}</td>
+                <td>{{ line.employer_statutory_contributions|currency }}</td>
+                <td>{{ line.loan_recovery_deductions|currency }}</td>
+                <td>{{ line.other_deductions|currency }}</td>
+                <td>{{ line.total_deductions|currency }}</td>
+                <td>{{ line.net_pay|currency }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="20">No payroll lines generated yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

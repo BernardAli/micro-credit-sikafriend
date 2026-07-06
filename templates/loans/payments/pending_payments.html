@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% load currency %}
+{% load humanize %}
+{% block content %}
+
+<style>
+  .pp-shell { display:grid; gap:18px; }
+
+  /* ── HERO ── */
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;padding:28px}
+  .hero-wrap  { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+  .hero-sub    { margin-top:8px; opacity:.90; max-width:850px; line-height:1.65; }
+  .hero-chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .hero-chip {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:7px 11px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.08);
+    font-size:12px; font-weight:800; color:#fff; backdrop-filter:blur(8px);
+  }
+  .hero-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start; }
+
+  .btn-soft {
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:10px 16px; border-radius:999px; font-weight:800; text-decoration:none;
+    border:1px solid var(--border); background:var(--panel-strong); color:var(--text);
+    box-shadow:0 10px 24px rgba(26,31,20,.08); transition:all .16s ease;
+  }
+  .btn-soft:hover { color:var(--text); transform:translateY(-1px); }
+  .btn-soft-primary { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .btn-soft-primary:hover { color:#fff; }
+  .btn-soft-danger { background:rgba(220,38,38,.10); color:var(--danger); border-color:rgba(220,38,38,.20); }
+  .btn-soft-danger:hover { background:rgba(220,38,38,.16); color:var(--danger); }
+
+  /* ── STAT CARDS ── */
+  .metrics-grid-3 { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; }
+  .stat-card {
+    border:1px solid var(--border); border-radius:24px;
+    background:var(--panel); padding:18px;
+    box-shadow:0 18px 45px rgba(26,31,20,.05);
+    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  }
+  .stat-card:hover { transform:translateY(-2px); box-shadow:0 22px 55px rgba(26,31,20,.08); border-color:rgba(58,90,30,.18); }
+  .stat-label { font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); }
+  .stat-value { font-size:25px; font-weight:900; line-height:1.08; margin-top:8px; color:var(--text); }
+  .stat-sub   { font-size:12px; color:var(--muted); margin-top:6px; line-height:1.55; }
+
+  /* ── SECTION CARD ── */
+  .section-card {
+    border:1px solid var(--border); border-radius:26px;
+    background:var(--panel-strong);
+    box-shadow:0 20px 50px rgba(26,31,20,.05); overflow:hidden;
+  }
+  .section-head { padding:20px 22px 0; }
+  .section-title { margin:0; font-size:18px; font-weight:900; color:var(--text); }
+  .section-sub   { color:var(--muted); font-size:13px; margin-top:4px; }
+  .section-body  { padding:20px 22px 22px; }
+
+  /* ── PAYMENT ITEM ── */
+  .pay-item {
+    border:1px solid var(--border); border-radius:22px;
+    background:var(--panel); padding:16px; margin:12px 0;
+    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  }
+  .pay-item:hover { transform:translateY(-2px); box-shadow:0 18px 45px rgba(26,31,20,.06); border-color:rgba(58,90,30,.18); }
+  .pay-item:first-child { margin-top:0; }
+  .pay-row { display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; align-items:flex-start; }
+
+  .entity-wrap { display:flex; gap:12px; align-items:flex-start; min-width:0; }
+  .mini-avatar {
+    width:46px; height:46px; border-radius:15px; overflow:hidden; flex:0 0 auto;
+    border:1px solid var(--border); background:var(--panel-strong);
+    box-shadow:0 8px 20px rgba(26,31,20,.06);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:900; font-size:15px; color:#fff;
+    background:linear-gradient(135deg, var(--primary-2), var(--gold-2));
+  }
+
+  .pay-title { font-weight:900; color:var(--text); line-height:1.25; }
+  .pay-meta  { color:var(--muted); font-size:13px; margin-top:4px; line-height:1.6; }
+
+  .chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .chip {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 10px; border-radius:999px;
+    border:1px solid var(--border); background:var(--panel-strong);
+    font-size:12px; font-weight:800; color:var(--text-2);
+  }
+  .chip-amber { background:rgba(245,158,11,.10); color:var(--warning); border-color:rgba(245,158,11,.16); }
+  .chip-blue  { background:rgba(46,92,138,.08);  color:var(--info); border-color:rgba(46,92,138,.18); }
+  .chip-slate { background:rgba(100,116,139,.08); color:var(--muted); border-color:var(--border); }
+
+  .pay-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end; }
+
+  .amount-badge {
+    font-weight:900; color:var(--text); padding:8px 14px;
+    border-radius:999px; background:rgba(58,90,30,.08);
+    border:1px solid color-mix(in srgb, var(--primary) 14%, transparent);
+    font-size:15px;
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align:center; padding:64px 24px;
+  }
+  .empty-icon  { font-size:44px; margin-bottom:14px; }
+  .empty-title { font-size:22px; font-weight:900; color:var(--text); margin-bottom:8px; }
+  .empty-sub   { font-size:14px; color:var(--muted); }
+
+  @media(max-width:900px) { .metrics-grid-3 { grid-template-columns:1fr; } }
+  @media(max-width:640px) { .hero-title { font-size:24px; } .pay-actions { justify-content:flex-start; } }
+</style>
+
+<div class="pp-shell">
+
+  <!-- HERO -->
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div>
+          <div class="hero-kicker">Payments · Review Queue</div>
+          <h1 class="hero-title">Pending Confirmations</h1>
+          <div class="hero-sub">
+            Borrower-submitted payment notifications awaiting staff verification.
+            Confirm once the transaction is validated; reject if it cannot be verified.
+          </div>
+          <div class="hero-chip-row">
+            <span class="hero-chip">Submissions: {{ pending|length }}</span>
+            <span class="hero-chip">Borrowers: {{ unique_borrowers }}</span>
+            <span class="hero-chip">Total Value: {{ total_pending_amount|ghs }}</span>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <a href="{% url 'loans:dashboard' %}" class="btn-soft">Dashboard</a>
+          <a href="{% url 'loans:loans_list' %}" class="btn-soft btn-soft-primary">All Loans</a>
+          <a href="{% url 'loans:payment_reconciliation' %}" class="btn-soft">Reconciliation Queue</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAT CARDS -->
+  <div class="metrics-grid-3">
+    <div class="stat-card">
+      <div class="stat-label">Pending Submissions</div>
+      <div class="stat-value">{{ pending|length }}</div>
+      <div class="stat-sub">Payments awaiting staff confirmation</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Pending Value</div>
+      <div class="stat-value">{{ total_pending_amount|ghs }}</div>
+      <div class="stat-sub">Combined value of unconfirmed submissions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Unique Borrowers</div>
+      <div class="stat-value">{{ unique_borrowers }}</div>
+      <div class="stat-sub">Borrowers with pending submissions</div>
+    </div>
+  </div>
+
+  <!-- PAYMENT LIST -->
+  <section class="section-card">
+    <div class="section-head">
+      <h3 class="section-title">Borrower Submissions</h3>
+      <div class="section-sub">
+        {% if pending %}
+          {{ pending|length }} submission{{ pending|length|pluralize }} awaiting review · confirm or reject each entry below
+        {% else %}
+          No submissions are currently awaiting review
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="section-body">
+      {% if pending %}
+        {% for p in pending %}
+        <div class="pay-item">
+          <div class="pay-row">
+
+            <!-- Borrower info -->
+            <div class="entity-wrap">
+              <div class="mini-avatar">
+                {{ p.loan.borrower.full_name|slice:":1" }}
+              </div>
+              <div>
+                <div class="pay-title">{{ p.loan.borrower.full_name }}</div>
+                <div class="pay-meta">
+                  Loan #{{ p.loan.id }} · {{ p.loan.get_loan_category_display }}
+                  {% if p.loan.agent_name %} · Agent: {{ p.loan.agent_name.name }}{% endif %}
+                </div>
+                <div class="chip-row">
+                  <span class="chip chip-amber">⏳ Pending</span>
+                  <span class="chip chip-blue">{{ p.get_payment_method_display }}</span>
+                  {% if p.reference %}
+                  <span class="chip chip-slate">Ref: {{ p.reference }}</span>
+                  {% endif %}
+                  <span class="chip">Loan balance: {{ p.loan.balance_amount|ghs }}</span>
+                  {% if p.note %}
+                  <span class="chip chip-slate">{{ p.note|truncatechars:40 }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- Amount + actions -->
+            <div class="pay-actions">
+              <div style="text-align:right;">
+                <div class="amount-badge">{{ p.amount|ghs }}</div>
+                <div style="font-size:11.5px;color:var(--muted);margin-top:5px;text-align:right;">
+                  {{ p.created_at|date:"d M Y, H:i" }}
+                  {% if p.submitted_by %}<br>by {{ p.submitted_by.get_full_name|default:p.submitted_by.username }}{% endif %}
+                </div>
+              </div>
+              <form method="post" action="{% url 'loans:payment_confirm' p.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-soft btn-soft-primary"
+                        onclick="return confirm('Confirm {{ p.amount|ghs }} from {{ p.loan.borrower.full_name }}?')">
+                  ✓ Confirm
+                </button>
+              </form>
+              <form method="post" action="{% url 'loans:payment_reject' p.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-soft btn-soft-danger"
+                        onclick="return confirm('Reject this submission?')">
+                  ✕ Reject
+                </button>
+              </form>
+            </div>
+
+          </div>
+        </div>
+        {% endfor %}
+
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">✅</div>
+          <div class="empty-title">All caught up</div>
+          <div class="empty-sub">No borrower payment submissions are awaiting confirmation right now.</div>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+</div>
+{% endblock %}

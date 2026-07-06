@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% load currency %}
+{% load humanize %}
+{% block content %}
+
+<style>
+  .detail-shell { display:grid; gap:18px; }
+
+  .detail-hero {
+    border-radius:24px; overflow:hidden;
+    background:linear-gradient(145deg,color-mix(in srgb, var(--primary-2) 35%, #000),var(--primary-2) 45%,var(--primary-3) 75%,var(--gold-2) 100%);
+    color:#fff; padding:26px 28px; position:relative;
+  }
+  [data-theme="dark"] .detail-hero {
+    background:linear-gradient(145deg,color-mix(in srgb, var(--primary-2) 20%, #000),color-mix(in srgb, var(--primary-2) 38%, #000) 45%,color-mix(in srgb, var(--primary) 48%, #000) 75%,color-mix(in srgb, var(--gold-2) 30%, #000) 100%);
+  }
+  .detail-hero::before {
+    content:"";position:absolute;top:-40px;right:-40px;
+    width:180px;height:180px;border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);pointer-events:none;
+  }
+  .dh-body { position:relative;z-index:1; }
+  .dh-kicker { font-size:10px;text-transform:uppercase;letter-spacing:.5em;color:var(--gold);font-weight:700; }
+  .dh-title { font-family:var(--font-serif);font-size:24px;font-weight:400;margin:6px 0 4px; }
+  .dh-sub { font-size:13px;opacity:.82; }
+  .dh-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px; }
+  .dh-stat {
+    border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.07);
+    border-radius:14px;padding:12px 14px;
+  }
+  .dh-stat .l { font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;opacity:.74;font-weight:700; }
+  .dh-stat .v { font-size:17px;font-weight:700;margin-top:4px; }
+
+  /* Summary cards */
+  .summary-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:14px; }
+  .sum-card {
+    border:1px solid var(--border);border-radius:18px;
+    background:var(--panel);padding:16px 18px;box-shadow:var(--shadow-xs);
+    position:relative;overflow:hidden;
+  }
+  .sum-card::before {
+    content:"";position:absolute;top:0;right:0;width:60px;height:60px;
+    background:radial-gradient(circle,var(--gold-pale),transparent 70%);pointer-events:none;
+  }
+  .sum-lbl { font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700; }
+  .sum-val { font-size:22px;font-weight:700;color:var(--text);margin-top:6px; }
+  .sum-sub { font-size:11.5px;color:var(--muted);margin-top:4px; }
+
+  /* Progress */
+  .progress-card {
+    border:1px solid var(--border);border-radius:18px;
+    background:var(--panel);padding:18px 20px;box-shadow:var(--shadow-xs);
+  }
+  .progress-label { display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:8px;font-weight:600; }
+  .bar-bg { height:8px;border-radius:99px;background:var(--bg-soft);overflow:hidden; }
+  .bar-fill { height:100%;border-radius:99px;background:linear-gradient(90deg,var(--primary),var(--gold)); }
+
+  /* Schedule table */
+  .schedule-card {
+    border:1px solid var(--border);border-radius:20px;
+    background:var(--panel);box-shadow:var(--shadow-sm);overflow:hidden;
+  }
+  .schedule-head {
+    padding:16px 20px 12px;border-bottom:1px solid var(--border-soft);position:relative;
+  }
+  .schedule-head::after {
+    content:"";position:absolute;bottom:0;left:0;right:0;height:1.5px;
+    background:linear-gradient(90deg,var(--gold),var(--primary),transparent 60%);
+  }
+  .schedule-title { font-family:var(--font-serif);font-size:17px;font-weight:400;color:var(--text);margin:0; }
+
+  table { width:100%;border-collapse:collapse;font-size:13px; }
+  thead { background:var(--bg-soft); }
+  th { padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border); }
+  td { padding:11px 14px;border-bottom:1px solid var(--border-soft);color:var(--text); }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:var(--gold-pale); }
+
+  @media(max-width:680px) {
+    .dh-grid { grid-template-columns:1fr 1fr; }
+    .summary-grid { grid-template-columns:1fr; }
+  }
+</style>
+
+<div class="detail-shell">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <a href="{% url 'borrower:portal' %}" class="btn btn-ghost">← Back to My Account</a>
+    {% if loan.status == "ACTIVE" or loan.status == "DEFAULT" %}
+    <a href="{% url 'borrower:make_payment' loan.pk %}" class="btn btn-primary">💳 Make Payment</a>
+    {% endif %}
+  </div>
+
+  <!-- Hero -->
+  <section class="detail-hero">
+    <div class="dh-body">
+      <div class="dh-kicker">✦ Loan Detail</div>
+      <div class="dh-title">Loan #{{ loan.id }}</div>
+      <div class="dh-sub">
+        {{ loan.get_loan_category_display }} ·
+        Started {{ loan.start_date|date:"d M Y" }} ·
+        <span class="{% if loan.status == 'ACTIVE' %}chip chip-gold{% elif loan.status == 'DEFAULT' %}chip chip-red{% else %}chip chip-green{% endif %}" style="font-size:11px;">{{ loan.status }}</span>
+      </div>
+      <div class="dh-grid">
+        <div class="dh-stat"><div class="l">Principal</div><div class="v">{{ loan.amount|ghs }}</div></div>
+        <div class="dh-stat"><div class="l">Weekly Payment</div><div class="v">{{ loan.weekly_payment|ghs }}</div></div>
+        <div class="dh-stat"><div class="l">Duration</div><div class="v">{{ loan.duration_weeks }} wks</div></div>
+        <div class="dh-stat"><div class="l">Total Expected</div><div class="v">{{ loan.total_expected_amount|ghs }}</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Summary -->
+  <div class="summary-grid">
+    <div class="sum-card">
+      <div class="sum-lbl">Amount Paid</div>
+      <div class="sum-val">{{ loan.total_paid_amount|ghs }}</div>
+      <div class="sum-sub">Principal: {{ loan.total_principal_paid|ghs }}</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-lbl">Balance Remaining</div>
+      <div class="sum-val">{{ loan.balance_amount|ghs }}</div>
+      <div class="sum-sub">ROIC remaining: {{ loan.roic_outstanding|ghs }}</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-lbl">Payments</div>
+      <div class="sum-val">{{ loan.actual_payments_count }}/{{ loan.expected_payments_count }}</div>
+      <div class="sum-sub">{{ loan.outstanding_payments_count }} remaining</div>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-card">
+    <div class="progress-label">
+      <span>Repayment Progress</span>
+      <span>{% widthratio loan.total_paid_amount loan.total_expected_amount 100 %}% complete</span>
+    </div>
+    <div class="bar-bg">
+      <div class="bar-fill" style="width:{% widthratio loan.total_paid_amount loan.total_expected_amount 100 %}%;"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:6px;">
+      <span>{{ loan.total_paid_amount|ghs }} paid</span>
+      <span>{{ loan.total_expected_amount|ghs }} total</span>
+    </div>
+  </div>
+
+  <!-- Payment history -->
+  <div class="schedule-card">
+    <div class="schedule-head">
+      <h3 class="schedule-title">Payment History</h3>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Principal</th>
+            <th>ROIC</th>
+            <th>Reference</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+            <tr>
+              <td style="color:var(--muted);font-weight:700;">{{ forloop.counter }}</td>
+              <td>{{ p.payment_date|date:"d M Y" }}</td>
+              <td style="font-weight:700;color:var(--success);">{{ p.amount|ghs }}</td>
+              <td>{{ p.principal_paid|ghs }}</td>
+              <td>{{ p.roic_paid|ghs }}</td>
+              <td style="color:var(--muted);">{{ p.reference|default:"—" }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">
+                No payments recorded yet.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

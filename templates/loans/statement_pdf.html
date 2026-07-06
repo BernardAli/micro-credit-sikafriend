@@ -1,0 +1,260 @@
+{% load currency %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 14mm 18mm 14mm;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      color: #15202b;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .header {
+      border-bottom: 2px solid #2f5d27;
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+    }
+
+    .company-name {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1d3f17;
+      margin: 0 0 4px;
+    }
+
+    .company-meta,
+    .muted {
+      color: #5b6470;
+      font-size: 11px;
+    }
+
+    .doc-title {
+      margin: 18px 0 6px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #15202b;
+    }
+
+    .grid {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 10px;
+      margin: 0 -10px 10px;
+    }
+
+    .metric {
+      width: 25%;
+      border: 1px solid #d7dde5;
+      border-radius: 10px;
+      padding: 10px;
+      vertical-align: top;
+      background: #f8fafc;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6b7280;
+      font-weight: 700;
+    }
+
+    .metric-value {
+      margin-top: 6px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .section {
+      margin-top: 18px;
+    }
+
+    .section-title {
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    .details {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+    }
+
+    .details td {
+      padding: 7px 8px;
+      border: 1px solid #dbe2ea;
+    }
+
+    .details td.label {
+      width: 28%;
+      font-weight: 700;
+      background: #f8fafc;
+    }
+
+    .payments {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+
+    .payments th,
+    .payments td {
+      border: 1px solid #dbe2ea;
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .payments th {
+      background: #eef4ea;
+      color: #22331e;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .right {
+      text-align: right;
+    }
+
+    .statement-block {
+      border: 1px solid #dbe2ea;
+      border-radius: 10px;
+      background: #fbfcfd;
+      padding: 12px;
+      white-space: pre-wrap;
+      font-family: "Courier New", monospace;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .footer {
+      margin-top: 24px;
+      border-top: 1px solid #dbe2ea;
+      padding-top: 10px;
+      font-size: 10px;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="company-name">{{ company_name }}</div>
+    <div class="company-meta">
+      {% if company_address %}{{ company_address }}{% endif %}
+      {% if company_phone %}{% if company_address %} | {% endif %}Tel: {{ company_phone }}{% endif %}
+      {% if company_email %} | {{ company_email }}{% endif %}
+    </div>
+    <div class="doc-title">Loan Statement</div>
+    <div class="muted">Generated on {{ generated_at|date:"d M Y, H:i" }}</div>
+  </div>
+
+  <table class="grid">
+    <tr>
+      <td class="metric">
+        <div class="metric-label">Borrower</div>
+        <div class="metric-value">{{ loan.borrower.full_name }}</div>
+      </td>
+      <td class="metric">
+        <div class="metric-label">Loan Number</div>
+        <div class="metric-value">#{{ loan.id }}</div>
+      </td>
+      <td class="metric">
+        <div class="metric-label">Status</div>
+        <div class="metric-value">{{ loan.status }}</div>
+      </td>
+      <td class="metric">
+        <div class="metric-label">Agent</div>
+        <div class="metric-value">{{ loan.agent_name.name }}</div>
+      </td>
+    </tr>
+  </table>
+
+  <table class="grid">
+    <tr>
+      <td class="metric">
+        <div class="metric-label">Principal</div>
+        <div class="metric-value">{{ loan.amount|ghs }}</div>
+      </td>
+      <td class="metric">
+        <div class="metric-label">ROIC</div>
+        <div class="metric-value">{{ loan.roic_amount|ghs }}</div>
+      </td>
+      <td class="metric">
+        <div class="metric-label">Total Paid</div>
+        <div class="metric-value">{{ loan.total_paid_amount|ghs }}</div>
+      </td>
+      <td class="metric">
+        <div class="metric-label">Balance</div>
+        <div class="metric-value">{{ loan.balance_amount|ghs }}</div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="section">
+    <h2 class="section-title">Loan Summary</h2>
+    <table class="details">
+      <tr><td class="label">Borrower ID</td><td>{{ loan.borrower.borrower_id }}</td><td class="label">Start Date</td><td>{{ loan.start_date }}</td></tr>
+      <tr><td class="label">National ID</td><td>{{ loan.borrower.national_id }}</td><td class="label">Duration</td><td>{{ loan.duration_weeks }} weeks</td></tr>
+      <tr><td class="label">Phone</td><td>{{ loan.borrower.phone }}</td><td class="label">Weekly Payment</td><td>{{ loan.weekly_payment|ghs }}</td></tr>
+      <tr><td class="label">Location</td><td>{{ loan.borrower.location }}</td><td class="label">Expected Payments</td><td>{{ loan.expected_payments_count }}</td></tr>
+      <tr><td class="label">Principal Outstanding</td><td>{{ loan.principal_outstanding|ghs }}</td><td class="label">Actual Payments</td><td>{{ loan.actual_payments_count }}</td></tr>
+      <tr><td class="label">ROIC Outstanding</td><td>{{ loan.roic_outstanding|ghs }}</td><td class="label">Outstanding Payments</td><td>{{ loan.outstanding_payments_count }}</td></tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Payment History</h2>
+    <table class="payments">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Date</th>
+          <th class="right">Amount</th>
+          <th class="right">Principal</th>
+          <th class="right">ROIC</th>
+          <th>Method</th>
+          <th>Reference</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for payment in payments %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ payment.payment_date }}</td>
+            <td class="right">{{ payment.amount|ghs }}</td>
+            <td class="right">{{ payment.principal_paid|ghs }}</td>
+            <td class="right">{{ payment.roic_paid|ghs }}</td>
+            <td>{{ payment.get_payment_method_display }}</td>
+            <td>{{ payment.reference|default:"-" }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7">No payments recorded yet.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Statement Narrative</h2>
+    <div class="statement-block">{{ statement }}</div>
+  </div>
+
+  <div class="footer">
+    This document was generated from the live {{ company_name }} loan portfolio records for internal use, borrower servicing, and audit support.
+  </div>
+</body>
+</html>

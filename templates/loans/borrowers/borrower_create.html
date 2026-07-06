@@ -1,0 +1,618 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .borrower-create-shell{
+    max-width: 1160px;
+    margin: 0 auto;
+    display: grid;
+    gap: 18px;
+  }
+
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+
+
+  .hero-inner{position:relative;z-index:1;padding:28px}
+
+  .hero-wrap{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:18px;
+    flex-wrap:wrap;
+  }
+
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+
+  .hero-sub{
+    margin-top:10px;
+    max-width:860px;
+    opacity:.88;
+    line-height:1.65;
+    font-size:14px;
+  }
+
+  .btn-soft{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:44px;
+    padding:10px 16px;
+    border-radius:999px;
+    font-weight:800;
+    text-decoration:none;
+    border:1px solid var(--border);
+    background:var(--panel-strong);
+    color:var(--text);
+    box-shadow:0 10px 24px rgba(26,31,20,.08);
+    transition:all .16s ease;
+  }
+
+  .btn-soft:hover{
+    transform:translateY(-1px);
+    color:var(--text);
+  }
+
+  .btn-soft-primary{
+    background:linear-gradient(135deg,var(--primary),var(--primary-3));
+    color:#fff;
+    border-color:var(--primary);
+    box-shadow:0 18px 36px rgba(58,90,30,.20);
+  }
+
+  .btn-soft-primary:hover{
+    color:#fff;
+  }
+
+  .form-card{
+    border:1px solid var(--border);
+    border-radius:30px;
+    background:var(--panel);
+    box-shadow:0 22px 60px rgba(26,31,20,.06);
+    overflow:hidden;
+  }
+
+  .form-head{
+    padding:22px 24px 0;
+  }
+
+  .form-title{
+    margin:0;
+    font-size:21px;
+    font-weight:900;
+    color:var(--text);
+  }
+
+  .form-sub{
+    margin-top:6px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.6;
+  }
+
+  .form-body{
+    padding:22px 24px 26px;
+  }
+
+  .section-card{
+    border:1px solid var(--border);
+    border-radius:24px;
+    background:var(--panel);
+    box-shadow:0 14px 36px rgba(26,31,20,.04);
+    overflow:hidden;
+    margin-bottom:18px;
+  }
+
+  .section-head{
+    padding:18px 20px 0;
+  }
+
+  .section-title{
+    margin:0;
+    font-size:17px;
+    font-weight:900;
+    color:var(--text);
+  }
+
+  .section-sub{
+    margin-top:5px;
+    font-size:13px;
+    color:var(--muted);
+    line-height:1.55;
+  }
+
+  .section-body{
+    padding:18px 20px 20px;
+  }
+
+  .field-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:16px;
+  }
+
+  .field-card{
+    border:1px solid var(--border);
+    background:var(--panel-strong);
+    border-radius:20px;
+    padding:14px;
+    box-shadow:0 8px 22px rgba(26,31,20,.03);
+  }
+
+  .field-card.full{
+    grid-column:1 / -1;
+  }
+
+  .field-label{
+    display:block;
+    margin-bottom:8px;
+    font-size:13px;
+    font-weight:900;
+    color:var(--text);
+  }
+
+  .field-help{
+    margin-top:8px;
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.5;
+  }
+
+  .upload-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:16px;
+  }
+
+  .upload-card{
+    border:1px solid var(--border);
+    border-radius:22px;
+    background:var(--panel);
+    padding:16px;
+    min-height:100%;
+    box-shadow:0 8px 24px rgba(26,31,20,.04);
+  }
+
+  .upload-title{
+    font-size:14px;
+    font-weight:900;
+    color:var(--text);
+    margin-bottom:8px;
+  }
+
+  .upload-help{
+    margin-top:8px;
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.5;
+  }
+
+  .error-box{
+    margin-top:8px;
+    padding:8px 10px;
+    border-radius:12px;
+    background:rgba(220,38,38,.06);
+    border:1px solid rgba(220,38,38,.14);
+    color:var(--danger);
+    font-size:12px;
+    font-weight:700;
+  }
+
+  .non-field-errors{
+    margin-bottom:16px;
+    padding:14px 16px;
+    border-radius:16px;
+    background:rgba(220,38,38,.06);
+    border:1px solid rgba(220,38,38,.14);
+    color:var(--danger);
+    font-weight:800;
+  }
+
+  .action-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-top:10px;
+    padding-top:18px;
+    border-top:1px solid var(--border-soft);
+  }
+
+  .action-note{
+    font-size:13px;
+    color:var(--muted);
+  }
+
+  .action-buttons{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .form-control,
+  .form-select,
+  .form-control[type="file"],
+  input,
+  select,
+  textarea{
+    width:100%;
+    min-height:48px;
+    border-radius:14px;
+    border:1px solid #dbe3ef;
+    background:var(--panel-strong);
+    box-shadow:none;
+    padding:12px 14px;
+  }
+
+  .form-control:focus,
+  .form-select:focus,
+  .form-control[type="file"]:focus,
+  input:focus,
+  select:focus,
+  textarea:focus{
+    border-color:#86b7fe;
+    box-shadow:0 0 0 .2rem rgba(13,110,253,.12);
+    outline:none;
+  }
+
+  @media (max-width: 992px){
+    .field-grid,
+    .upload-grid{
+      grid-template-columns:1fr;
+    }
+  }
+
+  @media (max-width: 640px){
+    .hero-title{
+      font-size:24px;
+    }
+
+    .action-bar{
+      flex-direction:column;
+      align-items:stretch;
+    }
+
+    .action-buttons{
+      width:100%;
+      display:grid;
+      grid-template-columns:1fr;
+    }
+
+    .action-buttons > *{
+      width:100%;
+    }
+  }
+</style>
+
+<div class="borrower-create-shell">
+
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div>
+          <div class="hero-kicker">Borrower Management</div>
+          <h1 class="hero-title">{{ title }}</h1>
+          <div class="hero-sub">
+            Register a new borrower and set up their portal login account. A temporary password will be generated and sent by SMS to both you and the borrower immediately after saving.
+          </div>
+        </div>
+
+        <a href="{% url 'loans:borrower_list' %}" class="btn-soft">
+          Back
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-card">
+    <div class="form-head">
+      <h3 class="form-title">Create Borrower Profile</h3>
+      <div class="form-sub">
+        Fill all required fields accurately. A portal login account is created automatically — the temporary password will be shown on screen and sent by SMS.
+      </div>
+    </div>
+
+    <div class="form-body">
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="non-field-errors">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <section class="section-card">
+          <div class="section-head">
+            <h5 class="section-title">Borrower Information</h5>
+            <div class="section-sub">
+              Core profile, contact, and operational grouping details.
+            </div>
+          </div>
+
+          <div class="section-body">
+            <div class="field-grid">
+              <div class="field-card">
+                <label class="field-label">Borrower ID</label>
+                {{ form.borrower_id }}
+                {% if form.borrower_id.errors %}<div class="error-box">{{ form.borrower_id.errors }}</div>{% endif %}
+                <div class="field-help">Unique internal reference for the borrower record.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Full Name</label>
+                {{ form.full_name }}
+                {% if form.full_name.errors %}<div class="error-box">{{ form.full_name.errors }}</div>{% endif %}
+                <div class="field-help">Official full name as used on identification records.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">National ID</label>
+                {{ form.national_id }}
+                {% if form.national_id.errors %}<div class="error-box">{{ form.national_id.errors }}</div>{% endif %}
+                <div class="field-help">Ghana Card or passport number for verification and audit trail.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Gender</label>
+                {{ form.gender }}
+                {% if form.gender.errors %}<div class="error-box">{{ form.gender.errors }}</div>{% endif %}
+                <div class="field-help">Applicant gender as captured on the approved form.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Date of Birth</label>
+                {{ form.date_of_birth }}
+                {% if form.date_of_birth.errors %}<div class="error-box">{{ form.date_of_birth.errors }}</div>{% endif %}
+                <div class="field-help">Applicant date of birth.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Borrower Type</label>
+                {{ form.borrower_type }}
+                {% if form.borrower_type.errors %}<div class="error-box">{{ form.borrower_type.errors }}</div>{% endif %}
+                <div class="field-help">Choose whether this is a new borrower or an existing borrower requesting a new loan.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Phone</label>
+                {{ form.phone }}
+                {% if form.phone.errors %}<div class="error-box">{{ form.phone.errors }}</div>{% endif %}
+                <div class="field-help">Primary phone number for reminders, collections, and support.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Alternative Phone</label>
+                {{ form.alternative_phone }}
+                {% if form.alternative_phone.errors %}<div class="error-box">{{ form.alternative_phone.errors }}</div>{% endif %}
+                <div class="field-help">Family or emergency contact number.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Email Address</label>
+                {{ form.email }}
+                {% if form.email.errors %}<div class="error-box">{{ form.email.errors }}</div>{% endif %}
+                <div class="field-help">Optional but recommended so the borrower can recover their password by email later.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Location</label>
+                {{ form.location }}
+                {% if form.location.errors %}<div class="error-box">{{ form.location.errors }}</div>{% endif %}
+                <div class="field-help">Residential area, community, or operating location.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Group Name</label>
+                {{ form.group_name }}
+                {% if form.group_name.errors %}<div class="error-box">{{ form.group_name.errors }}</div>{% endif %}
+                <div class="field-help">Savings group, field cluster, or borrower team classification.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Ghana Card Number</label>
+                {{ form.ghana_card_number }}
+                {% if form.ghana_card_number.errors %}<div class="error-box">{{ form.ghana_card_number.errors }}</div>{% endif %}
+                <div class="field-help">Exact Ghana Card number from the official card.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Preferred Language</label>
+                {{ form.preferred_language }}
+                {% if form.preferred_language.errors %}<div class="error-box">{{ form.preferred_language.errors }}</div>{% endif %}
+                <div class="field-help">Used for communication and borrower engagement.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-head">
+            <h5 class="section-title">Residential Information</h5>
+            <div class="section-sub">
+              Residence details required on the approved loan application form.
+            </div>
+          </div>
+
+          <div class="section-body">
+            <div class="field-grid">
+              <div class="field-card">
+                <label class="field-label">House Number / Digital Address</label>
+                {{ form.digital_address }}
+                {% if form.digital_address.errors %}<div class="error-box">{{ form.digital_address.errors }}</div>{% endif %}
+                <div class="field-help">House number, GhanaPost GPS, or other digital address.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Nearest Landmark</label>
+                {{ form.nearest_landmark }}
+                {% if form.nearest_landmark.errors %}<div class="error-box">{{ form.nearest_landmark.errors }}</div>{% endif %}
+                <div class="field-help">Nearest landmark for field verification.</div>
+              </div>
+
+              <div class="field-card full">
+                <label class="field-label">Detailed Direction to Residence</label>
+                {{ form.residence_directions }}
+                {% if form.residence_directions.errors %}<div class="error-box">{{ form.residence_directions.errors }}</div>{% endif %}
+                <div class="field-help">Include turns, junctions, signs, and other route details.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">How Long Lived Here</label>
+                {{ form.years_at_residence }}
+                {% if form.years_at_residence.errors %}<div class="error-box">{{ form.years_at_residence.errors }}</div>{% endif %}
+                <div class="field-help">Length of stay at the current residence.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Residence Status</label>
+                {{ form.residence_status }}
+                {% if form.residence_status.errors %}<div class="error-box">{{ form.residence_status.errors }}</div>{% endif %}
+                <div class="field-help">Owned, rented, family house, or other.</div>
+              </div>
+
+              <div class="field-card">
+                <label class="field-label">Residence Status Other</label>
+                {{ form.residence_status_other }}
+                {% if form.residence_status_other.errors %}<div class="error-box">{{ form.residence_status_other.errors }}</div>{% endif %}
+                <div class="field-help">Complete this only when residence status is Other.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Portal Login Account ──────────────────────────────────── -->
+        <section class="section-card" style="border-color:var(--border-accent);background:var(--gold-pale);">
+          <div class="section-head">
+            <h5 class="section-title" style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:18px;">🔑</span> Portal Login Account
+            </h5>
+            <div class="section-sub">
+              A login account is created automatically when you save. The temporary password is generated by the system,
+              sent by SMS to the borrower{% if user_role == "agent" %} and to you{% endif %}, and displayed on the next screen.
+              <strong style="color:var(--text);">Advise the borrower to change their password after first login.</strong>
+              Adding an email address above also enables self-service password recovery.
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="field-grid">
+              <div class="field-card">
+                <label class="field-label">{{ form.portal_username.label }}</label>
+                {{ form.portal_username }}
+                {% if form.portal_username.errors %}
+                  <div class="error-box">{{ form.portal_username.errors }}</div>
+                {% endif %}
+                <div class="field-help">{{ form.portal_username.help_text }}</div>
+              </div>
+              <div class="field-card" style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(58,90,30,.06),rgba(184,134,32,.04));">
+                <span style="font-size:28px;">🔐</span>
+                <div>
+                  <div style="font-weight:700;color:var(--text);font-size:13.5px;">Password auto-generated</div>
+                  <div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.55;">
+                    A secure temporary password is created by the system on save.<br>
+                    It will appear on the confirmation screen and be sent by SMS.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-head">
+            <h5 class="section-title">Photos & Verification Documents</h5>
+            <div class="section-sub">
+              Upload clear borrower photo and Ghana Card images for KYC and internal verification.
+            </div>
+          </div>
+
+          <div class="section-body">
+            <div class="upload-grid">
+              <div class="upload-card">
+                <div class="upload-title">Photo</div>
+                {{ form.photo }}
+                {% if form.photo.errors %}<div class="error-box">{{ form.photo.errors }}</div>{% endif %}
+                <div class="upload-help">Use a clear recent portrait image with good lighting.</div>
+              </div>
+
+              <div class="upload-card">
+                <div class="upload-title">Ghana Card Front</div>
+                {{ form.ghana_card_front }}
+                {% if form.ghana_card_front.errors %}<div class="error-box">{{ form.ghana_card_front.errors }}</div>{% endif %}
+                <div class="upload-help">Front image should be sharp, readable, and uncropped.</div>
+              </div>
+
+              <div class="upload-card">
+                <div class="upload-title">Ghana Card Back</div>
+                {{ form.ghana_card_back }}
+                {% if form.ghana_card_back.errors %}<div class="error-box">{{ form.ghana_card_back.errors }}</div>{% endif %}
+                <div class="upload-help">Back image should also be complete and clearly visible.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="action-bar">
+          <div class="action-note">All borrower fields are required and should match the borrower’s official documents.</div>
+
+          <div class="action-buttons">
+            <a href="{% url 'loans:borrower_list' %}" class="btn-soft">Cancel</a>
+            <button type="submit" class="btn-soft btn-soft-primary">Save & Create Login</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,449 @@
+{% extends "base.html" %}
+{% load currency %}
+{% load humanize %}
+
+{% block content %}
+
+<style>
+  .shell{display:grid;gap:16px}
+
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+
+  .hero-inner{position:relative;z-index:1;padding:28px}
+  .hero-wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+  .hero-sub{opacity:.88;max-width:900px;line-height:1.6}
+
+  .btn-soft{
+    display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;
+    font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text);
+    transition:all .16s ease
+  }
+  .btn-soft:hover{transform:translateY(-1px);color:var(--text)}
+  .btn-soft-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .btn-soft-primary:hover{color:#fff}
+
+  .metrics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .metrics-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  .metrics-grid-6{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+
+  .stat-card,.section-card,.loan-card,.category-card{
+    border:1px solid var(--border);
+    background:var(--panel-strong);
+    box-shadow:0 20px 50px rgba(26,31,20,.05)
+  }
+
+  .stat-card{
+    border-radius:22px;
+    padding:18px;
+    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  }
+
+  .stat-card:hover,
+  .loan-card:hover,
+  .category-card:hover{
+    transform:translateY(-2px);
+    border-color:rgba(58,90,30,.18);
+    box-shadow:0 24px 56px rgba(26,31,20,.08);
+  }
+
+  .section-card{border-radius:24px;overflow:hidden}
+  .loan-card{border-radius:18px;padding:14px;margin:10px 0;transition:all .16s ease}
+  .category-card{border-radius:20px;padding:16px;transition:all .16s ease}
+
+  .section-head{padding:18px 20px 0}
+  .section-body{padding:18px 20px 20px}
+  .section-title{margin:0;font-size:18px;font-weight:900;color:var(--text)}
+  .section-sub,.stat-sub,.muted{color:var(--muted)}
+
+  .stat-label{
+    font-size:12px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    color:var(--muted)
+  }
+
+  .stat-value{
+    font-size:24px;
+    font-weight:900;
+    margin-top:8px;
+    color:var(--text)
+  }
+
+  .filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+  .filter-grid input,.filter-grid select{
+    width:100%;
+    min-height:46px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px 12px;
+    background:var(--panel-strong)
+  }
+
+  .row-flex{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start}
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);
+    background:var(--panel-strong);font-size:12px;font-weight:800;color:var(--text-2)
+  }
+
+  .chip-green{background:rgba(22,163,74,.08);color:var(--success);border-color:rgba(22,163,74,.14)}
+  .chip-amber{background:rgba(245,158,11,.10);color:var(--warning);border-color:rgba(245,158,11,.16)}
+  .chip-red{background:rgba(220,38,38,.08);color:var(--danger);border-color:rgba(220,38,38,.14)}
+  .chip-blue{ background:rgba(46,92,138,.08); color:var(--info); border-color:rgba(46,92,138,.18); }
+  .chip-slate{background:rgba(100,116,139,.08);color:var(--muted);border-color:var(--border)}
+  .chip-violet{background:rgba(124,58,237,.08);color:#8b5cf6;border-color:rgba(124,58,237,.14)}
+  .chip-cyan{background:rgba(6,182,212,.10);color:var(--info);border-color:rgba(6,182,212,.14)}
+
+  .category-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px
+  }
+
+  .category-name{
+    font-size:14px;
+    font-weight:900;
+    color:var(--text)
+  }
+
+  .category-count{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:34px;
+    height:34px;
+    padding:0 10px;
+    border-radius:999px;
+    background:rgba(58,90,30,.08);
+    border:1px solid rgba(58,90,30,.12);
+    color:var(--primary-2);
+    font-weight:900;
+    font-size:13px
+  }
+
+  .category-metrics{
+    display:grid;
+    gap:8px;
+    margin-top:14px
+  }
+
+  .category-line{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    align-items:flex-start;
+    font-size:12px
+  }
+
+  .category-line .k{
+    color:var(--muted);
+    font-weight:800
+  }
+
+  .category-line .v{
+    color:var(--text);
+    font-weight:900;
+    text-align:right
+  }
+
+  @media (max-width:1300px){
+    .metrics-grid-6{grid-template-columns:repeat(3,minmax(0,1fr))}
+  }
+
+  @media (max-width:1100px){
+    .metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .metrics-grid-3{grid-template-columns:1fr}
+  }
+
+  @media (max-width:760px){
+    .metrics-grid-6{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+
+  @media (max-width:640px){
+    .metrics-grid,
+    .metrics-grid-6{grid-template-columns:1fr}
+    .hero-title{font-size:24px}
+  }
+</style>
+
+<div class="shell">
+
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div>
+          <div class="hero-kicker">Loan Operations</div>
+          <h1 class="hero-title">{{ title }}</h1>
+          <div class="hero-sub">
+            Comprehensive operational list of all loans with borrower status, loan category, balances,
+            ROIC, collections, outstanding exposure, and risk signals.
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <a href="{% url 'loans:loan_create' %}" class="btn-soft btn-soft-primary">New Loan</a>
+          <a href="{% url 'loans:loan_bulk_import' %}" class="btn-soft">Bulk Import</a>
+          <a href="{% url 'loans:loan_analytics' %}" class="btn-soft">Loan Analytics</a>
+          <a href="{% url 'loans:loan_monthly_analytics' %}" class="btn-soft">Monthly Analytics</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="metrics-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Disbursed</div>
+      <div class="stat-value">{{ metrics_total_disbursed|ghs }}</div>
+      <div class="stat-sub">Average: {{ avg_loan_size|ghs }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Amount Collected</div>
+      <div class="stat-value">{{ metrics_total_amount_collected|ghs }}</div>
+      <div class="stat-sub">Rate: {{ collection_rate }}%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">ROIC Collected</div>
+      <div class="stat-value">{{ metrics_roic_collected|ghs }}</div>
+      <div class="stat-sub">Recovered return component</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Principal Outstanding</div>
+      <div class="stat-value">{{ metrics_principal_outstanding|ghs }}</div>
+      <div class="stat-sub">Unrecovered principal exposure</div>
+    </div>
+  </section>
+
+
+  <section class="metrics-grid-3">
+    <div class="stat-card">
+      <div class="stat-label">Principal Outstanding</div>
+      <div class="stat-value">{{ total_principal_outstanding|ghs }}</div>
+      <div class="stat-sub">Unrecovered principal exposure</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">ROIC Outstanding</div>
+      <div class="stat-value">{{ total_roic_outstanding|ghs }}</div>
+      <div class="stat-sub">Outstanding return component</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Portfolio Balance</div>
+      <div class="stat-value">{{ total_balance|ghs }}</div>
+      <div class="stat-sub">Total unpaid portfolio balance</div>
+    </div>
+  </section>
+
+  {% if category_summary %}
+  <section class="section-card">
+    <div class="section-head">
+      <h3 class="section-title">Loan Category Summary</h3>
+      <div class="section-sub">Distribution of currently filtered loans by category</div>
+    </div>
+    <div class="section-body">
+      <div class="metrics-grid-6">
+        {% for c in category_summary %}
+          <div class="category-card">
+            <div class="category-head">
+              <div class="category-name">{{ c.label }}</div>
+              <div class="category-count">{{ c.count|intcomma }}</div>
+            </div>
+
+            <div class="category-metrics">
+              <div class="category-line">
+                <span class="k">Disbursed</span>
+                <span class="v">{{ c.disbursed|ghs }}</span>
+              </div>
+              <div class="category-line">
+                <span class="k">Expected</span>
+                <span class="v">{{ c.expected|ghs }}</span>
+              </div>
+              <div class="category-line">
+                <span class="k">ROIC</span>
+                <span class="v">{{ c.roic|ghs }}</span>
+              </div>
+              <div class="category-line">
+                <span class="k">Collected</span>
+                <span class="v">{{ c.collected|ghs }}</span>
+              </div>
+              <div class="category-line">
+                <span class="k">Balance</span>
+                <span class="v">{{ c.balance|ghs }}</span>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="section-card">
+    <div class="section-head">
+      <h3 class="section-title">Filters</h3>
+      <div class="section-sub">Filter loans for operations and monitoring</div>
+    </div>
+    <div class="section-body">
+      <form method="get" class="filter-grid">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search loan, borrower, ID, phone, agent">
+
+        <select name="status">
+          <option value="">All loan statuses</option>
+          {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+
+        <select name="borrower_status">
+          <option value="">All borrower statuses</option>
+          {% for value, label in borrower_status_choices %}
+            <option value="{{ value }}" {% if borrower_status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+
+        <select name="loan_category">
+          <option value="">All loan categories</option>
+          {% for value, label in loan_category_choices %}
+            <option value="{{ value }}" {% if loan_category == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+
+        <select name="agent_id">
+          <option value="">All agents</option>
+          {% for a in agents %}
+            <option value="{{ a.id }}" {% if agent_id == a.id|stringformat:'s' %}selected{% endif %}>{{ a.name }}</option>
+          {% endfor %}
+        </select>
+
+        <input type="text" name="location" value="{{ location }}" placeholder="Borrower location">
+
+        <select name="risk">
+          <option value="">All risk levels</option>
+          {% for value, label in risk_choices %}
+            <option value="{{ value }}" {% if risk == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+
+        <input type="date" name="from_date" value="{{ from_date }}">
+        <input type="date" name="to_date" value="{{ to_date }}">
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="submit" class="btn-soft btn-soft-primary">Apply</button>
+          <a href="{% url 'loans:loans_list' %}" class="btn-soft">Reset</a>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <div class="section-head">
+      <h3 class="section-title">Loan Portfolio</h3>
+      <div class="section-sub">
+        {{ page_obj.paginator.count }} loan{{ page_obj.paginator.count|pluralize }} matched{% if page_obj.paginator.count %} · showing {{ page_obj.start_index }}-{{ page_obj.end_index }}{% endif %}
+      </div>
+    </div>
+    <div class="section-body">
+      {% for row in loans %}
+        {% with l=row.loan %}
+        <div class="loan-card">
+          <div class="row-flex">
+            <div>
+              <div style="font-weight:900;font-size:16px;">
+                <a href="{% url 'loans:loan_detail' l.id %}" style="text-decoration:none;color:inherit;">Loan #{{ l.id }}</a>
+                — {{ l.borrower.full_name }}
+              </div>
+
+              <div class="muted" style="margin-top:6px;">
+                Borrower ID: {{ l.borrower.borrower_id }}
+                · Agent: {{ l.agent_name.name }}
+                · Start: {{ l.start_date|date:"d/m/Y" }}
+                · Weekly: {{ l.weekly_payment|ghs }}
+              </div>
+
+              <div class="chip-row">
+                <span class="chip chip-violet">Category: {{ l.get_loan_category_display }}</span>
+                <span class="chip {% if l.status == 'DEFAULT' %}chip-red{% elif l.status == 'ACTIVE' %}chip-amber{% else %}chip-green{% endif %}">
+                  Loan: {{ l.status }}
+                </span>
+                <span class="chip {% if l.borrower.status == 'BAD' %}chip-red{% elif l.borrower.status == 'ACTIVE' %}chip-amber{% else %}chip-green{% endif %}">
+                  Borrower: {{ l.borrower.status }}
+                </span>
+                <span class="chip {% if row.risk_label == 'High' %}chip-red{% elif row.risk_label == 'Medium' %}chip-amber{% else %}chip-green{% endif %}">
+                  Risk: {{ row.risk_label }}
+                </span>
+                <span class="chip chip-blue">Principal: {{ l.amount|ghs }}</span>
+                <span class="chip chip-blue">ROIC: {{ l.roic_amount|ghs }}</span>
+                <span class="chip chip-green">Expected: {{ l.total_expected_amount|ghs }}</span>
+                <span class="chip chip-green">Collected: {{ l.total_paid_amount|ghs }}</span>
+                <span class="chip chip-slate">Principal Out: {{ l.principal_outstanding|ghs }}</span>
+                <span class="chip chip-slate">ROIC Out: {{ l.roic_outstanding|ghs }}</span>
+                <span class="chip chip-cyan">Balance: {{ l.balance_amount|ghs }}</span>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <a class="btn-soft" href="{% url 'loans:loan_detail' l.id %}">Open</a>
+              <a class="btn-soft btn-soft-primary" href="{% url 'loans:loan_statement' l.id %}">Statement</a>
+            </div>
+          </div>
+        </div>
+        {% endwith %}
+      {% empty %}
+        <p class="muted">No loans found.</p>
+      {% endfor %}
+
+      {% include "includes/pagination.html" %}
+    </div>
+  </section>
+
+</div>
+
+{% endblock %}

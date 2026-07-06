@@ -1,0 +1,91 @@
+{% if page_obj.paginator.num_pages > 1 %}
+  <style>
+    .pagination-shell{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:18px;
+      padding-top:14px;
+      border-top:1px solid var(--border);
+    }
+
+    .pagination-meta{
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .pagination-nav{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .page-link,
+    .page-gap{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:40px;
+      min-height:40px;
+      padding:0 12px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:var(--panel);
+      color:var(--text);
+      font-size:13px;
+      font-weight:800;
+      text-decoration:none;
+    }
+
+    .page-link:hover{
+      color:var(--text);
+      transform:translateY(-1px);
+    }
+
+    .page-link.current{
+      background:var(--primary);
+      border-color:var(--primary);
+      color:#fff;
+    }
+
+    .page-link.edge{
+      padding:0 14px;
+    }
+
+    .page-gap{
+      color:var(--muted);
+      background:transparent;
+    }
+  </style>
+
+  <div class="pagination-shell">
+    <div class="pagination-meta">
+      Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+    </div>
+
+    <div class="pagination-nav" aria-label="Pagination">
+      {% if page_obj.has_previous %}
+        <a class="page-link edge" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+      {% endif %}
+
+      {% for page_number in page_numbers %}
+        {% if page_number %}
+          {% if page_number == page_obj.number %}
+            <span class="page-link current">{{ page_number }}</span>
+          {% else %}
+            <a class="page-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_number }}">{{ page_number }}</a>
+          {% endif %}
+        {% else %}
+          <span class="page-gap">...</span>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <a class="page-link edge" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}

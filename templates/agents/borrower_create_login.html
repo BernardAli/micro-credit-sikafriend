@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .login-shell { max-width:480px; margin:0 auto; display:grid; gap:16px; }
+  .info-banner {
+    border:1px solid var(--border-accent); border-radius:16px;
+    background:var(--gold-pale); padding:14px 16px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .bw-avatar {
+    width:48px; height:48px; border-radius:14px; overflow:hidden;
+    background:linear-gradient(135deg,var(--primary),var(--gold));
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:18px; color:#fff; flex-shrink:0;
+    font-family:var(--font-serif);
+  }
+  .bw-avatar img { width:100%; height:100%; object-fit:cover; }
+  .form-card {
+    border:1px solid var(--border); border-radius:20px;
+    background:var(--panel); box-shadow:var(--shadow-sm); overflow:hidden;
+  }
+  .form-head {
+    padding:18px 20px 14px; border-bottom:1px solid var(--border-soft); position:relative;
+  }
+  .form-head::after {
+    content:""; position:absolute; bottom:0; left:0; right:0; height:1.5px;
+    background:linear-gradient(90deg,var(--gold),var(--primary),transparent 60%);
+  }
+  .form-title { font-family:var(--font-serif);font-size:18px;font-weight:400;color:var(--text);margin:0; }
+  .form-sub   { font-size:12.5px;color:var(--muted);margin-top:3px; }
+  .form-body  { padding:20px; display:grid; gap:14px; }
+  .field { display:grid; gap:5px; }
+  .field label { font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em; }
+  .field .help { font-size:11.5px;color:var(--muted-2);margin-top:3px; }
+  .field .err  { font-size:11.5px;color:var(--danger);margin-top:3px;font-weight:600; }
+  .action-bar {
+    padding:14px 20px; border-top:1px solid var(--border-soft); background:var(--bg-soft);
+    display:flex; gap:10px; justify-content:flex-end;
+  }
+  .info-note {
+    border:1px solid var(--border); border-radius:13px;
+    background:var(--bg-soft); padding:12px 14px;
+    font-size:12.5px; color:var(--muted); line-height:1.65;
+  }
+  .info-note strong { color:var(--text); }
+</style>
+
+<div class="login-shell">
+  <a href="{% url 'loans:borrower_detail' borrower.pk %}" class="btn btn-ghost" style="width:fit-content;">
+    ← Back to {{ borrower.full_name }}
+  </a>
+
+  <!-- Borrower identity banner -->
+  <div class="info-banner">
+    <div class="bw-avatar">
+      {% if borrower.photo %}
+        <img src="{{ borrower.photo.url }}" alt="{{ borrower.full_name }}">
+      {% else %}
+        {{ borrower.full_name|slice:":1"|upper }}
+      {% endif %}
+    </div>
+    <div>
+      <div style="font-weight:700;color:var(--text);font-size:14px;">{{ borrower.full_name }}</div>
+      <div style="font-size:12px;color:var(--muted);">{{ borrower.borrower_id }} · {{ borrower.phone }}{% if borrower.email %} · {{ borrower.email }}{% endif %}</div>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-head">
+      <div class="form-title">{{ title }}</div>
+      <div class="form-sub">Create login credentials so this borrower can access their portal.</div>
+    </div>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="form-body">
+        <div class="field">
+          <label for="{{ form.username.id_for_label }}">Username</label>
+          {{ form.username }}
+          <div class="help">{{ form.username.help_text }}</div>
+          {% if form.username.errors %}<div class="err">{{ form.username.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="field">
+          <label for="{{ form.password.id_for_label }}">Password</label>
+          {{ form.password }}
+          {% if form.password.errors %}<div class="err">{{ form.password.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="field">
+          <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
+          {{ form.password2 }}
+          {% if form.password2.errors %}<div class="err">{{ form.password2.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <a href="{% url 'loans:borrower_detail' borrower.pk %}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary">Create Login</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="info-note">
+    <strong>Note:</strong> Once created, the borrower can log in at
+    <strong>/login/</strong> using these credentials. They will see only their own loan records and payment history — no other borrower data is visible to them.
+    {% if borrower.email %}
+      Their recovery email will be set to <strong>{{ borrower.email }}</strong>.
+    {% else %}
+      Add an email address on the borrower profile if you want them to use forgot-password later.
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

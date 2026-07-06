@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% load currency %}
+{% load humanize %}
+{% block content %}
+<style>
+  .workforce-shell{display:grid;gap:16px}
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;padding:28px}
+  .hero-wrap{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+  .hero-sub{margin-top:8px;opacity:.88;line-height:1.65;max-width:900px}
+  .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .btn-soft{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text)}
+  .btn-soft-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .metrics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .tabs-shell{display:grid;gap:16px}
+  .tabs-nav{display:flex;flex-wrap:wrap;gap:10px;padding:12px;border:1px solid var(--border);border-radius:24px;background:var(--panel-strong);box-shadow:0 18px 46px rgba(26,31,20,.05)}
+  .tab-btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:999px;border:1px solid var(--border);background:var(--panel);color:var(--text-2);font-size:13px;font-weight:800;cursor:pointer;transition:all .16s ease}
+  .tab-btn:hover{transform:translateY(-1px);color:var(--text)}
+  .tab-btn.is-active{background:linear-gradient(135deg,var(--primary) 0%, color-mix(in srgb,var(--primary-2) 82%, #fff) 100%);border-color:var(--primary);color:#fff;box-shadow:0 18px 44px var(--primary-glow)}
+  .tab-panel{display:grid;gap:16px}
+  .tab-panel[hidden]{display:none}
+  .stat-card,.section-card,.employee-card,.role-card{border:1px solid var(--border);border-radius:24px;background:var(--panel);box-shadow:0 18px 45px rgba(26,31,20,.05)}
+  .stat-card{padding:18px}
+  .stat-label{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .stat-value{margin-top:8px;font-size:24px;font-weight:900;color:var(--text)}
+  .stat-sub{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.55}
+  .role-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .role-card{padding:16px}
+  .role-title{font-size:13px;font-weight:900;color:var(--text)}
+  .role-count{font-size:24px;font-weight:900;margin-top:8px}
+  .section-card{overflow:hidden}
+  .section-head{padding:18px 20px 0}
+  .section-title{margin:0;font-size:18px;font-weight:900;color:var(--text)}
+  .section-sub{margin-top:4px;font-size:13px;color:var(--muted)}
+  .section-body{padding:18px 20px 20px}
+  .filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+  .filter-grid input,.filter-grid select{width:100%;min-height:46px;border:1px solid var(--border);border-radius:14px;padding:10px 12px;background:var(--panel-strong)}
+  .employee-list{display:grid;gap:12px}
+  .employee-card{padding:16px}
+  .employee-row{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .employee-main{display:flex;gap:14px;flex:1;min-width:0}
+  .employee-avatar{width:62px;height:62px;border-radius:18px;overflow:hidden;border:1px solid var(--border);background:var(--panel-strong);display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--muted)}
+  .employee-avatar img{width:100%;height:100%;object-fit:cover}
+  .employee-name{font-size:17px;font-weight:900;color:var(--text)}
+  .employee-meta{margin-top:4px;font-size:13px;color:var(--muted);line-height:1.55}
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:var(--panel-strong);font-size:11px;font-weight:800;color:var(--text-2)}
+  .chip-green{background:rgba(22,163,74,.08);border-color:rgba(22,163,74,.16);color:var(--success)}
+  .chip-blue{background:rgba(46,92,138,.08);border-color:rgba(46,92,138,.16);color:var(--info)}
+  .chip-gold{background:var(--gold-pale);border-color:color-mix(in srgb,var(--gold) 24%, transparent);color:var(--gold)}
+  .chip-red{background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.14);color:var(--danger)}
+  .employee-aside{min-width:250px;display:grid;gap:10px}
+  .aside-stat{padding:12px 14px;border-radius:18px;background:var(--panel-strong);border:1px solid var(--border)}
+  .aside-label{font-size:11px;font-weight:900;text-transform:uppercase;color:var(--muted);letter-spacing:.06em}
+  .aside-value{margin-top:5px;font-size:16px;font-weight:900;color:var(--text)}
+  .action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  @media(max-width:1100px){.metrics-grid,.role-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:760px){.metrics-grid,.role-grid{grid-template-columns:1fr}.employee-aside{min-width:0;width:100%}}
+</style>
+
+<div class="workforce-shell">
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div>
+          <div class="hero-kicker">People Operations</div>
+          <h1 class="hero-title">{{ title }}</h1>
+          <div class="hero-sub">Manage field agents, HR, finance, recovery, and office staff in one workforce directory. This view combines operational coverage, access setup, and payroll readiness for a modern micro-credit business.</div>
+        </div>
+        <div class="hero-actions">
+          <a href="{% url 'agent_create' %}" class="btn-soft btn-soft-primary">Add Workforce Member</a>
+          <a href="{% url 'agent_register' %}" class="btn-soft">Register Login</a>
+          <a href="{% url 'payroll_hub' %}" class="btn-soft">Open Payroll</a>
+          <a href="{% url 'agent_bulk_import' %}" class="btn-soft">Bulk Import</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tabs-shell">
+    <div class="tabs-nav" role="tablist" aria-label="Workforce sections">
+      <button type="button" class="tab-btn is-active" data-tab-target="overview" role="tab" aria-selected="true" aria-controls="workforce-tab-overview" id="workforce-tab-button-overview">Overview</button>
+      <button type="button" class="tab-btn" data-tab-target="filters" role="tab" aria-selected="false" aria-controls="workforce-tab-filters" id="workforce-tab-button-filters">Filters</button>
+      <button type="button" class="tab-btn" data-tab-target="directory" role="tab" aria-selected="false" aria-controls="workforce-tab-directory" id="workforce-tab-button-directory">Directory</button>
+    </div>
+
+    <div class="tab-panel" id="workforce-tab-overview" data-tab-panel="overview" role="tabpanel" aria-labelledby="workforce-tab-button-overview">
+      <section class="metrics-grid">
+        <div class="stat-card"><div class="stat-label">Total Workforce</div><div class="stat-value">{{ total_agents }}</div><div class="stat-sub">{{ active_workforce }} active employees across field and office teams.</div></div>
+        <div class="stat-card"><div class="stat-label">Payroll Active</div><div class="stat-value">{{ payroll_enabled_count }}</div><div class="stat-sub">Employees currently configured to appear in payroll runs.</div></div>
+        <div class="stat-card"><div class="stat-label">Monthly Base Payroll</div><div class="stat-value">{{ monthly_base_payroll|currency }}</div><div class="stat-sub">Base salary plus standard allowances before commissions and deductions.</div></div>
+        <div class="stat-card"><div class="stat-label">Admin Access</div><div class="stat-value">{{ admin_access_count }}</div><div class="stat-sub">HR, finance, operations, or management users with main platform access.</div></div>
+      </section>
+
+      <section class="role-grid">
+        {% for item in role_totals %}
+          <div class="role-card">
+            <div class="stat-label">{{ item.label }}</div>
+            <div class="role-count">{{ item.count }}</div>
+            <div class="stat-sub">{{ item.monthly_payroll|currency }} regular monthly payroll.</div>
+          </div>
+        {% endfor %}
+      </section>
+    </div>
+
+    <div class="tab-panel" id="workforce-tab-filters" data-tab-panel="filters" role="tabpanel" aria-labelledby="workforce-tab-button-filters" hidden>
+      <section class="section-card">
+        <div class="section-head">
+          <h2 class="section-title">Filters</h2>
+          <div class="section-sub">Search by employee code, role, department, branch, or loan risk for field teams.</div>
+        </div>
+        <div class="section-body">
+          <form method="get" class="filter-grid">
+            <input type="text" name="q" value="{{ q }}" placeholder="Search employee, code, phone, role">
+            <select name="workforce_role">
+              <option value="">All roles</option>
+              {% for code, label in role_choices %}<option value="{{ code }}" {% if workforce_role == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+            <input type="text" name="department" value="{{ department }}" placeholder="Department">
+            <select name="employment_status">
+              <option value="">All statuses</option>
+              {% for code, label in employment_status_choices %}<option value="{{ code }}" {% if employment_status == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+            <input type="text" name="location" value="{{ location }}" placeholder="Location">
+            <input type="text" name="group_name" value="{{ group_name }}" placeholder="Team / branch group">
+            <select name="access">
+              <option value="">Any access level</option>
+              {% for code, label in access_choices %}<option value="{{ code }}" {% if access == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+            <select name="risk">
+              <option value="">Any portfolio risk</option>
+              {% for code, label in risk_choices %}<option value="{{ code }}" {% if risk == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+            <input type="date" name="from_date" value="{{ from_date }}">
+            <input type="date" name="to_date" value="{{ to_date }}">
+            <button type="submit" class="btn-soft btn-soft-primary">Apply Filters</button>
+            <a href="{% url 'agent_list' %}" class="btn-soft">Reset</a>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" id="workforce-tab-directory" data-tab-panel="directory" role="tabpanel" aria-labelledby="workforce-tab-button-directory" hidden>
+      <section class="section-card">
+        <div class="section-head">
+          <h2 class="section-title">Directory</h2>
+          <div class="section-sub">Each record combines workforce identity, payroll readiness, and field portfolio context where applicable.</div>
+        </div>
+        <div class="section-body">
+          <div class="employee-list">
+            {% for row in agents %}
+              {% with employee=row.employee %}
+              <article class="employee-card">
+                <div class="employee-row">
+                  <div class="employee-main">
+                    <div class="employee-avatar">
+                      {% if employee.photo %}<img src="{{ employee.photo.url }}" alt="{{ employee.name }}">{% else %}{{ employee.name|slice:":1"|upper }}{% endif %}
+                    </div>
+                    <div>
+                      <div class="employee-name">{{ employee.name }}</div>
+                      <div class="employee-meta">{{ employee.agent_id }} · {{ employee.get_workforce_role_display }}{% if employee.job_title %} · {{ employee.job_title }}{% endif %}{% if employee.department %} · {{ employee.department }}{% endif %}</div>
+                      <div class="employee-meta">{{ employee.location }}{% if employee.email %} · {{ employee.email }}{% endif %}{% if employee.supervisor %} · Reports to {{ employee.supervisor.name }}{% endif %}</div>
+                      <div class="chip-row">
+                        <span class="chip chip-blue">{{ employee.get_employment_status_display }}</span>
+                        <span class="chip {% if employee.payroll_active %}chip-green{% else %}chip-red{% endif %}">{% if employee.payroll_active %}Payroll Active{% else %}Payroll Inactive{% endif %}</span>
+                        <span class="chip {% if employee.has_admin_access %}chip-gold{% else %}chip-blue{% endif %}">{% if employee.has_admin_access %}Admin Access{% else %}Standard Access{% endif %}</span>
+                        {% if employee.group_name %}<span class="chip">{{ employee.group_name }}</span>{% endif %}
+                        {% if employee.is_field_agent %}<span class="chip {% if row.risk_label == 'High' %}chip-red{% elif row.risk_label == 'Medium' %}chip-gold{% else %}chip-green{% endif %}">{{ row.risk_label }} Portfolio Risk</span>{% endif %}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="employee-aside">
+                    <div class="aside-stat"><div class="aside-label">Regular Monthly Pay</div><div class="aside-value">{{ row.gross_regular_pay|currency }}</div></div>
+                    <div class="aside-stat"><div class="aside-label">Loan Portfolio</div><div class="aside-value">{{ row.total_outstanding|currency }}</div></div>
+                    <div class="aside-stat"><div class="aside-label">Collections Rate</div><div class="aside-value">{{ row.collection_rate }}%</div></div>
+                  </div>
+                </div>
+                <div class="chip-row">
+                  <span class="chip">{{ row.total_loans }} loans</span>
+                  <span class="chip">{{ row.active_loans }} active</span>
+                  <span class="chip">{{ row.default_loans }} defaulted</span>
+                  <span class="chip">{{ row.distinct_borrowers }} borrowers</span>
+                  <span class="chip">Disbursed {{ row.total_disbursed|currency }}</span>
+                  <span class="chip">Collected {{ row.total_collected|currency }}</span>
+                </div>
+                <div class="action-row">
+                  <a href="{% url 'agent_detail' employee.pk %}" class="btn-soft btn-soft-primary">Open Profile</a>
+                  {% if employee.is_field_agent %}
+                    <a href="{% url 'agent_comprehensive_analysis' employee.pk %}" class="btn-soft">Analysis</a>
+                  {% endif %}
+                  {% if employee.user %}
+                    <a href="{% url 'agent_reset_password' employee.pk %}" class="btn-soft">Reset Password</a>
+                  {% else %}
+                    <a href="{% url 'agent_register' %}" class="btn-soft">Create Login</a>
+                  {% endif %}
+                </div>
+              </article>
+              {% endwith %}
+            {% empty %}
+              <div class="stat-sub">No workforce members matched the current filters.</div>
+            {% endfor %}
+          </div>
+          {% include "includes/pagination.html" %}
+        </div>
+      </section>
+    </div>
+  </section>
+</div>
+<script>
+  (() => {
+    const tabButtons = Array.from(document.querySelectorAll("#workforce-tab-button-overview, #workforce-tab-button-filters, #workforce-tab-button-directory"));
+    const tabPanels = Array.from(document.querySelectorAll("[data-tab-panel]"));
+    const validTabs = new Set(tabPanels.map((panel) => panel.dataset.tabPanel));
+
+    const activateTab = (tabName, updateHash = true) => {
+      tabButtons.forEach((button) => {
+        const isActive = button.dataset.tabTarget === tabName;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-selected", isActive ? "true" : "false");
+      });
+      tabPanels.forEach((panel) => {
+        panel.hidden = panel.dataset.tabPanel !== tabName;
+      });
+      if (updateHash && window.location.hash !== `#${tabName}`) {
+        history.replaceState(null, "", `#${tabName}`);
+      }
+    };
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => activateTab(button.dataset.tabTarget));
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    const hasFilters = Array.from(params.entries()).some(([, value]) => value);
+    const hashTab = window.location.hash ? window.location.hash.slice(1) : "";
+    const initialTab = validTabs.has(hashTab) ? hashTab : hasFilters ? "filters" : "overview";
+    activateTab(initialTab, false);
+  })();
+</script>
+{% endblock %}

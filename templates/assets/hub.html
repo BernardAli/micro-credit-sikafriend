@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+{% load currency %}
+{% block content %}
+<style>
+  .assets-shell{display:grid;gap:18px}
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;padding:28px}
+  .hero-wrap{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap}
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+  .hero-sub{margin-top:10px;max-width:980px;line-height:1.68;opacity:.88}
+  .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .btn-soft{
+    display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;
+    font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text);
+    transition:all .16s ease;cursor:pointer;
+  }
+  .btn-soft:hover{color:var(--text);transform:translateY(-1px)}
+  .btn-soft-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .metrics-grid,.category-grid,.link-grid{display:grid;gap:14px}
+  .metrics-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .category-grid,.link-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .stat-card,.category-card,.link-card,.panel{border:1px solid var(--border);background:var(--panel-strong);box-shadow:0 20px 50px rgba(26,31,20,.05)}
+  .stat-card,.category-card,.link-card{border-radius:22px;padding:18px}
+  .stat-label{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.38px;color:var(--muted)}
+  .stat-value{font-size:24px;font-weight:900;margin-top:8px;color:var(--text)}
+  .stat-sub{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.55}
+  .tabs-shell{display:grid;gap:16px}
+  .tabs-nav{
+    display:flex;flex-wrap:wrap;gap:10px;padding:12px;border:1px solid var(--border);border-radius:24px;
+    background:var(--panel-strong);box-shadow:0 18px 46px rgba(26,31,20,.05);
+  }
+  .tab-btn{
+    display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:999px;
+    border:1px solid var(--border);background:var(--panel);color:var(--text-2);font-size:13px;font-weight:800;cursor:pointer;
+    transition:all .16s ease;
+  }
+  .tab-btn:hover{transform:translateY(-1px);color:var(--text)}
+  .tab-btn.active{
+    background:linear-gradient(135deg,var(--primary) 0%, color-mix(in srgb,var(--primary-2) 82%, #fff) 100%);
+    border-color:var(--primary);color:#fff;box-shadow:0 18px 44px var(--primary-glow);
+  }
+  .tab-panel{display:none;gap:16px}
+  .tab-panel.active{display:grid}
+  .panel{border-radius:24px;overflow:hidden}
+  .section{padding:20px 22px}
+  .section + .section{border-top:1px solid var(--border-soft)}
+  .section-title{margin:0 0 6px;font-size:20px;font-weight:900;color:var(--text)}
+  .section-sub{color:var(--muted);font-size:13px;line-height:1.65;margin-bottom:16px}
+  .grid-2,.grid-3{display:grid;gap:16px}
+  .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .field-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .field{display:grid;gap:6px}
+  .field.full{grid-column:1 / -1}
+  .field label{font-size:12px;font-weight:900;color:var(--text);text-transform:uppercase;letter-spacing:.04em}
+  .field input,.field select,.field textarea{width:100%;min-height:46px;border:1px solid var(--border);border-radius:14px;padding:10px 12px;background:var(--panel)}
+  .field input[type="checkbox"]{width:auto;min-height:auto}
+  .field .helptext{font-size:12px;color:var(--muted);line-height:1.5}
+  .field .errorlist{margin:0;padding:0;list-style:none;color:var(--danger);font-size:12px;font-weight:700}
+  .check-row{display:flex;align-items:center;gap:10px;padding:14px;border:1px solid var(--border);border-radius:18px;background:var(--panel)}
+  .action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:18px}
+  .table{width:100%;border-collapse:collapse;min-width:760px;background:var(--panel)}
+  .table th,.table td{padding:12px 14px;border-bottom:1px solid var(--border-soft);text-align:left;font-size:13px;vertical-align:top}
+  .table th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:var(--bg-soft)}
+  .chip{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;border:1px solid var(--border);background:var(--panel);font-size:11px;font-weight:800;color:var(--text-2)}
+  .chip-green{background:rgba(22,163,74,.08);border-color:rgba(22,163,74,.16);color:var(--success)}
+  .chip-red{background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.14);color:var(--danger)}
+  .chip-gold{background:var(--gold-pale);border-color:color-mix(in srgb,var(--gold) 24%, transparent);color:var(--gold)}
+  .chip-blue{background:rgba(46,92,138,.08);border-color:rgba(46,92,138,.16);color:var(--info)}
+  .list{display:grid;gap:10px}
+  .item{padding:14px;border:1px solid var(--border);border-radius:18px;background:var(--panel-strong)}
+  .item-title{font-size:15px;font-weight:900;color:var(--text)}
+  .item-meta{margin-top:4px;font-size:13px;color:var(--muted);line-height:1.55}
+  @media(max-width:1280px){.metrics-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.category-grid,.link-grid,.grid-3{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
+  @media(max-width:760px){.metrics-grid,.field-grid,.field-grid-3{grid-template-columns:1fr}}
+</style>
+
+<div class="assets-shell">
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div>
+          <div class="hero-kicker">Fixed Assets, Depreciation & Control</div>
+          <h1 class="hero-title">{{ title }}</h1>
+          <div class="hero-sub">Track the full fixed-asset lifecycle for a modern micro-credit business: capitalization, branch or staff custody, scheduled maintenance, depreciation, disposals, warranty monitoring, and the linked accounting entries that keep the general ledger in step with the asset register.</div>
+        </div>
+        <div class="hero-actions">
+          <a href="{% url 'accounting:hub' %}" class="btn-soft">Open Accounting Hub</a>
+          <a href="{% url 'assets:bulk_import' %}" class="btn-soft btn-soft-primary">Bulk Import Assets</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="metrics-grid">
+    <div class="stat-card"><div class="stat-label">Assets Registered</div><div class="stat-value">{{ asset_count }}</div><div class="stat-sub">Full register size across all categories and lifecycle states.</div></div>
+    <div class="stat-card"><div class="stat-label">Active Assets</div><div class="stat-value">{{ active_asset_count }}</div><div class="stat-sub">Assets currently in service and available to operations.</div></div>
+    <div class="stat-card"><div class="stat-label">Capitalized Cost</div><div class="stat-value">{{ total_cost|currency }}</div><div class="stat-sub">Acquisition cost under fixed-asset control.</div></div>
+    <div class="stat-card"><div class="stat-label">Accumulated Depreciation</div><div class="stat-value">{{ accumulated_depreciation|currency }}</div><div class="stat-sub">Posted depreciation already reflected in accounting.</div></div>
+    <div class="stat-card"><div class="stat-label">Net Book Value</div><div class="stat-value">{{ net_book_value|currency }}</div><div class="stat-sub">Current carrying value based on posted depreciation runs.</div></div>
+    <div class="stat-card"><div class="stat-label">Depreciation Due</div><div class="stat-value">{{ depreciation_due_total|currency }}</div><div class="stat-sub">Unposted depreciation exposure at today’s date.</div></div>
+  </section>
+
+  <section class="tabs-shell" data-initial-tab="{{ active_tab }}">
+    <div class="tabs-nav" role="tablist" aria-label="Assets management sections">
+      <button type="button" class="tab-btn" data-tab-target="overview">Overview</button>
+      <button type="button" class="tab-btn" data-tab-target="register">Register</button>
+      <button type="button" class="tab-btn" data-tab-target="care">Custody & Maintenance</button>
+      <button type="button" class="tab-btn" data-tab-target="depreciation">Depreciation & Disposal</button>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="overview">
+      <section class="panel">
+        <div class="section">
+          <h2 class="section-title">Portfolio Summary</h2>
+          <div class="section-sub">Quick operational and accounting signals for the fixed-asset base supporting branches, staff, field teams, and back-office operations.</div>
+          <div class="metrics-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));">
+            <div class="stat-card"><div class="stat-label">Maintenance Due</div><div class="stat-value">{{ maintenance_due }}</div><div class="stat-sub">{{ overdue_maintenance }} scheduled jobs are overdue.</div></div>
+            <div class="stat-card"><div class="stat-label">Disposed / Written Off</div><div class="stat-value">{{ disposed_asset_count }}</div><div class="stat-sub">Assets no longer active in the operating base.</div></div>
+            <div class="stat-card"><div class="stat-label">Maintenance Cost</div><div class="stat-value">{{ maintenance_cost_total|currency }}</div><div class="stat-sub">Completed maintenance cost recorded across the register.</div></div>
+            <div class="stat-card"><div class="stat-label">Categories</div><div class="stat-value">{{ categories.count }}</div><div class="stat-sub">Asset classes with account mappings and depreciation defaults.</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="category-grid">
+        {% for item in category_breakdown %}
+          <div class="category-card">
+            <div class="stat-label">{{ item.category.name }}</div>
+            <div class="stat-value">{{ item.count }}</div>
+            <div class="stat-sub">Capitalized {{ item.cost|currency }} · Carrying {{ item.book_value|currency }}</div>
+          </div>
+        {% empty %}
+          <div class="category-card"><div class="stat-label">No Categories Yet</div><div class="stat-sub">Create your asset classes to begin fixed-asset control.</div></div>
+        {% endfor %}
+      </section>
+
+      <section class="grid-2">
+        <div class="panel">
+          <div class="section">
+            <h2 class="section-title">Recent Assets</h2>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr><th>Asset</th><th>Category</th><th>Status</th><th>Custodian</th><th class="right">Cost</th><th class="right">NBV</th></tr>
+                </thead>
+                <tbody>
+                  {% for asset in assets %}
+                    <tr>
+                      <td><a href="{% url 'assets:detail' asset.pk %}"><strong>{{ asset.asset_code }}</strong></a><br><span class="item-meta">{{ asset.name }}</span></td>
+                      <td>{{ asset.category.name }}</td>
+                      <td><span class="chip {% if asset.status == 'ACTIVE' %}chip-green{% elif asset.status == 'IN_MAINTENANCE' %}chip-gold{% else %}chip-red{% endif %}">{{ asset.get_status_display }}</span></td>
+                      <td>{{ asset.custodian.name|default:"-" }}</td>
+                      <td class="right">{{ asset.purchase_cost|currency }}</td>
+                      <td class="right">{{ asset.net_book_value|currency }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="6">No assets registered yet.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section">
+            <h2 class="section-title">Accounting Links</h2>
+            <div class="section-sub">These balances come from the accounting ledgers and move when asset capitalization, depreciation, maintenance, or disposal postings are created.</div>
+            <div class="link-grid">
+              {% for item in accounting_links %}
+                <div class="link-card">
+                  <div class="stat-label">{{ item.label }}</div>
+                  <div class="item-meta" style="margin-top:8px;">{% if item.account %}{{ item.account.code }} - {{ item.account.name }}{% else %}Missing ledger{% endif %}</div>
+                  <div class="stat-value" style="font-size:20px;">{% if item.account %}{{ item.account.current_balance|currency }}{% else %}-{% endif %}</div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="register">
+      <section class="grid-2">
+        <div class="panel">
+          <div class="section">
+            <h2 class="section-title">Create Asset Category</h2>
+            <div class="section-sub">Set depreciation defaults and map each category to the appropriate accounting ledgers.</div>
+            <form method="post">
+              {% csrf_token %}
+              <div class="field-grid">
+                {% for field in category_form %}
+                  <div class="field {% if field.name == 'description' %}full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="action-row"><button type="submit" name="create_category" class="btn-soft btn-soft-primary">Save Category</button></div>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section">
+            <h2 class="section-title">Register Asset</h2>
+            <div class="section-sub">Capture the acquisition, custody, ledger mapping, and depreciation setup in one workflow.</div>
+            <form method="post">
+              {% csrf_token %}
+              <div class="field-grid-3">
+                {% for field in asset_form %}
+                  <div class="field {% if field.name == 'notes' %}full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}<div class="helptext">{{ field.help_text }}</div>{% endif %}
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="action-row"><button type="submit" name="create_asset" class="btn-soft btn-soft-primary">Save Asset</button></div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="care">
+      <section class="grid-2">
+        <div class="panel">
+          <div class="section">
+            <h2 class="section-title">Assign Custody</h2>
+            <div class="section-sub">Track who is responsible for each asset, when it moved, and which branch or work point currently holds it.</div>
+            <form method="post">
+              {% csrf_token %}
+              <div class="field-grid">
+                {% for field in assignment_form %}
+                  <div class="field {% if field.name == 'notes' %}full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="action-row"><button type="submit" name="create_assignment" class="btn-soft btn-soft-primary">Record Assignment</button></div>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section">
+            <h2 class="section-title">Log Maintenance</h2>
+            <div class="section-sub">Plan service work, assign staff or vendors, capture cost, and optionally post completed maintenance into accounting.</div>
+            <form method="post">
+              {% csrf_token %}
+              <div class="field-grid">
+                {% for field in maintenance_form %}
+                  <div class="field {% if field.name == 'description' or field.name == 'notes' %}full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+                <div class="field full">
+                  <label for="{{ maintenance_form.post_maintenance.id_for_label }}">{{ maintenance_form.post_maintenance.label }}</label>
+                  <div class="check-row">{{ maintenance_form.post_maintenance }} <div class="item-meta">Post completed maintenance cost into accounting using the selected expense and settlement accounts.</div></div>
+                </div>
+              </div>
+              <div class="action-row"><button type="submit" name="create_maintenance" class="btn-soft btn-soft-primary">Save Maintenance</button></div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid-2">
+        <div class="panel">
+          <div class="section">
+            <h2 class="section-title">Recent Assignments</h2>
+            <div class="list">
+              {% for item in assignments %}
+                <div class="item">
+                  <div class="item-title">{{ item.asset.asset_code }} · {{ item.asset.name }}</div>
+                  <div class="item-meta">Assigned to {{ item.assigned_to.name|default:"Unassigned" }} on {{ item.assigned_date }}{% if item.location %} · {{ item.location }}{% endif %}</div>
+                </div>
+              {% empty %}
+                <div class="item"><div class="item-meta">No assignment records yet.</div></div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section">
+            <h2 class="section-title">Recent Maintenance</h2>
+            <div class="list">
+              {% for item in maintenance_records %}
+                <div class="item">
+                  <div class="item-title">{{ item.asset.asset_code }} · {{ item.get_maintenance_type_display }}</div>
+                  <div class="item-meta">{{ item.get_status_display }} · Requested {{ item.requested_on }}{% if item.completed_on %} · Completed {{ item.completed_on }}{% endif %}</div>
+                  <div class="item-meta">Actual cost {{ item.actual_cost|currency }}{% if item.vendor %} · Vendor {{ item.vendor.name }}{% endif %}</div>
+                </div>
+              {% empty %}
+                <div class="item"><div class="item-meta">No maintenance records yet.</div></div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="depreciation">
+      <section class="grid-2">
+        <div class="panel">
+          <div class="section">
+            <h2 class="section-title">Post Depreciation Run</h2>
+            <div class="section-sub">Generate depreciation for all eligible in-service assets and post the expense and accumulated depreciation into accounting.</div>
+            <form method="post">
+              {% csrf_token %}
+              <div class="field-grid">
+                {% for field in depreciation_form %}
+                  <div class="field {% if field.name == 'notes' %}full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="action-row"><button type="submit" name="create_depreciation_run" class="btn-soft btn-soft-primary">Post Depreciation</button></div>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section">
+            <h2 class="section-title">Dispose Asset</h2>
+            <div class="section-sub">Process sale, write-off, donation, loss, or trade-in and remove the asset from the books through accounting.</div>
+            <form method="post">
+              {% csrf_token %}
+              <div class="field-grid">
+                {% for field in disposal_form %}
+                  <div class="field {% if field.name == 'notes' %}full{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="action-row"><button type="submit" name="create_disposal" class="btn-soft btn-soft-primary">Post Disposal</button></div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid-2">
+        <div class="panel">
+          <div class="section">
+            <h2 class="section-title">Recent Depreciation Runs</h2>
+            <div class="list">
+              {% for run in depreciation_runs %}
+                <div class="item">
+                  <div class="item-title">{{ run.title }}</div>
+                  <div class="item-meta">{{ run.period_start }} to {{ run.period_end }} · Posted {{ run.posting_date }} · {{ run.get_status_display }}</div>
+                  <div class="item-meta">{{ run.lines.count }} assets · {{ run.total_depreciation|currency }}</div>
+                </div>
+              {% empty %}
+                <div class="item"><div class="item-meta">No depreciation runs posted yet.</div></div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section">
+            <h2 class="section-title">Recent Disposals</h2>
+            <div class="list">
+              {% for item in disposals %}
+                <div class="item">
+                  <div class="item-title">{{ item.asset.asset_code }} · {{ item.asset.name }}</div>
+                  <div class="item-meta">{{ item.get_disposal_type_display }} on {{ item.disposal_date }}</div>
+                  <div class="item-meta">Proceeds {{ item.proceeds|currency }} · Selling cost {{ item.selling_cost|currency }}</div>
+                </div>
+              {% empty %}
+                <div class="item"><div class="item-meta">No disposals have been processed yet.</div></div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+</div>
+
+<script>
+  (() => {
+    const shell = document.querySelector(".tabs-shell[data-initial-tab]");
+    if (!shell) return;
+    const tabButtons = Array.from(shell.querySelectorAll("[data-tab-target]"));
+    const tabPanels = Array.from(shell.querySelectorAll("[data-tab-panel]"));
+    const initialTab = shell.dataset.initialTab || "overview";
+
+    const openTab = (tabName, updateHash = true) => {
+      tabButtons.forEach((button) => {
+        const active = button.dataset.tabTarget === tabName;
+        button.classList.toggle("active", active);
+      });
+      tabPanels.forEach((panel) => {
+        panel.classList.toggle("active", panel.dataset.tabPanel === tabName);
+      });
+      if (updateHash) history.replaceState(null, "", `#${tabName}`);
+    };
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => openTab(button.dataset.tabTarget));
+    });
+
+    const hashTab = window.location.hash.replace("#", "");
+    const validHash = tabButtons.find((button) => button.dataset.tabTarget === hashTab);
+    openTab(validHash ? hashTab : initialTab, Boolean(validHash));
+  })();
+</script>
+{% endblock %}

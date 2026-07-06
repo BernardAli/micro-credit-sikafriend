@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h3 class="card-title">Add Payment - Loan #{{ loan.id }}</h3>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-primary" type="submit">Save</button>
+      <a class="btn" href="{% url 'borrower_detail' loan.borrower.id %}">Back</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

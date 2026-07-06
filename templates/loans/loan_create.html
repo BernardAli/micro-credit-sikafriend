@@ -1,0 +1,1280 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .loan-create-shell{
+    max-width: 1220px;
+    margin: 0 auto;
+    display: grid;
+    gap: 18px;
+  }
+
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+
+
+  .hero-inner{position:relative;z-index:1;padding:28px}
+
+  .hero-wrap{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:18px;
+    flex-wrap:wrap;
+  }
+
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+
+  .hero-sub{
+    margin-top:10px;
+    max-width:880px;
+    opacity:.88;
+    line-height:1.65;
+    font-size:14px;
+  }
+
+  .hero-chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:16px;
+  }
+
+  .hero-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:8px 12px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.08);
+    font-size:12px;
+    font-weight:800;
+    color:#fff;
+    backdrop-filter:blur(8px);
+  }
+
+  .btn-soft{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:44px;
+    padding:10px 16px;
+    border-radius:999px;
+    font-weight:800;
+    text-decoration:none;
+    border:1px solid var(--border);
+    background:var(--panel-strong);
+    color:var(--text);
+    box-shadow:0 10px 24px rgba(26,31,20,.08);
+    transition:all .16s ease;
+  }
+
+  .btn-soft:hover{
+    color:var(--text);
+    transform:translateY(-1px);
+  }
+
+  .btn-soft-primary{
+    background:linear-gradient(135deg,var(--primary),var(--primary-3));
+    color:#fff;
+    border-color:var(--primary);
+    box-shadow:0 18px 36px rgba(58,90,30,.22);
+  }
+
+  .btn-soft-primary:hover{
+    color:#fff;
+  }
+
+  .layout-grid{
+    display:grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap:18px;
+    align-items:start;
+  }
+
+  .section-card{
+    border:1px solid var(--border);
+    border-radius:28px;
+    background:var(--panel);
+    box-shadow:0 22px 60px rgba(26,31,20,.06);
+    overflow:hidden;
+  }
+
+  .section-head{
+    padding:20px 22px 0;
+  }
+
+  .section-title{
+    margin:0;
+    font-size:19px;
+    font-weight:900;
+    color:var(--text);
+  }
+
+  .section-sub{
+    color:var(--muted);
+    font-size:13px;
+    margin-top:5px;
+    line-height:1.55;
+  }
+
+  .section-body{
+    padding:20px 22px 24px;
+  }
+
+  .form-grid{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap:16px;
+  }
+
+  .field-card{
+    border:1px solid var(--border);
+    background:var(--panel-strong);
+    border-radius:20px;
+    padding:14px;
+    box-shadow:0 8px 24px rgba(26,31,20,.03);
+  }
+
+  .field-card.full{
+    grid-column:1 / -1;
+  }
+
+  .checkbox-card .field-wrap{
+    display:flex;
+    flex-direction:row;
+    align-items:flex-start;
+    gap:10px;
+  }
+
+  .checkbox-card input[type="checkbox"]{
+    width:18px;
+    height:18px;
+    min-height:18px;
+    margin-top:2px;
+    flex:0 0 auto;
+  }
+
+  .checkbox-card label{
+    margin:0;
+    line-height:1.45;
+  }
+
+  .field-wrap{
+    display:grid;
+    gap:8px;
+  }
+
+  .field-wrap label{
+    font-weight:900;
+    color:var(--text);
+    font-size:13px;
+    letter-spacing:.1px;
+  }
+
+  .field-wrap input,
+  .field-wrap select,
+  .field-wrap textarea{
+    width:100%;
+    min-height:48px;
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:10px 14px;
+    background:var(--panel-strong);
+    box-shadow:none;
+  }
+
+  .field-wrap input:focus,
+  .field-wrap select:focus,
+  .field-wrap textarea:focus{
+    outline:none;
+    border-color:#60a5fa;
+    box-shadow:0 0 0 4px rgba(58,90,30,.10);
+  }
+
+  .field-help{
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.5;
+  }
+
+  .field-error{
+    color:var(--danger);
+    font-size:12px;
+    font-weight:700;
+    line-height:1.45;
+  }
+
+  .note-box{
+    margin-top:22px;
+    padding:18px 18px;
+    border-radius:20px;
+    background:
+      linear-gradient(180deg, rgba(58,90,30,.04), rgba(81,122,40,.03));
+    border:1px solid rgba(58,90,30,.10);
+  }
+
+  .note-kicker{
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:.45px;
+    color:var(--primary-2);
+    text-transform:uppercase;
+  }
+
+  .note-text{
+    margin-top:6px;
+    font-size:14px;
+    color:var(--text-2);
+    line-height:1.7;
+  }
+
+  .action-row{
+    margin-top:24px;
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .summary-grid{
+    display:grid;
+    gap:12px;
+  }
+
+  .summary-card{
+    border:1px solid var(--border);
+    border-radius:22px;
+    background:var(--panel);
+    padding:16px;
+    box-shadow:0 10px 28px rgba(26,31,20,.04);
+    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  }
+
+  .summary-card:hover{
+    transform:translateY(-1px);
+    border-color:color-mix(in srgb, var(--primary) 14%, transparent);
+    box-shadow:0 16px 34px rgba(26,31,20,.06);
+  }
+
+  .summary-label{
+    font-size:12px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    color:var(--muted);
+  }
+
+  .summary-value{
+    font-size:24px;
+    font-weight:900;
+    color:var(--text);
+    margin-top:8px;
+    line-height:1.06;
+  }
+
+  .summary-sub{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:6px;
+    line-height:1.5;
+  }
+
+  .summary-panel{
+    margin-top:18px;
+    border:1px solid var(--border);
+    border-radius:22px;
+    background:var(--panel);
+    padding:16px;
+  }
+
+  .summary-panel-title{
+    font-size:14px;
+    font-weight:900;
+    color:var(--text);
+    margin-bottom:10px;
+  }
+
+  .term-row{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    padding:11px 0;
+    border-bottom:1px solid var(--border-soft);
+  }
+
+  .term-row:last-child{
+    border-bottom:none;
+  }
+
+  .term-label{
+    color:var(--muted);
+    font-size:13px;
+  }
+
+  .term-value{
+    font-weight:900;
+    color:var(--text);
+    text-align:right;
+    font-size:13px;
+  }
+
+  .preview-banner{
+    margin-top:16px;
+    padding:14px 16px;
+    border-radius:18px;
+    border:1px dashed rgba(58,90,30,.16);
+    background:rgba(58,90,30,.04);
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.65;
+  }
+
+  .risk-review{
+    display:grid;
+    gap:12px;
+  }
+
+  .risk-review__banner{
+    padding:14px 16px;
+    border-radius:18px;
+    border:1px solid rgba(220,38,38,.14);
+    background:rgba(220,38,38,.05);
+    color:var(--text);
+  }
+
+  .risk-review__banner.safe{
+    border-color:rgba(22,163,74,.14);
+    background:rgba(22,163,74,.05);
+  }
+
+  .risk-review__kicker{
+    font-size:11px;
+    font-weight:900;
+    letter-spacing:.35px;
+    text-transform:uppercase;
+    color:var(--danger);
+  }
+
+  .risk-review__banner.safe .risk-review__kicker{
+    color:var(--success);
+  }
+
+  .risk-review__title{
+    margin-top:6px;
+    font-size:15px;
+    font-weight:900;
+    color:var(--text);
+  }
+
+  .risk-review__meta{
+    margin-top:6px;
+    font-size:12.5px;
+    color:var(--muted);
+    line-height:1.6;
+  }
+
+  .risk-review__list{
+    display:grid;
+    gap:10px;
+  }
+
+  .risk-company{
+    border:1px solid var(--border);
+    border-radius:18px;
+    background:var(--panel);
+    padding:14px;
+  }
+
+  .risk-company__head{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:flex-start;
+  }
+
+  .risk-company__name{
+    font-size:14px;
+    font-weight:900;
+    color:var(--text);
+  }
+
+  .risk-company__sub{
+    margin-top:4px;
+    font-size:12px;
+    color:var(--muted);
+  }
+
+  .risk-company__amount{
+    font-size:14px;
+    font-weight:900;
+    color:var(--danger);
+    text-align:right;
+  }
+
+  .risk-ack{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    padding:14px 16px;
+    border-radius:18px;
+    border:1px dashed rgba(220,38,38,.18);
+    background:rgba(245,158,11,.06);
+    color:var(--text-2);
+    font-size:13px;
+    line-height:1.6;
+  }
+
+  .risk-ack input{
+    margin-top:2px;
+    width:16px;
+    height:16px;
+    flex:0 0 auto;
+  }
+
+  .muted{
+    color:var(--muted);
+  }
+
+  @media (max-width: 980px){
+    .layout-grid{
+      grid-template-columns:1fr;
+    }
+  }
+
+  @media (max-width: 760px){
+    .form-grid{
+      grid-template-columns:1fr;
+    }
+
+    .hero-title{
+      font-size:24px;
+    }
+
+    .action-row{
+      display:grid;
+      grid-template-columns:1fr;
+    }
+
+    .action-row > *{
+      width:100%;
+    }
+  }
+</style>
+
+<div class="loan-create-shell">
+
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div>
+          <div class="hero-kicker">Loan Management</div>
+          <h1 class="hero-title">Create New Loan</h1>
+          <div class="hero-sub">
+            Issue a new loan facility with structured repayment, automatic category assignment,
+            ROIC computation, principal and return recovery tracking, and real-time outstanding balance monitoring.
+          </div>
+
+          <div class="hero-chip-row">
+            <span class="hero-chip">Auto Category</span>
+            <span class="hero-chip">Principal Tracking</span>
+            <span class="hero-chip">ROIC Computation</span>
+            <span class="hero-chip">Repayment Monitoring</span>
+            <span class="hero-chip">Portfolio Ready</span>
+          </div>
+        </div>
+
+        <a href="{% url 'loans:dashboard' %}" class="btn-soft">Back to Dashboard</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="layout-grid">
+
+    <section class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Loan Application Details</h3>
+        <div class="section-sub">
+          Capture the borrower, field agent, loan request, sector, repayment plan, consent, collateral, and office review fields.
+        </div>
+      </div>
+
+      <div class="section-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="field-error" style="margin-bottom:14px;">
+              {{ form.non_field_errors }}
+            </div>
+          {% endif %}
+
+          <div class="form-grid">
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.borrower.id_for_label }}">Borrower</label>
+                {{ form.borrower }}
+                {% if form.borrower.errors %}
+                  <div class="field-error">{{ form.borrower.errors }}</div>
+                {% endif %}
+                <div class="field-help">Select the borrower receiving this facility.</div>
+              </div>
+            </div>
+
+            {% if is_agent %}
+              {# Agent: field is hidden — auto-assigned in view #}
+              {{ form.agent_name }}
+              <div class="field-card" style="background:linear-gradient(135deg,rgba(58,90,30,.06),rgba(184,134,32,.04));border-color:var(--border-accent);">
+                <div class="field-wrap">
+                  <label>Issuing Agent</label>
+                  <div style="font-size:14px;font-weight:700;color:var(--text);padding:10px 0 4px;">
+                    {{ agent_profile.name }}
+                  </div>
+                  <div class="field-help">{{ agent_profile.agent_id }} · This loan will be issued under your name.</div>
+                </div>
+              </div>
+            {% else %}
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.agent_name.id_for_label }}">Agent</label>
+                {{ form.agent_name }}
+                {% if form.agent_name.errors %}
+                  <div class="field-error">{{ form.agent_name.errors }}</div>
+                {% endif %}
+                <div class="field-help">Assign the responsible field agent or loan officer.</div>
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.amount.id_for_label }}">Loan Amount (GHS)</label>
+                {{ form.amount }}
+                {% if form.amount.errors %}
+                  <div class="field-error">{{ form.amount.errors }}</div>
+                {% endif %}
+                <div class="field-help">Principal amount to be disbursed to the borrower.</div>
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.loan_category_display.id_for_label }}">Loan Category</label>
+                {{ form.loan_category_display }}
+                {% if form.loan_category_display.errors %}
+                  <div class="field-error">{{ form.loan_category_display.errors }}</div>
+                {% endif %}
+                <div class="field-help">Automatically assigned from the loan amount band.</div>
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.loan_acquisition_date.id_for_label }}">Loan Acquisition Date</label>
+                {{ form.loan_acquisition_date }}
+                {% if form.loan_acquisition_date.errors %}
+                  <div class="field-error">{{ form.loan_acquisition_date.errors }}</div>
+                {% endif %}
+                <div class="field-help">Internal date the loan was acquired or originated.</div>
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.repayment_frequency.id_for_label }}">Repayment Frequency</label>
+                {{ form.repayment_frequency }}
+                {% if form.repayment_frequency.errors %}
+                  <div class="field-error">{{ form.repayment_frequency.errors }}</div>
+                {% endif %}
+                <div class="field-help">Daily or weekly, as selected on the application form.</div>
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.weekly_payment.id_for_label }}">Proposed Daily or Weekly Repayment (GHS)</label>
+                {{ form.weekly_payment }}
+                {% if form.weekly_payment.errors %}
+                  <div class="field-error">{{ form.weekly_payment.errors }}</div>
+                {% endif %}
+                <div class="field-help">Installment amount for the selected repayment frequency.</div>
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.duration_months.id_for_label }}">Duration (Months)</label>
+                {{ form.duration_months }}
+                {% if form.duration_months.errors %}
+                  <div class="field-error">{{ form.duration_months.errors }}</div>
+                {% endif %}
+                <div class="field-help">Optional month component of the loan duration.</div>
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.duration_weeks.id_for_label }}">Duration (Weeks)</label>
+                {{ form.duration_weeks }}
+                {% if form.duration_weeks.errors %}
+                  <div class="field-error">{{ form.duration_weeks.errors }}</div>
+                {% endif %}
+                <div class="field-help">Week component of the loan duration.</div>
+              </div>
+            </div>
+
+            <div class="field-card full">
+              <div class="field-wrap">
+                <label for="{{ form.start_date.id_for_label }}">Loan Repayment Start Date</label>
+                {{ form.start_date }}
+                {% if form.start_date.errors %}
+                  <div class="field-error">{{ form.start_date.errors }}</div>
+                {% endif %}
+                <div class="field-help">Date the repayment schedule begins.</div>
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.sector.id_for_label }}">Client Sector / Industry</label>
+                {{ form.sector }}
+                {% if form.sector.errors %}
+                  <div class="field-error">{{ form.sector.errors }}</div>
+                {% endif %}
+                <div class="field-help">Sector or industry selected on the application form.</div>
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.sector_other.id_for_label }}">Other Sector</label>
+                {{ form.sector_other }}
+                {% if form.sector_other.errors %}
+                  <div class="field-error">{{ form.sector_other.errors }}</div>
+                {% endif %}
+                <div class="field-help">Complete this when sector is Other.</div>
+              </div>
+            </div>
+
+            {% if form.status %}
+              <div class="field-card full">
+                <div class="field-wrap">
+                  <label for="{{ form.status.id_for_label }}">Status</label>
+                  {{ form.status }}
+                  {% if form.status.errors %}
+                    <div class="field-error">{{ form.status.errors }}</div>
+                  {% endif %}
+                  <div class="field-help">Initial loan status, if manually configurable.</div>
+                </div>
+              </div>
+            {% endif %}
+
+          </div>
+
+          <div class="note-box">
+            <div class="note-kicker">Declaration & Consent</div>
+            <div class="note-text">
+              Borrower confirms the application information is true, authorizes verification and background checks,
+              accepts the repayment terms, and consents to overdue recovery arrangements until the loan is fully repaid.
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top:16px;">
+            <div class="field-card checkbox-card full">
+              <div class="field-wrap">
+                {{ form.borrower_declaration_accepted }}
+                <div>
+                  <label for="{{ form.borrower_declaration_accepted.id_for_label }}">Borrower declaration accepted</label>
+                  {% if form.borrower_declaration_accepted.errors %}<div class="field-error">{{ form.borrower_declaration_accepted.errors }}</div>{% endif %}
+                  <div class="field-help">Digital acknowledgement of the declaration and direct debit consent text.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.borrower_signature_name.id_for_label }}">Borrower's Name / Signature</label>
+                {{ form.borrower_signature_name }}
+                {% if form.borrower_signature_name.errors %}<div class="field-error">{{ form.borrower_signature_name.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.borrower_signed_date.id_for_label }}">Borrower Signed Date</label>
+                {{ form.borrower_signed_date }}
+                {% if form.borrower_signed_date.errors %}<div class="field-error">{{ form.borrower_signed_date.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.guarantor_name.id_for_label }}">Guarantor / Group Leader Name</label>
+                {{ form.guarantor_name }}
+                {% if form.guarantor_name.errors %}<div class="field-error">{{ form.guarantor_name.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.guarantor_id_number.id_for_label }}">Guarantor / Group Leader ID Number</label>
+                {{ form.guarantor_id_number }}
+                {% if form.guarantor_id_number.errors %}<div class="field-error">{{ form.guarantor_id_number.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.guarantor_signature_name.id_for_label }}">Guarantor / Group Leader Signature</label>
+                {{ form.guarantor_signature_name }}
+                {% if form.guarantor_signature_name.errors %}<div class="field-error">{{ form.guarantor_signature_name.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.guarantor_signed_date.id_for_label }}">Guarantor Signed Date</label>
+                {{ form.guarantor_signed_date }}
+                {% if form.guarantor_signed_date.errors %}<div class="field-error">{{ form.guarantor_signed_date.errors }}</div>{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="note-box">
+            <div class="note-kicker">Collateral Information & Borrower Consent</div>
+            <div class="note-text">
+              Capture any pledged collateral and the borrower/guarantor acknowledgement from the approved form.
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top:16px;">
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.collateral_type.id_for_label }}">Type of Collateral</label>
+                {{ form.collateral_type }}
+                {% if form.collateral_type.errors %}<div class="field-error">{{ form.collateral_type.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.collateral_details.id_for_label }}">Collateral Details / ID Number</label>
+                {{ form.collateral_details }}
+                {% if form.collateral_details.errors %}<div class="field-error">{{ form.collateral_details.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.collateral_estimated_value.id_for_label }}">Estimated Value (GHS)</label>
+                {{ form.collateral_estimated_value }}
+                {% if form.collateral_estimated_value.errors %}<div class="field-error">{{ form.collateral_estimated_value.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.collateral_location.id_for_label }}">Collateral Location</label>
+                {{ form.collateral_location }}
+                {% if form.collateral_location.errors %}<div class="field-error">{{ form.collateral_location.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card checkbox-card full">
+              <div class="field-wrap">
+                {{ form.collateral_borrower_consent_accepted }}
+                <div>
+                  <label for="{{ form.collateral_borrower_consent_accepted.id_for_label }}">Borrower pledged collateral consent accepted</label>
+                  {% if form.collateral_borrower_consent_accepted.errors %}<div class="field-error">{{ form.collateral_borrower_consent_accepted.errors }}</div>{% endif %}
+                  <div class="field-help">Digital acknowledgement of the collateral pledge and security consent.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.collateral_borrower_signed_date.id_for_label }}">Borrower Collateral Consent Date</label>
+                {{ form.collateral_borrower_signed_date }}
+                {% if form.collateral_borrower_signed_date.errors %}<div class="field-error">{{ form.collateral_borrower_signed_date.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.collateral_guarantor_signature_name.id_for_label }}">Guarantor Collateral Acknowledgement</label>
+                {{ form.collateral_guarantor_signature_name }}
+                {% if form.collateral_guarantor_signature_name.errors %}<div class="field-error">{{ form.collateral_guarantor_signature_name.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.collateral_guarantor_signed_date.id_for_label }}">Guarantor Collateral Date</label>
+                {{ form.collateral_guarantor_signed_date }}
+                {% if form.collateral_guarantor_signed_date.errors %}<div class="field-error">{{ form.collateral_guarantor_signed_date.errors }}</div>{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="note-box">
+            <div class="note-kicker">Office Use Only</div>
+            <div class="note-text">
+              Internal receiving and approval fields from the BoG-approved application format.
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top:16px;">
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.application_received_by.id_for_label }}">Application Received By</label>
+                {{ form.application_received_by }}
+                {% if form.application_received_by.errors %}<div class="field-error">{{ form.application_received_by.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.application_received_date.id_for_label }}">Date Received</label>
+                {{ form.application_received_date }}
+                {% if form.application_received_date.errors %}<div class="field-error">{{ form.application_received_date.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.approved_amount.id_for_label }}">Loan Amount Approved (GHS)</label>
+                {{ form.approved_amount }}
+                {% if form.approved_amount.errors %}<div class="field-error">{{ form.approved_amount.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.approved_repayment_plan.id_for_label }}">Approved Repayment Plan</label>
+                {{ form.approved_repayment_plan }}
+                {% if form.approved_repayment_plan.errors %}<div class="field-error">{{ form.approved_repayment_plan.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.loan_officer_signature_name.id_for_label }}">Loan Officer Signature</label>
+                {{ form.loan_officer_signature_name }}
+                {% if form.loan_officer_signature_name.errors %}<div class="field-error">{{ form.loan_officer_signature_name.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card">
+              <div class="field-wrap">
+                <label for="{{ form.approval_manager_signature_name.id_for_label }}">Approval Manager Signature</label>
+                {{ form.approval_manager_signature_name }}
+                {% if form.approval_manager_signature_name.errors %}<div class="field-error">{{ form.approval_manager_signature_name.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="field-card full">
+              <div class="field-wrap">
+                <label for="{{ form.approval_date.id_for_label }}">Date of Approval</label>
+                {{ form.approval_date }}
+                {% if form.approval_date.errors %}<div class="field-error">{{ form.approval_date.errors }}</div>{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="field-card full" id="external-debt-review-card" {% if not selected_external_debt_check.requires_review %}hidden{% endif %}>
+            <div class="risk-review">
+              <div class="risk-review__banner {% if not selected_external_debt_check.requires_review %}safe{% endif %}" id="external-debt-banner">
+                <div class="risk-review__kicker">
+                  {% if selected_external_debt_check.requires_review %}Cross-Company Debt Check{% else %}External Debt Status{% endif %}
+                </div>
+                <div class="risk-review__title" id="external-debt-title">
+                  {{ selected_external_debt_check.headline|default:"No confirmed external debt found across other onboarded companies." }}
+                </div>
+                <div class="risk-review__meta" id="external-debt-meta">
+                  {% if selected_external_debt_check.requires_review %}
+                    {{ selected_external_debt_check.company_count }} other compan{{ selected_external_debt_check.company_count|pluralize:"y,ies" }} matched ·
+                    {{ selected_external_debt_check.open_loan_count }} open loan{{ selected_external_debt_check.open_loan_count|pluralize }} ·
+                    GHS {{ selected_external_debt_check.total_outstanding|floatformat:2 }}
+                    {% if selected_external_debt_check.has_default %} · Defaulted facilities detected{% endif %}
+                  {% else %}
+                    Select a borrower to see whether they already owe another onboarded company.
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="risk-review__list" id="external-debt-company-list">
+                {% for company in selected_external_debt_check.companies %}
+                  <div class="risk-company">
+                    <div class="risk-company__head">
+                      <div>
+                        <div class="risk-company__name">{{ company.tenant_name }}</div>
+                        <div class="risk-company__sub">
+                          {{ company.borrower_name }} · Matched on {{ company.matched_on|join:", " }} · Status: {{ company.borrower_status }}
+                        </div>
+                      </div>
+                      <div class="risk-company__amount">GHS {{ company.total_outstanding|floatformat:2 }}</div>
+                    </div>
+                    <div class="risk-company__sub" style="margin-top:8px;">
+                      Active loans: {{ company.active_loan_count }} · Default loans: {{ company.default_loan_count }} · Expected repayment: GHS {{ company.total_expected|floatformat:2 }}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+
+              <label class="risk-ack" id="external-debt-ack-wrap" {% if not selected_external_debt_check.requires_review %}hidden{% endif %}>
+                <input type="checkbox" name="confirm_external_debt_review" id="confirm_external_debt_review" {% if request.POST.confirm_external_debt_review %}checked{% endif %}>
+                <span>I have reviewed this customer's external debt exposure with other onboarded companies and still want to submit this loan for approval.</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="note-box">
+            <div class="note-kicker">System Note</div>
+            <div class="note-text">
+              Once created, the system will automatically compute the loan category, expected repayment, ROIC,
+              payment counts, principal outstanding, ROIC outstanding, overdue weeks, and portfolio status updates as payments are posted.
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button type="submit" class="btn-soft btn-soft-primary">Save Loan</button>
+            <a href="{% url 'loans:dashboard' %}" class="btn-soft">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Repayment Preview</h3>
+        <div class="section-sub">Live estimate generated from the loan terms being entered</div>
+      </div>
+
+      <div class="section-body">
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="summary-label">Loan Category</div>
+            <div class="summary-value" id="preview-category">Bronze</div>
+            <div class="summary-sub">Automatically selected from the amount range</div>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-label">Principal</div>
+            <div class="summary-value" id="preview-principal">GHS 0.00</div>
+            <div class="summary-sub">Original amount to be disbursed</div>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-label">ROIC</div>
+            <div class="summary-value" id="preview-roic">GHS 0.00</div>
+            <div class="summary-sub">Calculated as total repayment minus principal</div>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-label">Expected Total Repayment</div>
+            <div class="summary-value" id="preview-total">GHS 0.00</div>
+            <div class="summary-sub">Duration × weekly payment</div>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-label">Expected Payment Count</div>
+            <div class="summary-value" id="preview-count">0</div>
+            <div class="summary-sub">Number of weekly installments</div>
+          </div>
+        </div>
+
+        <div class="summary-panel">
+          <div class="summary-panel-title">Loan Terms Snapshot</div>
+
+          <div class="term-row">
+            <span class="term-label">Loan Category</span>
+            <span class="term-value" id="preview-category-inline">Bronze</span>
+          </div>
+
+          <div class="term-row">
+            <span class="term-label">Repayment Amount</span>
+            <span class="term-value" id="preview-weekly">GHS 0.00</span>
+          </div>
+
+          <div class="term-row">
+            <span class="term-label">Duration</span>
+            <span class="term-value" id="preview-duration">0 weeks</span>
+          </div>
+
+          <div class="term-row">
+            <span class="term-label">Expected Formula</span>
+            <span class="term-value">Installments × Amount</span>
+          </div>
+
+          <div class="term-row">
+            <span class="term-label">ROIC Formula</span>
+            <span class="term-value">(Installments × Amount) - Principal</span>
+          </div>
+        </div>
+
+        <div class="preview-banner">
+          This preview helps you validate the facility structure before saving. Review the borrower, category band,
+          repayment plan, and return profile carefully to ensure the loan terms align with your policy and expected return.
+        </div>
+
+        <div class="summary-panel">
+          <div class="summary-panel-title">Cross-Company Debt Overview</div>
+
+          <div class="term-row">
+            <span class="term-label">Other companies matched</span>
+            <span class="term-value" id="external-debt-company-count">{{ selected_external_debt_check.company_count }}</span>
+          </div>
+
+          <div class="term-row">
+            <span class="term-label">Open external loans</span>
+            <span class="term-value" id="external-debt-open-loans">{{ selected_external_debt_check.open_loan_count }}</span>
+          </div>
+
+          <div class="term-row">
+            <span class="term-label">Outstanding elsewhere</span>
+            <span class="term-value" id="external-debt-outstanding">GHS {{ selected_external_debt_check.total_outstanding|floatformat:2 }}</span>
+          </div>
+
+          <div class="term-row">
+            <span class="term-label">Default risk flag</span>
+            <span class="term-value" id="external-debt-default-flag">{% if selected_external_debt_check.has_default %}Yes{% else %}No{% endif %}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  (function () {
+    const amountEl = document.getElementById("id_amount");
+    const weeklyEl = document.getElementById("id_weekly_payment");
+    const frequencyEl = document.getElementById("id_repayment_frequency");
+    const durationMonthsEl = document.getElementById("id_duration_months");
+    const durationEl = document.getElementById("id_duration_weeks");
+    const categoryInputEl = document.getElementById("id_loan_category_display");
+    const borrowerEl = document.getElementById("id_borrower");
+
+    const principalOut = document.getElementById("preview-principal");
+    const roicOut = document.getElementById("preview-roic");
+    const totalOut = document.getElementById("preview-total");
+    const countOut = document.getElementById("preview-count");
+    const weeklyOut = document.getElementById("preview-weekly");
+    const durationOut = document.getElementById("preview-duration");
+    const categoryOut = document.getElementById("preview-category");
+    const categoryInlineOut = document.getElementById("preview-category-inline");
+    const riskCard = document.getElementById("external-debt-review-card");
+    const riskBanner = document.getElementById("external-debt-banner");
+    const riskTitle = document.getElementById("external-debt-title");
+    const riskMeta = document.getElementById("external-debt-meta");
+    const riskList = document.getElementById("external-debt-company-list");
+    const riskAckWrap = document.getElementById("external-debt-ack-wrap");
+    const riskCompanyCount = document.getElementById("external-debt-company-count");
+    const riskOpenLoans = document.getElementById("external-debt-open-loans");
+    const riskOutstanding = document.getElementById("external-debt-outstanding");
+    const riskDefaultFlag = document.getElementById("external-debt-default-flag");
+    const riskCheckUrl = "{% url 'loans:borrower_cross_company_check' %}";
+
+    function toNumber(value) {
+      const n = parseFloat(value);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function money(n) {
+      return "GHS " + n.toFixed(2);
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function getCategory(amount) {
+      if (amount <= 3000) return "Bronze";
+      if (amount <= 5000) return "Silver";
+      if (amount <= 10000) return "Gold";
+      if (amount <= 15000) return "Platinum";
+      if (amount <= 20000) return "Diamond";
+      return "Executive";
+    }
+
+    function repaymentCount(frequency, months, weeks) {
+      if (frequency === "DAILY") {
+        return (months * 30) + (weeks * 7);
+      }
+      return (months * 4) + weeks;
+    }
+
+    function durationLabel(frequency, months, weeks, count) {
+      const bits = [];
+      if (months) bits.push(months + " month" + (months === 1 ? "" : "s"));
+      if (weeks) bits.push(weeks + " week" + (weeks === 1 ? "" : "s"));
+      if (!bits.length) bits.push("0 weeks");
+      const unit = frequency === "DAILY" ? "daily" : "weekly";
+      return bits.join(", ") + " · " + count + " " + unit + " installment" + (count === 1 ? "" : "s");
+    }
+
+    function updatePreview() {
+      const principal = toNumber(amountEl ? amountEl.value : 0);
+      const weekly = toNumber(weeklyEl ? weeklyEl.value : 0);
+      const frequency = frequencyEl ? frequencyEl.value : "WEEKLY";
+      const durationMonths = toNumber(durationMonthsEl ? durationMonthsEl.value : 0);
+      const durationWeeks = toNumber(durationEl ? durationEl.value : 0);
+      const duration = repaymentCount(frequency, durationMonths, durationWeeks);
+
+      const totalExpected = weekly * duration;
+      const roic = Math.max(totalExpected - principal, 0);
+      const category = getCategory(principal);
+
+      principalOut.textContent = money(principal);
+      roicOut.textContent = money(roic);
+      totalOut.textContent = money(totalExpected);
+      countOut.textContent = duration.toString();
+      weeklyOut.textContent = money(weekly);
+      durationOut.textContent = durationLabel(frequency, durationMonths, durationWeeks, duration);
+      categoryOut.textContent = category;
+      categoryInlineOut.textContent = category;
+
+      if (categoryInputEl) {
+        categoryInputEl.value = category;
+      }
+    }
+
+    [amountEl, weeklyEl, frequencyEl, durationMonthsEl, durationEl].forEach(function (el) {
+      if (el) {
+        el.addEventListener("input", updatePreview);
+        el.addEventListener("change", updatePreview);
+      }
+    });
+
+    function renderCrossCompanyCheck(data) {
+      if (!riskCard) return;
+
+      riskCompanyCount.textContent = String(data.company_count || 0);
+      riskOpenLoans.textContent = String(data.open_loan_count || 0);
+      riskOutstanding.textContent = "GHS " + Number(data.total_outstanding || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      riskDefaultFlag.textContent = data.has_default ? "Yes" : "No";
+
+      if (!data.requires_review) {
+        riskCard.hidden = true;
+        riskAckWrap.hidden = true;
+        riskBanner.classList.add("safe");
+        riskTitle.textContent = data.headline || "No confirmed external debt found across other onboarded companies.";
+        riskMeta.textContent = "Select a borrower to see whether they already owe another onboarded company.";
+        riskList.innerHTML = "";
+        return;
+      }
+
+      riskCard.hidden = false;
+      riskAckWrap.hidden = false;
+      riskBanner.classList.remove("safe");
+      riskTitle.textContent = data.headline || "External debt found with another onboarded company.";
+      riskMeta.textContent =
+        (data.company_count || 0) + " other compan" + ((data.company_count || 0) === 1 ? "y" : "ies") +
+        " matched, " + (data.open_loan_count || 0) + " open loan(s), GHS " +
+        Number(data.total_outstanding || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) +
+        (data.has_default ? ", with defaulted facilities detected." : ".");
+
+      riskList.innerHTML = (data.companies || []).map(function(company) {
+        return `
+          <div class="risk-company">
+            <div class="risk-company__head">
+              <div>
+                <div class="risk-company__name">${escapeHtml(company.tenant_name)}</div>
+                <div class="risk-company__sub">
+                  ${escapeHtml(company.borrower_name)} · Matched on ${escapeHtml((company.matched_on || []).join(", "))} · Status: ${escapeHtml(company.borrower_status)}
+                </div>
+              </div>
+              <div class="risk-company__amount">GHS ${Number(company.total_outstanding || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </div>
+            <div class="risk-company__sub" style="margin-top:8px;">
+              Active loans: ${escapeHtml(company.active_loan_count)} · Default loans: ${escapeHtml(company.default_loan_count)} · Expected repayment: GHS ${Number(company.total_expected || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function fetchCrossCompanyCheck() {
+      if (!borrowerEl || !borrowerEl.value) {
+        renderCrossCompanyCheck({requires_review: false, company_count: 0, open_loan_count: 0, total_outstanding: 0, has_default: false});
+        return;
+      }
+
+      try {
+        const response = await fetch(riskCheckUrl + "?borrower_id=" + encodeURIComponent(borrowerEl.value), {
+          headers: {"X-Requested-With": "XMLHttpRequest"}
+        });
+        if (!response.ok) {
+          return;
+        }
+        renderCrossCompanyCheck(await response.json());
+      } catch (err) {
+        console.warn("Cross-company debt check failed.", err);
+      }
+    }
+
+    if (borrowerEl) {
+      borrowerEl.addEventListener("change", fetchCrossCompanyCheck);
+    }
+
+    updatePreview();
+    renderCrossCompanyCheck({{ selected_external_debt_check_json|safe }});
+  })();
+</script>
+
+{% endblock %}

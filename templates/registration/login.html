@@ -1,0 +1,80 @@
+{% extends "registration/auth_base.html" %}
+
+{% block page_title %}Sign In{% endblock %}
+{% block brand_heading %}Welcome back to your lending workspace.{% endblock %}
+{% block brand_body %}Access borrower records, loan portfolios, collections activity, repayment tracking, and operational analytics from one secure micro-credit management platform.{% endblock %}
+{% block brand_stats %}
+  <div class="brand-stat"><div class="label">Portfolio</div><div class="value">Ready</div></div>
+  <div class="brand-stat"><div class="label">Collections</div><div class="value">Tracked</div></div>
+  <div class="brand-stat"><div class="label">Borrowers</div><div class="value">Managed</div></div>
+  <div class="brand-stat"><div class="label">Analytics</div><div class="value">Available</div></div>
+{% endblock %}
+{% block form_title %}Sign in{% endblock %}
+{% block form_intro %}Enter your credentials to access the {{ company_name|default:"platform" }} management system.{% endblock %}
+
+{% block form_content %}
+  {% if form.errors %}
+    <div class="message-card">
+      <span class="dot"></span>
+      <div>Invalid username or password. Please check your credentials and try again.</div>
+    </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    {% if next %}
+      <input type="hidden" name="next" value="{{ next }}">
+    {% endif %}
+    <div class="form-grid">
+      <div class="field">
+        <label for="id_username">Username</label>
+        <input
+          type="text"
+          name="username"
+          id="id_username"
+          value="{{ form.username.value|default_if_none:'' }}"
+          placeholder="Enter your username"
+          autocomplete="username"
+          required
+        >
+      </div>
+      <div class="field">
+        <label for="id_password">Password</label>
+        <div class="password-wrap">
+          <input
+            type="password"
+            name="password"
+            id="id_password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            required
+          >
+          <span class="toggle-pw" onclick="togglePw()" id="togglePwBtn">Show</span>
+        </div>
+      </div>
+    </div>
+    <button type="submit" class="btn-submit">Sign In</button>
+  </form>
+
+  <div class="helper-row">
+    <span>Use the credentials assigned to your staff or borrower account.</span>
+    <a href="{% url 'password_reset' %}" class="text-link">Forgot password?</a>
+  </div>
+{% endblock %}
+
+{% block page_scripts %}
+  <script>
+    function togglePw() {
+      const field = document.getElementById('id_password');
+      const button = document.getElementById('togglePwBtn');
+      if (!field) return;
+      if (field.type === 'password') {
+        field.type = 'text';
+        if (button) button.textContent = 'Hide';
+      } else {
+        field.type = 'password';
+        if (button) button.textContent = 'Show';
+      }
+    }
+  </script>
+{% endblock %}

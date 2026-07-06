@@ -1,0 +1,93 @@
+{% extends "public/base.html" %}
+{% block title %}Terms of Service — {{ saas_name }}{% endblock %}
+{% block header_class %}pub-header--solid{% endblock %}
+{% block logo_class %}{% endblock %}
+{% block head_styles %}
+.legal-wrap { max-width:760px; margin:0 auto; padding:calc(var(--header-h) + 56px) var(--px) 80px; }
+.legal-wrap h1 { font-family:var(--font-head);font-size:clamp(26px,3.5vw,40px);font-weight:800;color:var(--gray-900);margin-bottom:10px; }
+.legal-meta { font-size:14px;color:var(--gray-500);margin-bottom:48px;padding-bottom:24px;border-bottom:1px solid var(--gray-200); }
+.legal-wrap h2 { font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--gray-900);margin:36px 0 12px; }
+.legal-wrap h3 { font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--gray-800);margin:24px 0 8px; }
+.legal-wrap p  { font-size:15px;color:var(--gray-600);line-height:1.8;margin-bottom:14px; }
+.legal-wrap ul { padding-left:24px;margin-bottom:14px; }
+.legal-wrap li { font-size:15px;color:var(--gray-600);line-height:1.8;margin-bottom:6px; }
+.legal-highlight { background:var(--navy-50);border:1px solid var(--navy-100);border-radius:var(--r);padding:18px 22px;margin:24px 0; }
+.legal-highlight p { margin:0;color:var(--navy);font-weight:500; }
+{% endblock %}
+{% block content %}
+<div class="legal-wrap">
+  <h1>Terms of Service</h1>
+  <div class="legal-meta">Last updated: {% now "F j, Y" %} · Effective immediately upon account creation</div>
+
+  <div class="legal-highlight"><p>By creating an account on {{ saas_name }}, you agree to these terms. Please read them carefully. If you do not agree, do not use the service.</p></div>
+
+  <h2>1. Acceptance of Terms</h2>
+  <p>These Terms of Service ("Terms") govern your access to and use of {{ saas_name }} ("Service", "Platform", "we", "us") operated by the {{ saas_name }} team. By registering an account, you agree to be bound by these Terms and our Privacy Policy.</p>
+  <p>If you are entering into these Terms on behalf of a company or other legal entity, you represent that you have authority to bind that entity to these Terms. In that case, "you" refers to that entity.</p>
+
+  <h2>2. Description of Service</h2>
+  <p>{{ saas_name }} provides a Software-as-a-Service (SaaS) platform for micro-credit institutions to manage loan portfolios, borrower records, agent teams, repayments, and financial reporting. Each customer organisation receives an isolated database schema ("Workspace") accessible via a dedicated subdomain.</p>
+
+  <h2>3. Account Registration and Eligibility</h2>
+  <ul>
+    <li>You must be at least 18 years old to create an account.</li>
+    <li>You must provide accurate, complete, and current information during registration.</li>
+    <li>You are responsible for maintaining the confidentiality of your login credentials.</li>
+    <li>You are responsible for all activity that occurs under your account.</li>
+    <li>One organisation may not create multiple accounts to circumvent plan limits without written permission.</li>
+  </ul>
+
+  <h2>4. Subscription Plans and Payment</h2>
+  <h3>4.1 Free Trial</h3>
+  <p>All plans include a free trial period (as stated on the pricing page at time of signup). No credit card is required during the trial. At the end of the trial, the account will enter a grace period. Access is suspended if a subscription is not activated within 7 days of trial expiry.</p>
+  <h3>4.2 Paid Subscriptions</h3>
+  <p>After the trial, continued use of the Service requires a paid subscription. Subscription fees are billed monthly or annually in advance. All fees are stated in GHS unless otherwise specified. Fees are non-refundable except as expressly stated in these Terms.</p>
+  <h3>4.3 Plan Limits</h3>
+  <p>Each plan includes limits on the number of borrowers, agents, and administrators. Exceeding these limits will result in a prompt to upgrade. We will not automatically charge you for a higher plan without your consent.</p>
+
+  <h2>5. Data Ownership and Privacy</h2>
+  <p>You retain full ownership of all data you upload to or create within {{ saas_name }} ("Customer Data"). We do not claim any rights to your Customer Data. We process Customer Data solely to provide and improve the Service.</p>
+  <p>Each organisation's data is stored in a dedicated, isolated PostgreSQL schema. Data from one organisation is never accessible to another organisation or mixed in shared tables.</p>
+  <p>Please refer to our <a href="/privacy/" style="color:var(--navy);font-weight:600">Privacy Policy</a> for full details on how we collect, process, and protect your data.</p>
+
+  <h2>6. Acceptable Use</h2>
+  <p>You agree not to use the Service to:</p>
+  <ul>
+    <li>Violate any applicable laws or regulations, including consumer lending laws in your jurisdiction.</li>
+    <li>Process data of individuals without appropriate consent.</li>
+    <li>Attempt to gain unauthorised access to other tenants' data or platform infrastructure.</li>
+    <li>Use the platform to facilitate illegal lending practices, including unlicensed lending where a licence is legally required.</li>
+    <li>Transmit harmful, fraudulent, or misleading information via the SMS notification features.</li>
+    <li>Resell or sublicense access to the platform without written agreement.</li>
+  </ul>
+
+  <h2>7. Service Availability and Uptime</h2>
+  <p>We target 99.9% platform uptime, excluding scheduled maintenance windows. We will provide advance notice of planned maintenance where possible. We are not liable for downtime caused by factors outside our reasonable control, including internet outages, force majeure events, or third-party service failures.</p>
+
+  <h2>8. Data Retention and Deletion</h2>
+  <p>Upon account suspension (e.g., after trial expiry or subscription cancellation), your data is retained for 90 days. You may request an export of your data at any time during this period by contacting <a href="mailto:{{ saas_email }}" style="color:var(--navy)">{{ saas_email }}</a>. After 90 days, data may be permanently deleted.</p>
+  <p>Upon a permanent account deletion request, all Customer Data will be purged within 30 days.</p>
+
+  <h2>9. Intellectual Property</h2>
+  <p>The Service, including its software, design, and documentation, is owned by {{ saas_name }} and protected by intellectual property laws. These Terms do not grant you any rights to our trademarks, service marks, or branding.</p>
+
+  <h2>10. Limitation of Liability</h2>
+  <p>To the maximum extent permitted by law, {{ saas_name }} shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or goodwill, arising from your use of or inability to use the Service.</p>
+  <p>Our total liability for any claim arising under these Terms shall not exceed the fees paid by you to {{ saas_name }} in the three months preceding the claim.</p>
+
+  <h2>11. Indemnification</h2>
+  <p>You agree to indemnify and hold harmless {{ saas_name }}, its affiliates, and employees from any claims, damages, or expenses (including legal fees) arising from your use of the Service, your violation of these Terms, or your violation of any third-party rights.</p>
+
+  <h2>12. Termination</h2>
+  <p>Either party may terminate the subscription at any time. You may terminate by ceasing use and requesting account deletion. We may suspend or terminate your account if you violate these Terms, fail to pay fees after notice, or engage in activities that harm the Service or other users.</p>
+
+  <h2>13. Changes to These Terms</h2>
+  <p>We may update these Terms from time to time. Material changes will be communicated via email to your registered address at least 14 days before taking effect. Continued use of the Service after such notice constitutes acceptance of the revised Terms.</p>
+
+  <h2>14. Governing Law</h2>
+  <p>These Terms are governed by the laws of the Republic of Ghana. Any disputes shall be resolved in the courts of Accra, Ghana, unless otherwise agreed in writing.</p>
+
+  <h2>15. Contact</h2>
+  <p>For questions about these Terms, contact us at <a href="mailto:{{ saas_email }}" style="color:var(--navy);font-weight:600">{{ saas_email }}</a>.</p>
+</div>
+{% endblock %}

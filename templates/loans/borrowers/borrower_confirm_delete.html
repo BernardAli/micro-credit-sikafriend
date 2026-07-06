@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h3 class="card-title">Delete Borrower</h3>
+  <p>Are you sure you want to delete <b>{{ borrower.full_name }}</b> ({{ borrower.national_id }})?</p>
+
+  <form method="post">
+    {% csrf_token %}
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-primary" type="submit">Yes, Delete</button>
+      <a class="btn" href="{% url 'loans:borrower_detail' borrower.id %}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

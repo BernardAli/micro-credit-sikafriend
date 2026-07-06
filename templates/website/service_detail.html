@@ -1,0 +1,183 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+<style>
+.svc-pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--gold-pale);border:1px solid rgba(184,134,32,.18);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);margin-bottom:16px}
+.svc-detail-actions,.svc-related-actions,.svc-cta-actions{display:flex;gap:12px;flex-wrap:wrap}
+.svc-summary-grid,.svc-best-grid,.svc-related-grid,.svc-tier-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+.svc-info-card,.svc-best-card,.svc-related-card,.svc-process-card,.svc-side-card,.svc-cta-card,.svc-tier-card{
+  border:1px solid var(--border);border-radius:var(--r-xl);background:var(--panel);box-shadow:var(--sh-sm)
+}
+.svc-info-card,.svc-best-card,.svc-related-card,.svc-process-card,.svc-side-card,.svc-tier-card{padding:24px}
+.svc-summary-grid .svc-info-card:first-child{grid-column:span 2}
+.svc-icon-box{width:58px;height:58px;border-radius:18px;display:flex;align-items:center;justify-content:center;background:var(--gold-pale);border:1px solid rgba(184,134,32,.18);font-size:28px;margin-bottom:16px}
+.svc-card-title{font-family:var(--font-serif);font-size:22px;color:var(--text);margin-bottom:12px}
+.svc-copy{font-size:13.5px;line-height:1.75;color:var(--muted)}
+.svc-feature-image{border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--sh-lg);border:1px solid var(--border);position:relative;margin-bottom:24px}
+.svc-feature-image img{width:100%;aspect-ratio:16 / 9;object-fit:cover}
+.svc-feature-image::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(8,18,4,.52),transparent 58%)}
+.svc-chip-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.svc-chip{display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--panel2);font-size:12px;font-weight:700;color:var(--text2)}
+.svc-split{display:grid;grid-template-columns:1.12fr .88fr;gap:24px}
+.svc-list{display:grid;gap:10px;margin-top:16px}
+.svc-list-item{display:flex;gap:10px;font-size:13.5px;font-weight:600;color:var(--text2);line-height:1.6}
+.svc-list-item::before{content:"✓";width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--primary),var(--gold));color:#fff;font-size:10px;font-weight:800;flex-shrink:0}
+.svc-process-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.svc-process-step{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);margin-bottom:8px}
+.svc-side-stack{display:grid;gap:18px}
+.svc-side-title{font-size:16px;font-weight:800;color:var(--text);margin-bottom:10px}
+.svc-related-card{display:flex;flex-direction:column}
+.svc-related-copy{font-size:13px;line-height:1.7;color:var(--muted);margin-top:10px;flex:1}
+.svc-tier-card .tier-range{margin-top:4px;font-size:12.5px;font-weight:700;color:var(--muted)}
+.svc-cta-card{padding:30px;background:linear-gradient(145deg,var(--primary) 0%,color-mix(in srgb,var(--primary-l) 80%,#fff) 60%,var(--gold) 100%);color:#fff}
+.svc-cta-card .svc-copy{color:rgba(255,255,255,.86)}
+@media(max-width:1100px){.svc-detail-hero,.svc-split{grid-template-columns:1fr}.svc-summary-grid,.svc-best-grid,.svc-related-grid,.svc-tier-grid,.svc-process-grid{grid-template-columns:1fr 1fr}.svc-summary-grid .svc-info-card:first-child{grid-column:auto}}
+@media(max-width:760px){.svc-summary-grid,.svc-best-grid,.svc-related-grid,.svc-tier-grid,.svc-process-grid{grid-template-columns:1fr}}
+</style>
+
+<div class="page-hero" style="min-height:460px">
+    <div class="page-hero-img" style="background-image:url('{% if profile.services_hero_image %}{{ profile.services_hero_image.url }}{% else %}{% static 'website/images/microcredit-loan-products.webp' %}{% endif %}')"></div>
+    <div class="page-hero-overlay" style="background:linear-gradient(160deg,rgba(8,18,4,.92),rgba(30,48,12,.82) 58%,rgba(58,38,8,.72) 100%)"></div>
+  <div class="page-hero-deco"></div>
+  <div class="wrap"><div class="page-hero-inner">
+    <div class="page-hero-breadcrumb">
+          <a href="{% url 'company:website' %}">Home</a><span>/</span>
+          <a href="{% url 'company:services' %}">Loan Products</a><span>/</span>
+          <span>{{ service.title }}</span>
+        </div>
+    <h1 class="h-lg">{{ service.title }}</h1>
+        <p class="lead" style="color:rgba(255,255,255,.8)">{{ service.headline }}</p>
+  </div></div>
+</div>
+
+<section class="section">
+  <div class="wrap">
+    <div class="svc-split">
+      <div class="svc-side-stack">
+        <div class="svc-feature-image reveal">
+          <img src="{% static 'website/images/microcredit-market-support.webp' %}" alt="{{ service.title }} support">
+        </div>
+        <div class="svc-side-card reveal">
+          <h2 class="svc-card-title">Who this service is ideal for</h2>
+          <p class="svc-copy">{{ service.audience_label }}</p>
+          <div class="svc-list">
+            {% for item in service.best_for %}
+              <div class="svc-list-item">{{ item }}</div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="svc-side-card reveal">
+          <h2 class="svc-card-title">Key benefits and solution design</h2>
+          <div class="svc-list">
+            {% for item in service.feature_points %}
+              <div class="svc-list-item">{{ item }}</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="svc-side-stack">
+        <div class="svc-side-card reveal">
+          <div class="svc-side-title">Typical documents and checks</div>
+          <div class="svc-list">
+            {% for item in service.documents %}
+              <div class="svc-list-item">{{ item }}</div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="svc-side-card reveal">
+          <div class="svc-side-title">Support you can expect</div>
+          <div class="svc-list">
+            {% for item in service.support_items %}
+              <div class="svc-list-item">{{ item }}</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <div class="sec-header reveal">
+      <div class="eyebrow">Borrower Journey</div>
+      <h2 class="h-lg">How this service works from first contact to disbursement</h2>
+      <p class="lead">Every solution follows a transparent process so borrowers understand the product, the cost, and the repayment plan before approval.</p>
+    </div>
+    <div class="svc-process-grid">
+      {% for step in service.journey %}
+        <article class="svc-process-card reveal">
+          <div class="svc-process-step">Step {{ forloop.counter }}</div>
+          <h3 class="svc-card-title" style="font-size:18px">{{ step.title }}</h3>
+          <p class="svc-copy">{{ step.description }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="sec-header reveal">
+      <div class="eyebrow">Recommended Tiers</div>
+      <h2 class="h-lg">Common loan ranges for this type of request</h2>
+      <p class="lead">These tiers are often the best starting point for {{ service.title|lower }} requests. Final approval still depends on repayment capacity and account history.</p>
+    </div>
+    <div class="svc-tier-grid">
+      {% for tier in recommended_tiers %}
+        <article class="svc-tier-card reveal">
+          <div class="svc-pill">{{ tier.label }}</div>
+          <h3 class="svc-card-title">{{ tier.label }} Tier</h3>
+          <div class="tier-range">Up to {{ profile.formatted_currency }} {{ tier.max|floatformat:0 }}</div>
+          <div class="svc-list" style="margin-top:16px">
+            <div class="svc-list-item">{{ profile.get_repayment_cycle_display }} repayment structure</div>
+            <div class="svc-list-item">Suitable where need and affordability align</div>
+            <div class="svc-list-item">Can lead into higher tiers with strong repayment history</div>
+          </div>
+        </article>
+      {% empty %}
+        <article class="svc-tier-card reveal">
+          <h3 class="svc-card-title">Custom facility sizing</h3>
+          <p class="svc-copy">Talk to our team and we’ll guide you to the most suitable amount based on purpose, cash flow, and eligibility.</p>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <div class="sec-header reveal">
+      <div class="eyebrow">Related Solutions</div>
+      <h2 class="h-lg">Other products worth comparing</h2>
+      <p class="lead">This page is connected to other relevant services so you can compare alternatives before deciding on the best route.</p>
+    </div>
+    <div class="svc-related-grid">
+      {% for related in related_services %}
+        <article class="svc-related-card reveal">
+          <div class="svc-icon-box">{{ related.icon }}</div>
+          <div class="svc-pill">{{ related.badge }}</div>
+          <h3 class="svc-card-title">{{ related.title }}</h3>
+          <p class="svc-related-copy">{{ related.description }}</p>
+          <div class="svc-related-actions" style="margin-top:18px">
+            <a href="{% url 'company:service_detail' related.slug %}" class="btn btn-primary btn-sm">Open Solution</a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="svc-cta-card reveal">
+      <h2 class="h-lg" style="color:#fff">{{ service.cta_title }}</h2>
+      <p class="svc-copy" style="margin-top:12px">{{ service.cta_body }}</p>
+      <div class="svc-cta-actions" style="margin-top:22px">
+        <a href="{% url 'company:contact' %}" class="btn btn-ghost-white btn-lg">Contact Our Team</a>
+        <a href="{% url 'company:services' %}" class="btn btn-outline btn-lg" style="border-color:rgba(255,255,255,.5);color:#fff">Back to All Solutions</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

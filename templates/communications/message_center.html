@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .message-shell{
+    display:grid;
+    gap:16px;
+  }
+
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+
+  .hero-inner{position:relative;z-index:1;padding:28px}
+
+  .hero-wrap{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+
+  .hero-sub{
+    margin-top:8px;
+    opacity:.86;
+    line-height:1.65;
+    max-width:900px;
+  }
+
+  .btn-soft{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:10px 16px;
+    border-radius:999px;
+    font-weight:800;
+    text-decoration:none;
+    border:1px solid var(--border);
+    background:var(--panel-strong);
+    color:var(--text);
+    transition:all .16s ease;
+    cursor:pointer;
+  }
+
+  .btn-soft:hover{
+    color:var(--text);
+    transform:translateY(-1px);
+  }
+
+  .btn-soft-primary{
+    background:var(--primary);
+    color:#fff;
+    border-color:var(--primary);
+  }
+
+  .btn-soft-primary:hover{ color:#fff; }
+
+  .metrics-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:14px;
+  }
+
+  .stat-card,.section-card{
+    border:1px solid var(--border);
+    background:var(--panel-strong);
+    box-shadow:0 20px 50px rgba(26,31,20,.05);
+  }
+
+  .stat-card{
+    border-radius:22px;
+    padding:18px;
+  }
+
+  .section-card{
+    border-radius:24px;
+    overflow:hidden;
+  }
+
+  .stat-label{
+    font-size:12px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    color:var(--muted);
+  }
+
+  .stat-value{
+    font-size:24px;
+    font-weight:900;
+    margin-top:8px;
+    color:var(--text);
+  }
+
+  .stat-sub{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:6px;
+  }
+
+  .section-head{
+    padding:18px 20px 0;
+  }
+
+  .section-title{
+    margin:0;
+    font-size:18px;
+    font-weight:900;
+    color:var(--text);
+  }
+
+  .section-sub{
+    color:var(--muted);
+    font-size:13px;
+    margin-top:4px;
+  }
+
+  .section-body{
+    padding:18px 20px 20px;
+  }
+
+  .form-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:14px;
+  }
+
+  .field-card{
+    border:1px solid var(--border);
+    border-radius:18px;
+    background:var(--panel-strong);
+    padding:14px;
+  }
+
+  .field-card.full{
+    grid-column:1 / -1;
+  }
+
+  .field-label{
+    font-size:12px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.35px;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+
+  .field-card input,
+  .field-card select,
+  .field-card textarea{
+    width:100%;
+    min-height:46px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px 12px;
+    background:var(--panel-strong);
+  }
+
+  .field-error{
+    margin-top:6px;
+    font-size:12px;
+    color:var(--danger);
+    font-weight:700;
+  }
+
+  .action-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:16px;
+  }
+
+  .recipient-card{
+    border:1px solid var(--border);
+    border-radius:18px;
+    background:var(--panel-strong);
+    padding:14px;
+    margin:10px 0;
+  }
+
+  .recipient-title{
+    font-weight:900;
+    color:var(--text);
+  }
+
+  .recipient-meta{
+    margin-top:4px;
+    font-size:13px;
+    color:var(--muted);
+  }
+
+  .note-box{
+    padding:14px 16px;
+    border-radius:18px;
+    border:1px dashed rgba(58,90,30,.18);
+    background:rgba(58,90,30,.04);
+    color:var(--muted);
+    line-height:1.65;
+    font-size:13px;
+  }
+
+  @media (max-width: 900px){
+    .metrics-grid,
+    .form-grid{
+      grid-template-columns:1fr;
+    }
+  }
+</style>
+
+<div class="message-shell">
+
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div>
+          <div class="hero-kicker">Management Messaging</div>
+          <h1 class="hero-title">{{ title }}</h1>
+          <div class="hero-sub">
+            Send controlled SMS campaigns to users, agents, borrowers, filtered borrower groups,
+            loan-category segments, language groups, geographic segments, agent portfolios, or manual numbers.
+          </div>
+        </div>
+        <div>
+          <a href="{% url 'communications:marketing_hub' %}" class="btn-soft">Open Marketing Center</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="metrics-grid">
+    <div class="stat-card">
+      <div class="stat-label">Preview Recipients</div>
+      <div class="stat-value">{{ preview_count }}</div>
+      <div class="stat-sub">Unique phone numbers matched</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Dispatch Attempts</div>
+      <div class="stat-value">{{ sent_count }}</div>
+      <div class="stat-sub">Count for the latest provider send attempt</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Message Length</div>
+      <div class="stat-value">{{ message_text|length }}</div>
+      <div class="stat-sub">Characters in current message</div>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <div class="section-head">
+      <h3 class="section-title">Compose Message</h3>
+      <div class="section-sub">Choose a recipient segment, refine it with filters, preview recipients, then send.</div>
+    </div>
+
+    <div class="section-body">
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="form-grid">
+          <div class="field-card">
+            <div class="field-label">Recipient Group</div>
+            {{ form.recipient_group }}
+            {% for error in form.recipient_group.errors %}
+              <div class="field-error">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="field-card">
+            <div class="field-label">Agent</div>
+            {{ form.agent }}
+            {% for error in form.agent.errors %}
+              <div class="field-error">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="field-card">
+            <div class="field-label">Borrower Status</div>
+            {{ form.borrower_status }}
+            {% for error in form.borrower_status.errors %}
+              <div class="field-error">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="field-card">
+            <div class="field-label">Loan Status</div>
+            {{ form.loan_status }}
+            {% for error in form.loan_status.errors %}
+              <div class="field-error">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="field-card">
+            <div class="field-label">Loan Category</div>
+            {{ form.loan_category }}
+            {% for error in form.loan_category.errors %}
+              <div class="field-error">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="field-card">
+            <div class="field-label">Preferred Language</div>
+            {{ form.preferred_language }}
+            {% for error in form.preferred_language.errors %}
+              <div class="field-error">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="field-card">
+            <div class="field-label">Location</div>
+            {{ form.location }}
+            {% for error in form.location.errors %}
+              <div class="field-error">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="field-card">
+            <div class="field-label">Group Name</div>
+            {{ form.group_name }}
+            {% for error in form.group_name.errors %}
+              <div class="field-error">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="field-card full">
+            <div class="field-label">Manual Numbers</div>
+            {{ form.manual_numbers }}
+            {% for error in form.manual_numbers.errors %}
+              <div class="field-error">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="field-card full">
+            <div class="field-label">Message</div>
+            {{ form.message }}
+            {% for error in form.message.errors %}
+              <div class="field-error">{{ error }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% for error in form.non_field_errors %}
+          <div class="field-error" style="margin-top:10px;">{{ error }}</div>
+        {% endfor %}
+
+        <div class="action-row">
+          <button type="submit" name="action" value="preview" class="btn-soft">Preview Recipients</button>
+          <button type="submit" name="action" value="send" class="btn-soft btn-soft-primary">Send Messages</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <div class="section-head">
+      <h3 class="section-title">Recipient Preview</h3>
+      <div class="section-sub">Showing up to 200 recipients from the current filter selection.</div>
+    </div>
+
+    <div class="section-body">
+      <div class="note-box">
+        SMS sending uses the configured `safe_send_sms()` helper. Failed SMS deliveries will not interrupt the send loop.
+      </div>
+
+      {% for recipient in preview_recipients %}
+        <div class="recipient-card">
+          <div class="recipient-title">{{ recipient.label }}</div>
+          <div class="recipient-meta">{{ recipient.phone }} · {{ recipient.category }}</div>
+        </div>
+      {% empty %}
+        <div class="recipient-card">
+          <div class="recipient-meta">No recipients previewed yet.</div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+</div>
+
+{% endblock %}

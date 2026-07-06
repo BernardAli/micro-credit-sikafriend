@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+{% load currency %}
+{% block content %}
+<style>
+  .payroll-shell{display:grid;gap:16px}
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;padding:28px}
+  .hero-wrap{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+  .hero-sub{margin-top:8px;opacity:.88;line-height:1.65;max-width:920px}
+  .metrics-grid,.role-grid,.panel-grid{display:grid;gap:14px}
+  .tabs-shell{display:grid;gap:16px}
+  .tabs-nav{display:flex;flex-wrap:wrap;gap:10px;padding:12px;border:1px solid var(--border);border-radius:24px;background:var(--panel-strong);box-shadow:0 18px 46px rgba(26,31,20,.05)}
+  .tab-btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:999px;border:1px solid var(--border);background:var(--panel);color:var(--text-2);font-size:13px;font-weight:800;cursor:pointer;transition:all .16s ease}
+  .tab-btn:hover{transform:translateY(-1px);color:var(--text)}
+  .tab-btn.is-active{background:linear-gradient(135deg,var(--primary) 0%, color-mix(in srgb,var(--primary-2) 82%, #fff) 100%);border-color:var(--primary);color:#fff;box-shadow:0 18px 44px var(--primary-glow)}
+  .tab-panel{display:grid;gap:16px}
+  .tab-panel[hidden]{display:none}
+  .metrics-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .role-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .panel-grid{grid-template-columns:1.15fr .85fr}
+  .stat-card,.panel,.role-card,.preview-card{border:1px solid var(--border);border-radius:24px;background:var(--panel);box-shadow:0 18px 45px rgba(26,31,20,.05)}
+  .stat-card,.role-card,.preview-card{padding:18px}
+  .stat-label{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .stat-value{margin-top:8px;font-size:24px;font-weight:900;color:var(--text)}
+  .stat-sub{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.55}
+  .panel{overflow:hidden}
+  .panel-head{padding:18px 20px 0}
+  .panel-title{margin:0;font-size:18px;font-weight:900;color:var(--text)}
+  .panel-sub{margin-top:4px;font-size:13px;color:var(--muted)}
+  .panel-body{padding:18px 20px 20px}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .field{display:grid;gap:6px}
+  .field.full{grid-column:1 / -1}
+  .field label{font-size:12px;font-weight:900;color:var(--text);text-transform:uppercase;letter-spacing:.04em}
+  .field input,.field select,.field textarea{width:100%;min-height:46px;border:1px solid var(--border);border-radius:14px;padding:10px 12px;background:var(--panel-strong)}
+  .check-row{display:flex;align-items:center;gap:10px;padding:14px;border:1px solid var(--border);border-radius:18px;background:var(--panel-strong)}
+  .action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .btn-soft{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text)}
+  .btn-soft-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .list{display:grid;gap:10px}
+  .item{padding:14px;border:1px solid var(--border);border-radius:18px;background:var(--panel-strong)}
+  .item-title{font-size:15px;font-weight:900;color:var(--text)}
+  .item-meta{margin-top:4px;font-size:13px;color:var(--muted);line-height:1.55}
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:var(--panel);font-size:11px;font-weight:800;color:var(--text-2)}
+  .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:18px}
+  .table{width:100%;border-collapse:collapse;min-width:720px;background:var(--panel)}
+  .table th,.table td{padding:12px 14px;border-bottom:1px solid var(--border-soft);text-align:left;font-size:13px}
+  .table th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:var(--bg-soft)}
+  @media(max-width:1100px){.metrics-grid,.role-grid,.panel-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:760px){.metrics-grid,.role-grid,.panel-grid,.grid{grid-template-columns:1fr}}
+</style>
+
+<div class="payroll-shell">
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div>
+          <div class="hero-kicker">HR & Compensation</div>
+          <h1 class="hero-title">{{ title }}</h1>
+          <div class="hero-sub">Run payroll for field agents and office teams, track recurring and one-off adjustments, include collections-based commissions, and keep a clean audit trail for approvals and payments.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tabs-shell">
+    <div class="tabs-nav" role="tablist" aria-label="Payroll sections">
+      <button type="button" class="tab-btn is-active" data-tab-target="overview" role="tab" aria-selected="true" aria-controls="payroll-tab-overview" id="payroll-tab-button-overview">Overview</button>
+      <button type="button" class="tab-btn" data-tab-target="setup" role="tab" aria-selected="false" aria-controls="payroll-tab-setup" id="payroll-tab-button-setup">Run Setup</button>
+      <button type="button" class="tab-btn" data-tab-target="history" role="tab" aria-selected="false" aria-controls="payroll-tab-history" id="payroll-tab-button-history">History & Preview</button>
+    </div>
+
+    <div class="tab-panel" id="payroll-tab-overview" data-tab-panel="overview" role="tabpanel" aria-labelledby="payroll-tab-button-overview">
+      <section class="metrics-grid">
+        <div class="stat-card"><div class="stat-label">Payroll Ready</div><div class="stat-value">{{ payroll_ready_count }}</div><div class="stat-sub">Active employees configured for payroll processing.</div></div>
+        <div class="stat-card"><div class="stat-label">Regular Monthly Payroll</div><div class="stat-value">{{ monthly_regular_payroll|currency }}</div><div class="stat-sub">Base salary plus fixed allowances before variable earnings and deductions.</div></div>
+        <div class="stat-card"><div class="stat-label">Live Adjustments</div><div class="stat-value">{{ active_adjustments_count }}</div><div class="stat-sub">Recurring or active one-off payroll adjustments currently in effect.</div></div>
+        <div class="stat-card"><div class="stat-label">Processed Runs</div><div class="stat-value">{{ paid_runs_count }}</div><div class="stat-sub">{{ draft_runs_count }} draft and {{ approved_runs_count }} approved runs still in workflow.</div></div>
+      </section>
+
+      <section class="role-grid">
+        {% for item in role_breakdown %}
+          <div class="role-card">
+            <div class="stat-label">{{ item.label }}</div>
+            <div class="stat-value">{{ item.count }}</div>
+            <div class="stat-sub">{{ item.monthly_payroll|currency }} regular payroll footprint.</div>
+          </div>
+        {% endfor %}
+      </section>
+    </div>
+
+    <div class="tab-panel" id="payroll-tab-setup" data-tab-panel="setup" role="tabpanel" aria-labelledby="payroll-tab-button-setup" hidden>
+      <section class="panel-grid">
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Create Payroll Run</h2>
+            <div class="panel-sub">Generate a draft payroll with line items for all eligible staff in the selected period.</div>
+          </div>
+          <div class="panel-body">
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="create_run">
+              <div class="grid">
+                <div class="field full"><label for="{{ run_form.title.id_for_label }}">Run Title</label>{{ run_form.title }}</div>
+                <div class="field"><label for="{{ run_form.period_start.id_for_label }}">Period Start</label>{{ run_form.period_start }}</div>
+                <div class="field"><label for="{{ run_form.period_end.id_for_label }}">Period End</label>{{ run_form.period_end }}</div>
+                <div class="field"><label for="{{ run_form.pay_date.id_for_label }}">Pay Date</label>{{ run_form.pay_date }}</div>
+                <div class="field full"><label for="{{ run_form.notes.id_for_label }}">Notes</label>{{ run_form.notes }}</div>
+              </div>
+              <div class="grid" style="margin-top:14px">
+                <div class="check-row">{{ run_form.include_active_only }} <div><strong>Active Employees Only</strong><div class="stat-sub">Exclude suspended, exited, and onboarding records.</div></div></div>
+                <div class="check-row">{{ run_form.include_commissions }} <div><strong>Include Commissions</strong><div class="stat-sub">Apply collection-based commissions using each employee’s configured rate.</div></div></div>
+                <div class="check-row">{{ run_form.include_loan_recovery }} <div><strong>Include Loan Recovery Deductions</strong><div class="stat-sub">Pull deductions for salary advances, welfare recoveries, and employee loan recoveries.</div></div></div>
+              </div>
+              <div class="action-row"><button type="submit" class="btn-soft btn-soft-primary">Generate Draft Payroll</button></div>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Add Payroll Adjustment</h2>
+            <div class="panel-sub">Capture recurring allowances, deductions, bonuses, overtime, penalties, and advance recoveries.</div>
+          </div>
+          <div class="panel-body">
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="create_adjustment">
+              <div class="grid">
+                <div class="field full"><label for="{{ adjustment_form.employee.id_for_label }}">Employee</label>{{ adjustment_form.employee }}</div>
+                <div class="field"><label for="{{ adjustment_form.adjustment_type.id_for_label }}">Adjustment Type</label>{{ adjustment_form.adjustment_type }}</div>
+                <div class="field"><label for="{{ adjustment_form.category.id_for_label }}">Category</label>{{ adjustment_form.category }}</div>
+                <div class="field full"><label for="{{ adjustment_form.label.id_for_label }}">Label</label>{{ adjustment_form.label }}</div>
+                <div class="field"><label for="{{ adjustment_form.amount.id_for_label }}">Amount</label>{{ adjustment_form.amount }}</div>
+                <div class="field"><label for="{{ adjustment_form.effective_from.id_for_label }}">Effective From</label>{{ adjustment_form.effective_from }}</div>
+                <div class="field"><label for="{{ adjustment_form.effective_to.id_for_label }}">Effective To</label>{{ adjustment_form.effective_to }}</div>
+                <div class="field full"><label for="{{ adjustment_form.notes.id_for_label }}">Notes</label>{{ adjustment_form.notes }}</div>
+              </div>
+              <div class="grid" style="margin-top:14px">
+                <div class="check-row">{{ adjustment_form.is_recurring }} <div><strong>Recurring</strong><div class="stat-sub">Carry this adjustment across future periods while it remains active.</div></div></div>
+                <div class="check-row">{{ adjustment_form.is_active }} <div><strong>Active</strong><div class="stat-sub">Inactive adjustments stay on record but are ignored during payroll generation.</div></div></div>
+              </div>
+              <div class="action-row"><button type="submit" class="btn-soft btn-soft-primary">Save Adjustment</button></div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" id="payroll-tab-history" data-tab-panel="history" role="tabpanel" aria-labelledby="payroll-tab-button-history" hidden>
+      <section class="panel-grid">
+        <div class="panel">
+          <div class="panel-head"><h2 class="panel-title">Recent Payroll Runs</h2><div class="panel-sub">Generated runs across draft, approved, and paid stages.</div></div>
+          <div class="panel-body">
+            <div class="list">
+              {% for run in runs %}
+                <div class="item">
+                  <div class="item-title">{{ run.title }}</div>
+                  <div class="item-meta">{{ run.period_start }} to {{ run.period_end }} · Pay date {{ run.pay_date }} · {{ run.get_status_display }}</div>
+                  <div class="chip-row">
+                    <span class="chip">{{ run.lines.count }} employees</span>
+                    <span class="chip">Gross {{ run.total_gross|currency }}</span>
+                    <span class="chip">Net {{ run.total_net|currency }}</span>
+                  </div>
+                  <div class="action-row">
+                    <a href="{% url 'payroll_run_detail' run.pk %}" class="btn-soft">Open Run</a>
+                  </div>
+                </div>
+              {% empty %}
+                <div class="stat-sub">No payroll runs have been created yet.</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2 class="panel-title">Recent Adjustments</h2><div class="panel-sub">Latest earnings and deductions influencing payroll output.</div></div>
+          <div class="panel-body">
+            <div class="list">
+              {% for item in adjustments %}
+                <div class="item">
+                  <div class="item-title">{{ item.employee.name }} · {{ item.label }}</div>
+                  <div class="item-meta">{{ item.get_adjustment_type_display }} · {{ item.get_category_display }} · {{ item.amount|currency }}</div>
+                  <div class="item-meta">Effective {{ item.effective_from }}{% if item.effective_to %} to {{ item.effective_to }}{% endif %}{% if item.is_recurring %} · Recurring{% endif %}</div>
+                </div>
+              {% empty %}
+                <div class="stat-sub">No payroll adjustments recorded yet.</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2 class="panel-title">Current Statutory Policy</h2><div class="panel-sub">These company settings now drive automatic PAYE, pension, welfare deductions, and payroll liability postings into accounting.</div></div>
+        <div class="panel-body">
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Control</th><th>Setting</th><th>Accounting Link</th></tr></thead>
+              <tbody>
+                <tr><td>Automatic PAYE</td><td>{% if company_profile.payroll_tax_enabled %}Enabled{% else %}Disabled{% endif %} · Relief {{ company_profile.payroll_personal_relief_amount|currency }}</td><td>{{ company_profile.paye_payable_account_code }}</td></tr>
+                <tr><td>Employee Pension</td><td>{% if company_profile.payroll_employee_pension_enabled %}{{ company_profile.payroll_employee_pension_rate }}% of base salary{% else %}Disabled{% endif %}</td><td>{{ company_profile.employee_pension_payable_account_code }}</td></tr>
+                <tr><td>Employer Pension</td><td>{% if company_profile.payroll_employer_pension_enabled %}{{ company_profile.payroll_employer_pension_rate }}% of base salary{% else %}Disabled{% endif %}</td><td>{{ company_profile.employer_pension_payable_account_code }} / {{ company_profile.employer_statutory_expense_account_code }}</td></tr>
+                <tr><td>Welfare Deductions</td><td>{% if company_profile.payroll_welfare_enabled %}{{ company_profile.payroll_welfare_deduction_rate }}% + {{ company_profile.payroll_welfare_fixed_amount|currency }}{% else %}Disabled{% endif %}</td><td>{{ company_profile.welfare_payable_account_code }}</td></tr>
+                <tr><td>Indirect Tax Reference</td><td>VAT {{ company_profile.vat_rate }}% · NHIL {{ company_profile.nhil_rate }}% · GETFund {{ company_profile.getfund_rate }}% · WHT {{ company_profile.withholding_tax_rate }}%</td><td>Corporate tax {{ company_profile.corporate_income_tax_rate }}%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2 class="panel-title">Current Payroll Preview</h2><div class="panel-sub">Top payroll-ready employees using the current month-to-date calculation logic.</div></div>
+        <div class="panel-body">
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Employee</th><th>Role</th><th>Gross</th><th>Statutory</th><th>Total Deductions</th><th>Net</th><th>Employer Statutory</th><th>Collections Tracked</th><th>Commission</th></tr></thead>
+              <tbody>
+                {% for row in payroll_preview %}
+                  <tr>
+                    <td>{{ row.employee.name }}<br><span style="color:var(--muted)">{{ row.employee.agent_id }}</span></td>
+                    <td>{{ row.employee.get_workforce_role_display }}</td>
+                    <td>{{ row.gross_pay|currency }}</td>
+                    <td>{{ row.statutory_deductions|currency }}</td>
+                    <td>{{ row.total_deductions|currency }}</td>
+                    <td>{{ row.net_pay|currency }}</td>
+                    <td>{{ row.employer_statutory_contributions|currency }}</td>
+                    <td>{{ row.collections_tracked|currency }}</td>
+                    <td>{{ row.commission_total|currency }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="9">No payroll-ready employees available for preview.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+</div>
+<script>
+  (() => {
+    const tabButtons = Array.from(document.querySelectorAll("#payroll-tab-button-overview, #payroll-tab-button-setup, #payroll-tab-button-history"));
+    const tabPanels = Array.from(document.querySelectorAll("[data-tab-panel]"));
+    const validTabs = new Set(tabPanels.map((panel) => panel.dataset.tabPanel));
+
+    const activateTab = (tabName, updateHash = true) => {
+      tabButtons.forEach((button) => {
+        const isActive = button.dataset.tabTarget === tabName;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-selected", isActive ? "true" : "false");
+      });
+      tabPanels.forEach((panel) => {
+        panel.hidden = panel.dataset.tabPanel !== tabName;
+      });
+      if (updateHash && window.location.hash !== `#${tabName}`) {
+        history.replaceState(null, "", `#${tabName}`);
+      }
+    };
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => activateTab(button.dataset.tabTarget));
+    });
+
+    const hashTab = window.location.hash ? window.location.hash.slice(1) : "";
+    const panelWithErrors = tabPanels.find((panel) => panel.querySelector(".errorlist, .err, ul.errorlist"));
+    const initialTab = panelWithErrors ? panelWithErrors.dataset.tabPanel : validTabs.has(hashTab) ? hashTab : "overview";
+    activateTab(initialTab, false);
+  })();
+</script>
+{% endblock %}

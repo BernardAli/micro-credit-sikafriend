@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+{% load currency %}
+{% block content %}
+
+<style>
+  .statement-shell{
+    display:grid;
+    gap:16px;
+  }
+
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+
+  .hero-inner{position:relative;z-index:1;padding:28px}
+
+  .hero-wrap{
+    display:flex;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    align-items:flex-start;
+  }
+
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+
+  .hero-sub{
+    margin-top:8px;
+    opacity:.88;
+    max-width:920px;
+  }
+
+  .chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:12px;
+  }
+
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:7px 11px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.08);
+    font-size:12px;
+    font-weight:800;
+    color:#fff;
+  }
+
+  .btn-soft{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:10px 16px;
+    border-radius:999px;
+    font-weight:800;
+    text-decoration:none;
+    border:1px solid var(--border);
+    background:var(--panel-strong);
+    color:var(--text);
+  }
+
+  .btn-soft:hover{
+    color:var(--text);
+  }
+
+  .btn-soft-primary{
+    background:var(--primary);
+    color:#fff;
+    border-color:var(--primary);
+  }
+
+  .btn-soft-primary:hover{
+    color:#fff;
+  }
+
+  .metrics-grid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:14px;
+  }
+
+  .stat-card{
+    border:1px solid var(--border);
+    border-radius:22px;
+    background:var(--panel);
+    padding:18px;
+    box-shadow:0 18px 45px rgba(26,31,20,.05);
+  }
+
+  .stat-label{
+    font-size:12px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    color:var(--muted);
+  }
+
+  .stat-value{
+    font-size:22px;
+    font-weight:900;
+    line-height:1.08;
+    margin-top:8px;
+    color:var(--text);
+  }
+
+  .stat-sub{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:6px;
+  }
+
+  .section-card{
+    border:1px solid var(--border);
+    border-radius:24px;
+    background:var(--panel-strong);
+    box-shadow:0 20px 50px rgba(26,31,20,.05);
+    overflow:hidden;
+  }
+
+  .section-head{
+    padding:18px 20px 0;
+  }
+
+  .section-title{
+    margin:0;
+    font-size:18px;
+    font-weight:900;
+    color:var(--text);
+  }
+
+  .section-sub{
+    color:var(--muted);
+    font-size:13px;
+    margin-top:4px;
+  }
+
+  .section-body{
+    padding:18px 20px 20px;
+  }
+
+  .statement-box{
+    width:100%;
+    min-height:460px;
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:18px;
+    background:
+      var(--panel);
+    color:var(--text);
+    font-size:14px;
+    line-height:1.7;
+    resize:vertical;
+    outline:none;
+    white-space:pre-wrap;
+    box-shadow:inset 0 1px 2px rgba(26,31,20,.03);
+  }
+
+  .action-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  @media print{
+    .no-print{
+      display:none !important;
+    }
+
+    body{
+      background:var(--panel-strong);
+    }
+
+    .hero-card,
+    .section-card,
+    .stat-card{
+      box-shadow:none !important;
+    }
+
+    .statement-box{
+      border:none;
+      background:var(--panel-strong);
+      min-height:auto;
+      padding:0;
+    }
+  }
+
+  @media (max-width:1100px){
+    .metrics-grid{
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+  }
+
+  @media (max-width:640px){
+    .metrics-grid{
+      grid-template-columns:1fr;
+    }
+
+    .hero-title{
+      font-size:24px;
+    }
+  }
+</style>
+
+<div class="statement-shell">
+
+  <!-- HERO -->
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div>
+          <div class="hero-kicker">Loan Statement</div>
+          <h1 class="hero-title">Loan #{{ loan.id }} Statement</h1>
+          <div class="hero-sub">
+            Official repayment statement for {{ loan.borrower.full_name }}, showing principal, ROIC, collections, and current outstanding balance.
+          </div>
+
+          <div class="chip-row">
+            <span class="chip">Borrower: {{ loan.borrower.full_name }}</span>
+            <span class="chip">Agent: {{ loan.agent_name.name }}</span>
+            <span class="chip">Status: {{ loan.status }}</span>
+          </div>
+        </div>
+
+        <div class="action-row no-print">
+          <a class="btn-soft" href="{% url 'loans:loan_detail' loan.id %}">Back to Loan</a>
+          <a class="btn-soft" href="{% url 'loans:borrower_detail' loan.borrower.id %}">Borrower</a>
+          <a class="btn-soft" href="{% url 'loans:loan_statement_pdf' loan.id %}" target="_blank">Open PDF</a>
+          <button type="button" class="btn-soft btn-soft-primary" onclick="window.print()">Print</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUMMARY -->
+  <section class="metrics-grid">
+    <div class="stat-card">
+      <div class="stat-label">Principal</div>
+      <div class="stat-value">{{ loan.amount|ghs }}</div>
+      <div class="stat-sub">Amount disbursed</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">ROIC</div>
+      <div class="stat-value">{{ loan.roic_amount|ghs }}</div>
+      <div class="stat-sub">Expected return component</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Total Paid</div>
+      <div class="stat-value">{{ loan.total_paid_amount|ghs }}</div>
+      <div class="stat-sub">All recorded payments</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Balance</div>
+      <div class="stat-value">{{ loan.balance_amount|ghs }}</div>
+      <div class="stat-sub">Outstanding total</div>
+    </div>
+  </section>
+
+  <!-- STATEMENT BODY -->
+  <section class="section-card">
+    <div class="section-head">
+      <h3 class="section-title">Statement Details</h3>
+      <div class="section-sub">Printable full statement generated from the current loan records</div>
+    </div>
+
+    <div class="section-body">
+      <textarea readonly class="statement-box">{{ statement }}</textarea>
+    </div>
+  </section>
+
+</div>
+
+{% endblock %}

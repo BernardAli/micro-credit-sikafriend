@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% load currency %}
+{% block content %}
+<style>
+  .profile-shell{display:grid;gap:16px}
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;padding:28px}
+  .hero-wrap{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;align-items:center}
+  .hero-left{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .hero-avatar{width:96px;height:96px;border-radius:24px;overflow:hidden;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900}
+  .hero-avatar img{width:100%;height:100%;object-fit:cover}
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+  .hero-meta{margin-top:6px;opacity:.88;line-height:1.6}
+  .hero-chips,.chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .chip{display:inline-flex;align-items:center;padding:7px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);font-size:12px;font-weight:800;color:#fff}
+  .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .btn-soft{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text)}
+  .btn-soft-primary{background:var(--primary);border-color:var(--primary);color:#fff}
+  .grid-4,.grid-3,.grid-2{display:grid;gap:14px}
+  .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stat-card,.section-card,.line-card{border:1px solid var(--border);border-radius:24px;background:var(--panel);box-shadow:0 18px 45px rgba(26,31,20,.05)}
+  .stat-card{padding:18px}
+  .stat-label{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .stat-value{margin-top:8px;font-size:24px;font-weight:900;color:var(--text)}
+  .stat-sub{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.55}
+  .section-card{overflow:hidden}
+  .section-head{padding:18px 20px 0}
+  .section-title{margin:0;font-size:18px;font-weight:900;color:var(--text)}
+  .section-sub{margin-top:4px;font-size:13px;color:var(--muted)}
+  .section-body{padding:18px 20px 20px}
+  .detail-list{display:grid;gap:10px}
+  .detail-row{display:flex;justify-content:space-between;gap:14px;padding:12px 14px;border-radius:18px;background:var(--panel-strong);border:1px solid var(--border)}
+  .detail-row strong{color:var(--text)}
+  .detail-row span{color:var(--muted);text-align:right}
+  .line-card{padding:16px}
+  .line-title{font-size:15px;font-weight:900;color:var(--text)}
+  .line-meta{margin-top:4px;font-size:13px;color:var(--muted);line-height:1.55}
+  .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:18px}
+  .table{width:100%;border-collapse:collapse;min-width:760px;background:var(--panel)}
+  .table th,.table td{padding:12px 14px;border-bottom:1px solid var(--border-soft);text-align:left;font-size:13px}
+  .table th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:var(--bg-soft)}
+  @media(max-width:1100px){.grid-4,.grid-3,.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:760px){.grid-4,.grid-3,.grid-2{grid-template-columns:1fr}.detail-row{flex-direction:column}.detail-row span{text-align:left}}
+</style>
+
+<div class="profile-shell">
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div class="hero-left">
+          <div class="hero-avatar">
+            {% if agent.photo %}<img src="{{ agent.photo.url }}" alt="{{ agent.name }}">{% else %}{{ agent.name|slice:":1"|upper }}{% endif %}
+          </div>
+          <div>
+            <div class="hero-kicker">Workforce Profile</div>
+            <h1 class="hero-title">{{ agent.name }}</h1>
+            <div class="hero-meta">{{ agent.agent_id }} · {{ agent.get_workforce_role_display }}{% if agent.job_title %} · {{ agent.job_title }}{% endif %}{% if agent.department %} · {{ agent.department }}{% endif %}</div>
+            <div class="hero-meta">{{ agent.location }}{% if agent.email %} · {{ agent.email }}{% endif %}{% if agent.phone %} · {{ agent.phone }}{% endif %}</div>
+            <div class="hero-chips">
+              <span class="chip">{{ agent.get_employment_status_display }}</span>
+              <span class="chip">{% if agent.payroll_active %}Payroll Active{% else %}Payroll Inactive{% endif %}</span>
+              <span class="chip">{% if agent.has_admin_access %}Admin Console Access{% else %}Standard / Field Access{% endif %}</span>
+              {% if agent.group_name %}<span class="chip">{{ agent.group_name }}</span>{% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="hero-actions">
+          {% if agent.is_field_agent %}
+            <a href="{% url 'agent_comprehensive_analysis' agent.pk %}" class="btn-soft btn-soft-primary">Portfolio Analysis</a>
+          {% endif %}
+          {% if user_role == "admin" %}
+            {% if agent.user %}
+              <a href="{% url 'agent_reset_password' agent.pk %}" class="btn-soft">Reset Password</a>
+            {% else %}
+              <a href="{% url 'agent_register' %}" class="btn-soft">Create Login</a>
+            {% endif %}
+            <a href="{% url 'payroll_hub' %}" class="btn-soft">Payroll Center</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid-4">
+    <div class="stat-card"><div class="stat-label">Base Salary</div><div class="stat-value">{{ agent.base_salary|currency }}</div><div class="stat-sub">Fixed monthly salary before allowances and variable pay.</div></div>
+    <div class="stat-card"><div class="stat-label">Regular Monthly Pay</div><div class="stat-value">{{ agent.gross_regular_pay|currency }}</div><div class="stat-sub">Base salary plus recurring fixed allowances.</div></div>
+    <div class="stat-card"><div class="stat-label">Current Month Net Preview</div><div class="stat-value">{{ payroll_snapshot.net_pay|currency }}</div><div class="stat-sub">Includes salary, allowances, commissions, and current adjustments.</div></div>
+    <div class="stat-card"><div class="stat-label">Active Portfolio</div><div class="stat-value">{{ total_outstanding|currency }}</div><div class="stat-sub">{{ total_loans }} total loans and {{ total_borrowers }} distinct borrowers.</div></div>
+  </section>
+
+  <section class="grid-2">
+    <div class="section-card">
+      <div class="section-head">
+        <h2 class="section-title">Employment & Access</h2>
+        <div class="section-sub">Operational, HR, and system-access profile for this workforce member.</div>
+      </div>
+      <div class="section-body">
+        <div class="detail-list">
+          <div class="detail-row"><strong>Employment Type</strong><span>{{ agent.get_employment_type_display }}</span></div>
+          <div class="detail-row"><strong>Hire Date</strong><span>{{ agent.hire_date|default:"—" }}</span></div>
+          <div class="detail-row"><strong>Supervisor</strong><span>{% if agent.supervisor %}{{ agent.supervisor.name }}{% else %}—{% endif %}</span></div>
+          <div class="detail-row"><strong>Direct Reports</strong><span>{{ direct_reports_count }}</span></div>
+          <div class="detail-row"><strong>Preferred Payment Method</strong><span>{{ agent.get_preferred_payment_method_display }}</span></div>
+          <div class="detail-row"><strong>National ID</strong><span>{{ agent.ghana_card_number|default:"—" }}</span></div>
+          <div class="detail-row"><strong>Tax Number</strong><span>{{ agent.tax_number|default:"—" }}</span></div>
+          <div class="detail-row"><strong>Social Security</strong><span>{{ agent.social_security_number|default:"—" }}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-head">
+        <h2 class="section-title">Payroll Snapshot</h2>
+        <div class="section-sub">Preview of this month’s payroll composition based on current setup.</div>
+      </div>
+      <div class="section-body">
+        <div class="detail-list">
+          <div class="detail-row"><strong>Fixed Allowances</strong><span>{{ payroll_snapshot.fixed_allowances|currency }}</span></div>
+          <div class="detail-row"><strong>Variable Earnings</strong><span>{{ payroll_snapshot.variable_earnings_total|currency }}</span></div>
+          <div class="detail-row"><strong>Commission</strong><span>{{ payroll_snapshot.commission_total|currency }}</span></div>
+          <div class="detail-row"><strong>Gross Pay</strong><span>{{ payroll_snapshot.gross_pay|currency }}</span></div>
+          <div class="detail-row"><strong>Total Deductions</strong><span>{{ payroll_snapshot.total_deductions|currency }}</span></div>
+          <div class="detail-row"><strong>Collections Tracked</strong><span>{{ payroll_snapshot.collections_tracked|currency }}</span></div>
+          <div class="detail-row"><strong>Disbursements Tracked</strong><span>{{ payroll_snapshot.disbursements_tracked|currency }}</span></div>
+          <div class="detail-row"><strong>Notes</strong><span>{{ payroll_snapshot.notes|default:"No active payroll adjustments." }}</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid-3">
+    <div class="section-card">
+      <div class="section-head"><h2 class="section-title">Compensation Structure</h2></div>
+      <div class="section-body detail-list">
+        <div class="detail-row"><strong>Housing Allowance</strong><span>{{ agent.housing_allowance|currency }}</span></div>
+        <div class="detail-row"><strong>Transport Allowance</strong><span>{{ agent.transport_allowance|currency }}</span></div>
+        <div class="detail-row"><strong>Meal Allowance</strong><span>{{ agent.meal_allowance|currency }}</span></div>
+        <div class="detail-row"><strong>Communication Allowance</strong><span>{{ agent.communication_allowance|currency }}</span></div>
+        <div class="detail-row"><strong>Other Allowance</strong><span>{{ agent.other_allowance|currency }}</span></div>
+        <div class="detail-row"><strong>Commission Rate</strong><span>{{ agent.commission_rate }}%</span></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-head"><h2 class="section-title">Bank & Mobile Money</h2></div>
+      <div class="section-body detail-list">
+        <div class="detail-row"><strong>Bank Name</strong><span>{{ agent.bank_name|default:"—" }}</span></div>
+        <div class="detail-row"><strong>Account Name</strong><span>{{ agent.bank_account_name|default:"—" }}</span></div>
+        <div class="detail-row"><strong>Account Number</strong><span>{{ agent.bank_account_number|default:"—" }}</span></div>
+        <div class="detail-row"><strong>MoMo Name</strong><span>{{ agent.mobile_money_name|default:"—" }}</span></div>
+        <div class="detail-row"><strong>MoMo Number</strong><span>{{ agent.mobile_money_number|default:"—" }}</span></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-head"><h2 class="section-title">Emergency & Notes</h2></div>
+      <div class="section-body detail-list">
+        <div class="detail-row"><strong>Emergency Contact</strong><span>{{ agent.emergency_contact_name|default:"—" }}</span></div>
+        <div class="detail-row"><strong>Emergency Phone</strong><span>{{ agent.emergency_contact_phone|default:"—" }}</span></div>
+        <div class="detail-row"><strong>Address</strong><span>{{ agent.residential_address|default:"—" }}</span></div>
+        <div class="detail-row"><strong>Internal Notes</strong><span>{{ agent.notes|default:"—" }}</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid-2">
+    <div class="section-card">
+      <div class="section-head"><h2 class="section-title">Recent Payroll Runs</h2><div class="section-sub">Latest line items involving this employee.</div></div>
+      <div class="section-body">
+        <div class="detail-list">
+          {% for line in recent_payroll_lines %}
+            <div class="line-card">
+              <div class="line-title">{{ line.run.title }}</div>
+              <div class="line-meta">{{ line.run.period_start }} to {{ line.run.period_end }} · {{ line.run.get_status_display }}</div>
+              <div class="chip-row"><span class="chip" style="color:var(--text);background:var(--panel-strong);border-color:var(--border)">Gross {{ line.gross_pay|currency }}</span><span class="chip" style="color:var(--text);background:var(--panel-strong);border-color:var(--border)">Net {{ line.net_pay|currency }}</span></div>
+            </div>
+          {% empty %}
+            <div class="stat-sub">No payroll lines have been generated for this employee yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-head"><h2 class="section-title">Payroll Adjustments</h2><div class="section-sub">Recurring and one-off earnings or deductions.</div></div>
+      <div class="section-body">
+        <div class="detail-list">
+          {% for item in recent_adjustments %}
+            <div class="line-card">
+              <div class="line-title">{{ item.label }}</div>
+              <div class="line-meta">{{ item.get_adjustment_type_display }} · {{ item.get_category_display }} · {{ item.amount|currency }}</div>
+              <div class="line-meta">Effective from {{ item.effective_from }}{% if item.effective_to %} to {{ item.effective_to }}{% endif %}{% if item.is_recurring %} · Recurring{% endif %}</div>
+            </div>
+          {% empty %}
+            <div class="stat-sub">No payroll adjustments recorded yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <div class="section-head"><h2 class="section-title">Portfolio Snapshot</h2><div class="section-sub">Field performance remains visible for agents while office staff naturally show zero portfolio activity.</div></div>
+    <div class="section-body">
+      <div class="grid-4">
+        <div class="stat-card"><div class="stat-label">Total Loans</div><div class="stat-value">{{ total_loans }}</div><div class="stat-sub">{{ active_loans }} active and {{ default_loans }} defaulted.</div></div>
+        <div class="stat-card"><div class="stat-label">Collections Rate</div><div class="stat-value">{{ collections_rate }}%</div><div class="stat-sub">{{ total_collected|currency }} collected against {{ total_expected|currency }} expected.</div></div>
+        <div class="stat-card"><div class="stat-label">This Month Collected</div><div class="stat-value">{{ month_collected|currency }}</div><div class="stat-sub">{{ month_principal_collected|currency }} principal and {{ month_roic_collected|currency }} ROIC.</div></div>
+        <div class="stat-card"><div class="stat-label">PAR Proxy</div><div class="stat-value">{{ par_rate }}%</div><div class="stat-sub">{{ par_amount|currency }} currently at risk.</div></div>
+      </div>
+      <div class="table-wrap" style="margin-top:16px">
+        <table class="table">
+          <thead><tr><th>Borrower</th><th>Status</th><th>Amount</th><th>Expected</th><th>Collected</th><th>Balance</th></tr></thead>
+          <tbody>
+            {% for loan in recent_loans %}
+              <tr>
+                <td>{{ loan.borrower.full_name }}</td>
+                <td>{{ loan.get_status_display }}</td>
+                <td>{{ loan.amount|currency }}</td>
+                <td>{{ loan.total_expected_amount|currency }}</td>
+                <td>{{ loan.total_paid_amount|currency }}</td>
+                <td>{{ loan.balance_amount|currency }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6">No loans assigned to this employee yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,472 @@
+{% extends "base.html" %}
+{% load currency %}
+{% block content %}
+
+<style>
+  .analytics-shell{display:grid;gap:16px}
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;padding:28px}
+  .hero-wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start}
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+  .hero-sub{margin-top:8px;opacity:.86;max-width:900px}
+  .btn-soft{
+    display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;
+    font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text)
+  }
+  .btn-soft-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .btn-soft-primary:hover,.btn-soft:hover{color:inherit}
+  .metrics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .metrics-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  .section-card{
+    border:1px solid var(--border);border-radius:24px;background:var(--panel-strong);box-shadow:0 20px 50px rgba(26,31,20,.05);overflow:hidden
+  }
+  .section-head{padding:18px 20px 0}
+  .section-title{margin:0;font-size:18px;font-weight:900;color:var(--text)}
+  .section-sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .section-body{padding:18px 20px 20px}
+  .stat-card{
+    border:1px solid var(--border);border-radius:22px;background:var(--panel-strong);
+    padding:18px;box-shadow:0 18px 45px rgba(26,31,20,.05)
+  }
+  .stat-label{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+  .stat-value{font-size:24px;font-weight:900;line-height:1.08;margin-top:8px;color:var(--text)}
+  .stat-sub{font-size:12px;color:var(--muted);margin-top:6px}
+  .filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+  .filter-grid input,.filter-grid select{
+    width:100%;min-height:46px;border:1px solid var(--border);border-radius:14px;padding:10px 12px;background:var(--panel-strong)
+  }
+  .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chart-box{height:360px}
+  .table-wrap{overflow:auto}
+  table.analytics-table{width:100%;border-collapse:collapse}
+  table.analytics-table th, table.analytics-table td{
+    padding:10px 12px;border-bottom:1px solid var(--border-soft);font-size:13px;vertical-align:top
+  }
+  table.analytics-table th{
+    text-align:left;background:var(--bg-soft);color:var(--text-2);font-weight:900;position:sticky;top:0
+  }
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);
+    background:var(--panel-strong);font-size:12px;font-weight:800;color:var(--text-2)
+  }
+  .chip-green{background:rgba(22,163,74,.08);color:var(--success);border-color:rgba(22,163,74,.14)}
+  .chip-amber{background:rgba(245,158,11,.10);color:var(--warning);border-color:rgba(245,158,11,.16)}
+  .chip-red{background:rgba(220,38,38,.08);color:var(--danger);border-color:rgba(220,38,38,.14)}
+  .chip-slate{background:rgba(100,116,139,.08);color:var(--muted);border-color:var(--border)}
+  .muted{color:var(--muted)}
+  @media (max-width:1100px){
+    .metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .metrics-grid-3,.chart-grid{grid-template-columns:1fr}
+  }
+  @media (max-width:640px){
+    .metrics-grid{grid-template-columns:1fr}
+    .hero-title{font-size:24px}
+  }
+</style>
+
+<div class="analytics-shell">
+
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div>
+          <div class="hero-kicker">Borrower Status Intelligence</div>
+          <h1 class="hero-title">{{ title }}</h1>
+          <div class="hero-sub">
+            Analyze borrower performance by ACTIVE, CLOSED and BAD status to support collections strategy,
+            recovery prioritization, risk containment, staffing, and communication planning.
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <a href="{% url 'loans:borrower_list' %}" class="btn-soft">Borrowers</a>
+          <a href="{% url 'loans:borrower_analytics' %}" class="btn-soft">General Analytics</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="metrics-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Borrowers</div>
+      <div class="stat-value">{{ overall_borrowers }}</div>
+      <div class="stat-sub">All borrowers in current scope</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Overall Loans</div>
+      <div class="stat-value">{{ overall_loans }}</div>
+      <div class="stat-sub">Loans linked to selected borrowers</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Overall Outstanding</div>
+      <div class="stat-value">{{ overall_total_outstanding|ghs }}</div>
+      <div class="stat-sub">Principal + ROIC still outstanding</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Overall Collection Rate</div>
+      <div class="stat-value">{{ overall_collection_rate }}%</div>
+      <div class="stat-sub">Collected divided by expected</div>
+    </div>
+  </section>
+
+  <section class="metrics-grid-3">
+    <div class="stat-card">
+      <div class="stat-label">Active Borrowers</div>
+      <div class="stat-value">{{ active_summary.count }}</div>
+      <div class="stat-sub">
+        Loans: {{ active_summary.loans }} · Outstanding: {{ active_summary.total_outstanding|ghs }}
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Closed Borrowers</div>
+      <div class="stat-value">{{ closed_summary.count }}</div>
+      <div class="stat-sub">
+        Loans: {{ closed_summary.loans }} · Outstanding: {{ closed_summary.total_outstanding|ghs }}
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Bad Borrowers</div>
+      <div class="stat-value">{{ bad_summary.count }}</div>
+      <div class="stat-sub">
+        Loans: {{ bad_summary.loans }} · Outstanding: {{ bad_summary.total_outstanding|ghs }}
+      </div>
+    </div>
+  </section>
+
+  <section class="metrics-grid-3">
+    <div class="stat-card">
+      <div class="stat-label">Active Portfolio</div>
+      <div class="stat-value">{{ active_summary.disbursed|ghs }}</div>
+      <div class="stat-sub">Principal disbursed to active borrowers</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Closed Portfolio</div>
+      <div class="stat-value">{{ closed_summary.disbursed|ghs }}</div>
+      <div class="stat-sub">Principal disbursed to closed borrowers</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Bad Portfolio</div>
+      <div class="stat-value">{{ bad_summary.disbursed|ghs }}</div>
+      <div class="stat-sub">Principal disbursed to bad borrowers</div>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <div class="section-head">
+      <h3 class="section-title">Filters</h3>
+      <div class="section-sub">Focus the analysis by borrower attributes</div>
+    </div>
+    <div class="section-body">
+      <form method="get" class="filter-grid">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search name, phone, ID, Ghana Card">
+        <input type="text" name="location" value="{{ location }}" placeholder="Location">
+        <input type="text" name="group_name" value="{{ group_name }}" placeholder="Group">
+
+        <select name="preferred_language">
+          <option value="">All languages</option>
+          {% for value, label in language_choices %}
+            <option value="{{ value }}" {% if preferred_language == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+
+        <select name="borrower_status">
+          <option value="">All borrower statuses</option>
+          {% for value, label in borrower_status_choices %}
+            <option value="{{ value }}" {% if borrower_status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="submit" class="btn-soft btn-soft-primary">Apply</button>
+          <a href="{% url 'loans:borrower_status_analytics' %}" class="btn-soft">Reset</a>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="chart-grid">
+    <div class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Borrower Status Mix</h3>
+        <div class="section-sub">Count of ACTIVE, CLOSED and BAD borrowers</div>
+      </div>
+      <div class="section-body"><div id="statusMixChart" class="chart-box"></div></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Collections by Borrower Status</h3>
+        <div class="section-sub">How much has been collected from each borrower class</div>
+      </div>
+      <div class="section-body"><div id="statusCollectionsChart" class="chart-box"></div></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Outstanding by Borrower Status</h3>
+        <div class="section-sub">Exposure concentration by borrower class</div>
+      </div>
+      <div class="section-body"><div id="statusOutstandingChart" class="chart-box"></div></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Outstanding by Location and Status</h3>
+        <div class="section-sub">Shows where active and bad exposure is concentrated</div>
+      </div>
+      <div class="section-body"><div id="locationStatusChart" class="chart-box"></div></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Outstanding by Group and Status</h3>
+        <div class="section-sub">Identifies high-risk groups for follow-up</div>
+      </div>
+      <div class="section-body"><div id="groupStatusChart" class="chart-box"></div></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Borrowers by Language and Status</h3>
+        <div class="section-sub">Useful for team assignment and communication strategy</div>
+      </div>
+      <div class="section-body"><div id="languageStatusChart" class="chart-box"></div></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Top Bad Borrowers by Outstanding</h3>
+        <div class="section-sub">Immediate recovery and escalation priorities</div>
+      </div>
+      <div class="section-body"><div id="badBorrowersChart" class="chart-box"></div></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-head">
+        <h3 class="section-title">Top Active Exposure</h3>
+        <div class="section-sub">Large live accounts requiring close monitoring</div>
+      </div>
+      <div class="section-body"><div id="activeExposureChart" class="chart-box"></div></div>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <div class="section-head">
+      <h3 class="section-title">Borrower Status Decision Table</h3>
+      <div class="section-sub">
+        Use this to prioritize recovery, follow-up and relationship management{% if page_obj.paginator.count %} · showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}{% endif %}
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="table-wrap">
+        <table class="analytics-table">
+          <thead>
+            <tr>
+              <th>Borrower</th>
+              <th>Status</th>
+              <th>Loans</th>
+              <th>Disbursed</th>
+              <th>Expected</th>
+              <th>Collected</th>
+              <th>Principal Out</th>
+              <th>ROIC Out</th>
+              <th>Total Out</th>
+              <th>Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in borrowers %}
+              <tr>
+                <td>
+                  <div style="font-weight:900">{{ row.borrower.full_name }}</div>
+                  <div class="muted">
+                    {{ row.borrower.borrower_id }} · {{ row.borrower.location }} · {{ row.borrower.group_name }} · {{ row.borrower.preferred_language }}
+                  </div>
+                </td>
+                <td>
+                  <span class="chip {% if row.borrower_status == 'BAD' %}chip-red{% elif row.borrower_status == 'ACTIVE' %}chip-amber{% else %}chip-green{% endif %}">
+                    {{ row.borrower_status }}
+                  </span>
+                </td>
+                <td>
+                  {{ row.total_loans }}<br>
+                  <span class="muted">A: {{ row.active_loans }} · C: {{ row.closed_loans }}{% if row.default_loans %} · D: {{ row.default_loans }}{% endif %}</span>
+                </td>
+                <td>{{ row.total_disbursed|ghs }}</td>
+                <td>{{ row.total_expected|ghs }}</td>
+                <td>{{ row.total_collected|ghs }}</td>
+                <td>{{ row.principal_outstanding|ghs }}</td>
+                <td>{{ row.roic_outstanding|ghs }}</td>
+                <td><strong>{{ row.total_outstanding|ghs }}</strong></td>
+                <td>{{ row.collection_rate }}%</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="10" class="muted">No borrower status analytics data found.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% include "includes/pagination.html" %}
+    </div>
+  </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script>
+  const statusMixChart = echarts.init(document.getElementById('statusMixChart'));
+  statusMixChart.setOption({
+    tooltip: { trigger: 'item' },
+    legend: { bottom: 0 },
+    series: [{
+      type: 'pie',
+      radius: ['45%', '72%'],
+      data: [
+        { value: {{ chart_status_values.0|default:0 }}, name: '{{ chart_status_labels.0 }}' },
+        { value: {{ chart_status_values.1|default:0 }}, name: '{{ chart_status_labels.1 }}' },
+        { value: {{ chart_status_values.2|default:0 }}, name: '{{ chart_status_labels.2 }}' }
+      ]
+    }]
+  });
+
+  const statusCollectionsChart = echarts.init(document.getElementById('statusCollectionsChart'));
+  statusCollectionsChart.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: {{ chart_status_labels|safe }} },
+    yAxis: { type: 'value' },
+    series: [
+      { name: 'Collected', type: 'bar', data: {{ chart_collection_status_values|safe }} }
+    ]
+  });
+
+  const statusOutstandingChart = echarts.init(document.getElementById('statusOutstandingChart'));
+  statusOutstandingChart.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: {{ chart_status_labels|safe }} },
+    yAxis: { type: 'value' },
+    series: [
+      { name: 'Outstanding', type: 'bar', data: {{ chart_outstanding_status_values|safe }} }
+    ]
+  });
+
+  const locationStatusChart = echarts.init(document.getElementById('locationStatusChart'));
+  locationStatusChart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { bottom: 0 },
+    xAxis: { type: 'category', data: {{ chart_location_labels|safe }}, axisLabel: { rotate: 25 } },
+    yAxis: { type: 'value' },
+    series: [
+      { name: 'ACTIVE', type: 'bar', stack: 'status', data: {{ chart_location_active|safe }} },
+      { name: 'CLOSED', type: 'bar', stack: 'status', data: {{ chart_location_closed|safe }} },
+      { name: 'BAD', type: 'bar', stack: 'status', data: {{ chart_location_bad|safe }} }
+    ]
+  });
+
+  const groupStatusChart = echarts.init(document.getElementById('groupStatusChart'));
+  groupStatusChart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { bottom: 0 },
+    xAxis: { type: 'category', data: {{ chart_group_labels|safe }}, axisLabel: { rotate: 25 } },
+    yAxis: { type: 'value' },
+    series: [
+      { name: 'ACTIVE', type: 'bar', stack: 'status', data: {{ chart_group_active|safe }} },
+      { name: 'CLOSED', type: 'bar', stack: 'status', data: {{ chart_group_closed|safe }} },
+      { name: 'BAD', type: 'bar', stack: 'status', data: {{ chart_group_bad|safe }} }
+    ]
+  });
+
+  const languageStatusChart = echarts.init(document.getElementById('languageStatusChart'));
+  languageStatusChart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { bottom: 0 },
+    xAxis: { type: 'category', data: {{ chart_language_labels|safe }}, axisLabel: { rotate: 25 } },
+    yAxis: { type: 'value' },
+    series: [
+      { name: 'ACTIVE', type: 'bar', stack: 'lang', data: {{ chart_language_active|safe }} },
+      { name: 'CLOSED', type: 'bar', stack: 'lang', data: {{ chart_language_closed|safe }} },
+      { name: 'BAD', type: 'bar', stack: 'lang', data: {{ chart_language_bad|safe }} }
+    ]
+  });
+
+  const badBorrowersChart = echarts.init(document.getElementById('badBorrowersChart'));
+  badBorrowersChart.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: {{ chart_bad_labels|safe }}, axisLabel: { rotate: 25 } },
+    yAxis: { type: 'value' },
+    series: [
+      { name: 'Bad Outstanding', type: 'bar', data: {{ chart_bad_outstanding|safe }} }
+    ]
+  });
+
+  const activeExposureChart = echarts.init(document.getElementById('activeExposureChart'));
+  activeExposureChart.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: {{ chart_active_labels|safe }}, axisLabel: { rotate: 25 } },
+    yAxis: { type: 'value' },
+    series: [
+      { name: 'Active Outstanding', type: 'bar', data: {{ chart_active_outstanding|safe }} }
+    ]
+  });
+
+  window.addEventListener('resize', function () {
+    statusMixChart.resize();
+    statusCollectionsChart.resize();
+    statusOutstandingChart.resize();
+    locationStatusChart.resize();
+    groupStatusChart.resize();
+    languageStatusChart.resize();
+    badBorrowersChart.resize();
+    activeExposureChart.resize();
+  });
+</script>
+
+{% endblock %}

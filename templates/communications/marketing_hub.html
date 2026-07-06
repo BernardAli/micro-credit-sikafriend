@@ -1,0 +1,812 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .marketing-shell{display:grid;gap:16px}
+  .hero-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:30px;
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
+      var(--primary-2) 36%,
+      var(--primary) 72%,
+      var(--gold-2) 100%
+    );
+    color:#fff;
+    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
+  }
+
+  [data-theme="dark"] .hero-card{
+    background:linear-gradient(145deg,
+      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
+      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
+      color-mix(in srgb,var(--primary) 60%,#000) 72%,
+      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
+    );
+    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
+  }
+
+  .hero-card::before{
+    content:"";
+    position:absolute;
+    top:-70px;
+    right:-60px;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    left:28%;
+    bottom:-60px;
+    width:380px;
+    height:220px;
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;padding:28px}
+  .hero-wrap{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap}
+  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
+  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
+  .hero-sub{margin-top:10px;max-width:980px;line-height:1.68;opacity:.88}
+  .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .btn-soft{
+    display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;
+    font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text);
+    transition:all .16s ease;cursor:pointer;
+  }
+  .btn-soft:hover{color:var(--text);transform:translateY(-1px)}
+  .btn-soft-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .btn-soft-primary:hover{color:#fff}
+  .btn-soft-gold{background:var(--gold);color:#fff;border-color:var(--gold)}
+  .btn-soft-gold:hover{color:#fff}
+  .metrics-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+  .tabs-shell{display:grid;gap:16px}
+  .tabs-nav{
+    display:flex;flex-wrap:wrap;gap:10px;padding:12px;border:1px solid var(--border);border-radius:24px;
+    background:var(--panel-strong);box-shadow:0 18px 46px rgba(26,31,20,.05);
+  }
+  .tab-btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;border-radius:999px;
+    border:1px solid var(--border);background:var(--panel);color:var(--text-2);font-size:13px;font-weight:800;cursor:pointer;
+    transition:all .16s ease;
+  }
+  .tab-btn:hover{transform:translateY(-1px);color:var(--text)}
+  .tab-btn.is-active{
+    background:linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary-2) 82%, #fff) 100%);
+    border-color:var(--primary);color:#fff;box-shadow:0 18px 44px var(--primary-glow);
+  }
+  .tab-panel{display:grid;gap:16px}
+  .tab-panel[hidden]{display:none}
+  .panel,.stat-card{
+    border:1px solid var(--border);background:var(--panel-strong);box-shadow:0 20px 50px rgba(26,31,20,.05);
+  }
+  .stat-card{border-radius:22px;padding:18px}
+  .stat-label{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.38px;color:var(--muted)}
+  .stat-value{font-size:24px;font-weight:900;margin-top:8px;color:var(--text)}
+  .stat-sub{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.55}
+  .panel{border-radius:24px;overflow:hidden}
+  .panel-head{padding:18px 20px 0}
+  .panel-title{margin:0;font-size:18px;font-weight:900;color:var(--text)}
+  .panel-sub{color:var(--muted);font-size:13px;margin-top:4px;line-height:1.6}
+  .panel-body{padding:18px 20px 20px}
+  .stack-grid{display:grid;gap:16px}
+  .two-col{display:grid;grid-template-columns:1.18fr .82fr;gap:16px}
+  .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+  .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .field-card{
+    border:1px solid var(--border);border-radius:18px;background:var(--panel-strong);
+    padding:14px;
+  }
+  .field-card.full{grid-column:1 / -1}
+  .field-label{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.34px;color:var(--muted);margin-bottom:8px}
+  .field-card input,.field-card select,.field-card textarea{
+    width:100%;min-height:46px;border:1px solid var(--border);border-radius:14px;padding:10px 12px;background:var(--panel-strong);
+  }
+  .field-card input[type="checkbox"]{width:auto;min-height:auto;padding:0}
+  .field-row-inline{display:flex;align-items:center;gap:10px}
+  .field-help{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.55}
+  .field-error{margin-top:6px;font-size:12px;color:var(--danger);font-weight:700}
+  .action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .note-box{
+    padding:14px 16px;border-radius:18px;border:1px dashed rgba(58,90,30,.18);
+    background:rgba(58,90,30,.04);color:var(--muted);line-height:1.65;font-size:13px;
+  }
+  .template-list,.log-list,.lead-list,.campaign-list,.preview-list{display:grid;gap:10px}
+  .template-card,.log-card,.lead-card,.campaign-card,.preview-card{
+    border:1px solid var(--border);border-radius:18px;background:var(--panel-strong);padding:14px;
+  }
+  .template-head,.campaign-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+  .template-title,.campaign-title{font-size:16px;font-weight:900;color:var(--text)}
+  .muted{color:var(--muted)}
+  .tiny{font-size:12px;line-height:1.55}
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .chip{
+    display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;border:1px solid var(--border);
+    background:var(--panel);font-size:11px;font-weight:800;color:var(--text-2);
+  }
+  .chip-gold{background:var(--gold-pale);border-color:color-mix(in srgb, var(--gold) 24%, transparent);color:var(--gold)}
+  .chip-green{background:rgba(22,163,74,.08);border-color:rgba(22,163,74,.16);color:var(--success)}
+  .chip-red{background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.14);color:var(--danger)}
+  .chip-blue{background:rgba(46,92,138,.08);border-color:rgba(46,92,138,.16);color:var(--info)}
+  .chip-slate{background:rgba(100,116,139,.08);border-color:rgba(100,116,139,.12);color:var(--muted)}
+  .popup-preview{
+    border:1px solid var(--border);border-radius:26px;overflow:hidden;background:var(--panel);box-shadow:0 18px 46px rgba(26,31,20,.08);
+  }
+  .popup-preview.theme-GOLD{background:linear-gradient(135deg,#fff8e8 0%,#fff 100%)}
+  .popup-preview.theme-FOREST{background:linear-gradient(135deg,#edf7e5 0%,#fff 100%)}
+  .popup-preview.theme-MIDNIGHT{background:linear-gradient(135deg,#1b2317 0%,#0f140c 100%);color:#eef6dc}
+  .popup-preview-inner{display:grid;grid-template-columns:1.1fr .9fr;gap:0}
+  .popup-copy{padding:22px}
+  .popup-badge{
+    display:inline-flex;padding:5px 10px;border-radius:999px;background:var(--gold-pale);border:1px solid color-mix(in srgb, var(--gold) 20%, transparent);
+    font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);
+  }
+  .popup-preview.theme-MIDNIGHT .popup-badge{background:rgba(232,200,64,.12);color:#f4d774}
+  .popup-title{margin:12px 0 8px;font-size:24px;font-weight:900;line-height:1.1}
+  .popup-body{font-size:13.5px;line-height:1.7;color:inherit;opacity:.88}
+  .popup-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .popup-art{min-height:260px;background:radial-gradient(circle at center, color-mix(in srgb, var(--gold) 18%, transparent), transparent 55%), linear-gradient(135deg, rgba(255,255,255,.24), transparent);}
+  .popup-art img{width:100%;height:100%;object-fit:cover}
+  .status-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+  .status-tile{border:1px solid var(--border);border-radius:18px;background:var(--panel);padding:14px}
+  .status-tile strong{display:block;font-size:20px;color:var(--text);margin-top:6px}
+  .lead-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .mini-form{display:inline}
+  .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:18px}
+  .table{width:100%;border-collapse:collapse;min-width:720px;background:var(--panel)}
+  .table th,.table td{padding:12px 14px;border-bottom:1px solid var(--border-soft);text-align:left;font-size:13px}
+  .table th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:var(--bg-soft)}
+  @media (max-width:1280px){.metrics-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.two-col,.three-col,.status-grid{grid-template-columns:1fr}}
+  @media (max-width:760px){.metrics-grid,.field-grid,.popup-preview-inner{grid-template-columns:1fr}}
+</style>
+
+<div class="marketing-shell">
+
+  <section class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-wrap">
+        <div>
+          <div class="hero-kicker">Growth & Outreach</div>
+          <h1 class="hero-title">{{ title }}</h1>
+          <div class="hero-sub">
+            Run acquisition, reactivation, loyalty, referral, and seasonal campaigns from one place. This workspace combines message templates, audience targeting, website lead capture, campaign dispatch history, and a first-visit website popup for special offers.
+          </div>
+        </div>
+        <div class="hero-actions">
+          <a href="{% url 'communications:management_message_center' %}" class="btn-soft">Open SMS Message Center</a>
+          <a href="{% url 'company:website' %}" target="_blank" class="btn-soft btn-soft-gold">View Public Website</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="metrics-grid">
+    <div class="stat-card">
+      <div class="stat-label">Templates</div>
+      <div class="stat-value">{{ templates_count }}</div>
+      <div class="stat-sub">Reusable campaign messages and direct-message examples</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Campaigns</div>
+      <div class="stat-value">{{ campaigns_count }}</div>
+      <div class="stat-sub">Recorded marketing campaigns launched from this workspace</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Website Leads</div>
+      <div class="stat-value">{{ leads_count }}</div>
+      <div class="stat-sub">Captured from the public contact page and ready for follow-up</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">SMS-Ready Contacts</div>
+      <div class="stat-value">{{ sms_ready_contacts }}</div>
+      <div class="stat-sub">Borrowers, agents, and leads with phone numbers</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Email-Ready Contacts</div>
+      <div class="stat-value">{{ email_ready_contacts }}</div>
+      <div class="stat-sub">Contacts currently reachable by email campaigns</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Live Website Popup</div>
+      <div class="stat-value">{% if active_popup %}Active{% else %}Off{% endif %}</div>
+      <div class="stat-sub">
+        {% if active_popup %}{{ active_popup.name }}{% else %}No first-visit popup is currently live{% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="tabs-shell">
+    <div class="tabs-nav" role="tablist" aria-label="Marketing management sections">
+      <button type="button" class="tab-btn is-active" data-tab-target="campaigns" role="tab" aria-selected="true" aria-controls="marketing-tab-campaigns" id="marketing-tab-button-campaigns">Campaigns</button>
+      <button type="button" class="tab-btn" data-tab-target="templates" role="tab" aria-selected="false" aria-controls="marketing-tab-templates" id="marketing-tab-button-templates">Templates</button>
+      <button type="button" class="tab-btn" data-tab-target="leads-popup" role="tab" aria-selected="false" aria-controls="marketing-tab-leads-popup" id="marketing-tab-button-leads-popup">Leads & Popup</button>
+      <button type="button" class="tab-btn" data-tab-target="history" role="tab" aria-selected="false" aria-controls="marketing-tab-history" id="marketing-tab-button-history">History</button>
+    </div>
+
+    <div class="tab-panel" id="marketing-tab-campaigns" data-tab-panel="campaigns" role="tabpanel" aria-labelledby="marketing-tab-button-campaigns">
+      <section class="stack-grid">
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Campaign Launcher</h2>
+            <div class="panel-sub">Compose a live marketing run, preview the matched audience, and dispatch through SMS, email, or WhatsApp copy workflows.</div>
+          </div>
+          <div class="panel-body">
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="preview_campaign">
+              {{ campaign_form.template_id }}
+
+              <div class="field-grid">
+                <div class="field-card">
+                  <div class="field-label">Campaign Title</div>
+                  {{ campaign_form.title }}
+                  {% for error in campaign_form.title.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Channel</div>
+                  {{ campaign_form.channel }}
+                  {% for error in campaign_form.channel.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Objective</div>
+                  {{ campaign_form.objective }}
+                  {% for error in campaign_form.objective.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Audience</div>
+                  {{ campaign_form.audience }}
+                  {% for error in campaign_form.audience.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Email Subject</div>
+                  {{ campaign_form.subject }}
+                  {% for error in campaign_form.subject.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                  <div class="field-help">Used for email campaigns. SMS and WhatsApp can leave this blank.</div>
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Specific Agent</div>
+                  {{ campaign_form.agent }}
+                  {% for error in campaign_form.agent.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Borrower Status Filter</div>
+                  {{ campaign_form.borrower_status }}
+                  {% for error in campaign_form.borrower_status.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Loan Status Filter</div>
+                  {{ campaign_form.loan_status }}
+                  {% for error in campaign_form.loan_status.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Loan Category</div>
+                  {{ campaign_form.loan_category }}
+                  {% for error in campaign_form.loan_category.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Preferred Language</div>
+                  {{ campaign_form.preferred_language }}
+                  {% for error in campaign_form.preferred_language.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Location</div>
+                  {{ campaign_form.location }}
+                  {% for error in campaign_form.location.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Group Name</div>
+                  {{ campaign_form.group_name }}
+                  {% for error in campaign_form.group_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Lead Status</div>
+                  {{ campaign_form.lead_status }}
+                  {% for error in campaign_form.lead_status.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">CTA Label</div>
+                  {{ campaign_form.cta_label }}
+                  {% for error in campaign_form.cta_label.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card full">
+                  <div class="field-label">CTA URL</div>
+                  {{ campaign_form.cta_url }}
+                  {% for error in campaign_form.cta_url.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card full">
+                  <div class="field-label">Campaign Message</div>
+                  {{ campaign_form.message }}
+                  {% for error in campaign_form.message.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                  <div class="field-help">Use placeholders like <code>{name}</code> or <code>{first_name}</code> for a more personal feel.</div>
+                </div>
+                <div class="field-card full">
+                  <div class="field-label">Manual Contacts</div>
+                  {{ campaign_form.manual_contacts }}
+                  {% for error in campaign_form.manual_contacts.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                  <div class="field-help">Only required when the audience is set to manual contacts. You can mix phone numbers and email addresses.</div>
+                </div>
+              </div>
+
+              {% if channel_note %}
+                <div class="note-box" style="margin-top:14px">{{ channel_note }}</div>
+              {% endif %}
+
+              <div class="action-row">
+                <button type="submit" class="btn-soft btn-soft-primary">Preview Audience</button>
+                <button type="submit" class="btn-soft" onclick="this.form.elements['action'].value='send_campaign'">Launch Campaign</button>
+              </div>
+            </form>
+
+            {% if preview_count %}
+              <div class="note-box" style="margin-top:16px">
+                Preview matched <strong>{{ preview_count }}</strong> recipient{{ preview_count|pluralize }} ready for the selected channel.
+              </div>
+              <div class="preview-list" style="margin-top:12px">
+                {% for recipient in preview_recipients %}
+                  <div class="preview-card">
+                    <div class="template-head">
+                      <div>
+                        <div class="template-title">{{ recipient.name }}</div>
+                        <div class="muted tiny">{{ recipient.category }}{% if recipient.source %} · {{ recipient.source }}{% endif %}</div>
+                      </div>
+                      <div class="chip-row">
+                        {% if recipient.phone %}<span class="chip chip-green">{{ recipient.phone }}</span>{% endif %}
+                        {% if recipient.email %}<span class="chip chip-blue">{{ recipient.email }}</span>{% endif %}
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" id="marketing-tab-templates" data-tab-panel="templates" role="tabpanel" aria-labelledby="marketing-tab-button-templates" hidden>
+      <section class="two-col">
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Direct Message Examples</h2>
+            <div class="panel-sub">Load proven campaign starters into the composer, then tailor the message to your audience and channel.</div>
+          </div>
+          <div class="panel-body">
+            <div class="template-list">
+              {% for template in example_templates %}
+                <article class="template-card">
+                  <div class="template-head">
+                    <div>
+                      <div class="template-title">{{ template.title }}</div>
+                      <div class="muted tiny">{{ template.objective|default:template.get_category_display }}</div>
+                    </div>
+                    <div class="chip-row">
+                      <span class="chip chip-gold">{{ template.get_channel_display }}</span>
+                      <span class="chip chip-slate">{{ template.get_category_display }}</span>
+                    </div>
+                  </div>
+                  <div class="muted tiny" style="margin-top:10px">{{ template.body|truncatechars:220 }}</div>
+                  {% if template.audience_hint %}
+                    <div class="chip-row"><span class="chip chip-blue">Suggested audience: {{ template.audience_hint }}</span></div>
+                  {% endif %}
+                  <div class="action-row">
+                    <button
+                      type="button"
+                      class="btn-soft use-template-btn"
+                      data-template-id="{{ template.id }}"
+                      data-title="{{ template.title|escapejs }}"
+                      data-channel="{{ template.channel|escapejs }}"
+                      data-objective="{{ template.category|escapejs }}"
+                      data-subject="{{ template.subject|escapejs }}"
+                      data-message="{{ template.body|escapejs }}"
+                      data-cta-label="{{ template.cta_label|escapejs }}"
+                      data-cta-url="{{ template.cta_url|escapejs }}"
+                    >
+                      Use Template
+                    </button>
+                  </div>
+                </article>
+              {% empty %}
+                <div class="note-box">No example templates are available yet.</div>
+              {% endfor %}
+            </div>
+
+            {% if custom_templates %}
+              <div class="panel-sub" style="margin-top:16px">Latest custom templates</div>
+              <div class="template-list" style="margin-top:10px">
+                {% for template in custom_templates %}
+                  <article class="template-card">
+                    <div class="template-head">
+                      <div>
+                        <div class="template-title">{{ template.title }}</div>
+                        <div class="muted tiny">{{ template.get_channel_display }} · {{ template.get_category_display }}</div>
+                      </div>
+                      <span class="chip {% if template.is_active %}chip-green{% else %}chip-red{% endif %}">{% if template.is_active %}Active{% else %}Inactive{% endif %}</span>
+                    </div>
+                  </article>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Save New Template</h2>
+            <div class="panel-sub">Build your own reusable message library for different campaigns and field teams.</div>
+          </div>
+          <div class="panel-body">
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="save_template">
+              <div class="field-grid">
+                <div class="field-card full">
+                  <div class="field-label">Template Title</div>
+                  {{ template_form.title }}
+                  {% for error in template_form.title.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Channel</div>
+                  {{ template_form.channel }}
+                  {% for error in template_form.channel.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Category</div>
+                  {{ template_form.category }}
+                  {% for error in template_form.category.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card full">
+                  <div class="field-label">Objective</div>
+                  {{ template_form.objective }}
+                  {% for error in template_form.objective.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card full">
+                  <div class="field-label">Audience Hint</div>
+                  {{ template_form.audience_hint }}
+                  {% for error in template_form.audience_hint.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card full">
+                  <div class="field-label">Subject</div>
+                  {{ template_form.subject }}
+                  {% for error in template_form.subject.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card full">
+                  <div class="field-label">Template Body</div>
+                  {{ template_form.body }}
+                  {% for error in template_form.body.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">CTA Label</div>
+                  {{ template_form.cta_label }}
+                  {% for error in template_form.cta_label.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">CTA URL</div>
+                  {{ template_form.cta_url }}
+                  {% for error in template_form.cta_url.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-row-inline">{{ template_form.is_featured }} <span class="tiny">Feature in example library</span></div>
+                </div>
+                <div class="field-card">
+                  <div class="field-row-inline">{{ template_form.is_active }} <span class="tiny">Template active</span></div>
+                </div>
+              </div>
+              <div class="action-row">
+                <button type="submit" class="btn-soft btn-soft-primary">Save Template</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" id="marketing-tab-leads-popup" data-tab-panel="leads-popup" role="tabpanel" aria-labelledby="marketing-tab-button-leads-popup" hidden>
+      <section class="stack-grid">
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-head">
+              <h2 class="panel-title">Lead Pipeline</h2>
+              <div class="panel-sub">Track public website enquiries and move them through the funnel from new interest to converted client.</div>
+            </div>
+            <div class="panel-body">
+              <div class="status-grid">
+                {% for item in lead_status_counts %}
+                  <div class="status-tile">
+                    <div class="stat-label">{{ item.label }}</div>
+                    <strong>{{ item.count }}</strong>
+                  </div>
+                {% endfor %}
+              </div>
+
+              <div class="lead-list" style="margin-top:14px">
+                {% for lead in leads %}
+                  <article class="lead-card">
+                    <div class="template-head">
+                      <div>
+                        <div class="template-title">{{ lead.name }}</div>
+                        <div class="muted tiny">{{ lead.subject|default:"General enquiry" }} · {{ lead.created_at|date:"d M Y, H:i" }}</div>
+                      </div>
+                      <span class="chip {% if lead.status == 'NEW' %}chip-blue{% elif lead.status == 'CONTACTED' %}chip-gold{% elif lead.status == 'QUALIFIED' %}chip-green{% elif lead.status == 'CONVERTED' %}chip-green{% else %}chip-slate{% endif %}">
+                        {{ lead.get_status_display }}
+                      </span>
+                    </div>
+                    <div class="muted tiny" style="margin-top:8px">
+                      {% if lead.phone %}{{ lead.phone }}{% endif %}{% if lead.phone and lead.email %} · {% endif %}{% if lead.email %}{{ lead.email }}{% endif %}
+                    </div>
+                    <div class="muted tiny" style="margin-top:8px">{{ lead.message|truncatechars:180 }}</div>
+                    <div class="lead-actions">
+                      {% for value, label in website_lead_status_choices %}
+                        {% if value != lead.status %}
+                          <form method="post" class="mini-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_lead">
+                            <input type="hidden" name="lead_id" value="{{ lead.id }}">
+                            <input type="hidden" name="new_status" value="{{ value }}">
+                            <button type="submit" class="btn-soft">{{ label }}</button>
+                          </form>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  </article>
+                {% empty %}
+                  <div class="note-box">Website enquiries will start appearing here once visitors use the contact form.</div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2 class="panel-title">Website Promo Popup</h2>
+              <div class="panel-sub">Configure a special marketing message that appears only for a visitor’s first page load while the popup is active.</div>
+            </div>
+            <div class="panel-body">
+              {% if popup_preview %}
+                <div class="popup-preview theme-{{ popup_preview.theme }}">
+                  <div class="popup-preview-inner">
+                    <div class="popup-copy">
+                      {% if popup_preview.badge %}<div class="popup-badge">{{ popup_preview.badge }}</div>{% endif %}
+                      <div class="popup-title">{{ popup_preview.headline }}</div>
+                      <div class="popup-body">{{ popup_preview.body }}</div>
+                      <div class="popup-actions">
+                        {% if popup_preview.cta_label %}<span class="btn-soft btn-soft-primary">{{ popup_preview.cta_label }}</span>{% endif %}
+                        {% if popup_preview.secondary_label %}<span class="btn-soft">{{ popup_preview.secondary_label }}</span>{% endif %}
+                      </div>
+                    </div>
+                    <div class="popup-art">
+                      {% if popup_preview.image %}
+                        <img src="{{ popup_preview.image.url }}" alt="{{ popup_preview.name }}">
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              {% else %}
+                <div class="note-box">No popup has been configured yet. Save one below to start using first-visit offers on the website.</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Popup Settings</h2>
+            <div class="panel-sub">Only one popup is kept active at a time. Updating the active popup refreshes the browser-side first-visit key for new visitors.</div>
+          </div>
+          <div class="panel-body">
+            <form method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="save_popup">
+              <div class="field-grid">
+                <div class="field-card full">
+                  <div class="field-label">Internal Name</div>
+                  {{ popup_form.name }}
+                  {% for error in popup_form.name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Badge</div>
+                  {{ popup_form.badge }}
+                  {% for error in popup_form.badge.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Theme</div>
+                  {{ popup_form.theme }}
+                  {% for error in popup_form.theme.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card full">
+                  <div class="field-label">Headline</div>
+                  {{ popup_form.headline }}
+                  {% for error in popup_form.headline.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card full">
+                  <div class="field-label">Body</div>
+                  {{ popup_form.body }}
+                  {% for error in popup_form.body.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Primary CTA Label</div>
+                  {{ popup_form.cta_label }}
+                  {% for error in popup_form.cta_label.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Primary CTA URL</div>
+                  {{ popup_form.cta_url }}
+                  {% for error in popup_form.cta_url.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Secondary Label</div>
+                  {{ popup_form.secondary_label }}
+                  {% for error in popup_form.secondary_label.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Secondary URL</div>
+                  {{ popup_form.secondary_url }}
+                  {% for error in popup_form.secondary_url.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card full">
+                  <div class="field-label">Popup Image</div>
+                  {{ popup_form.image }}
+                  {% for error in popup_form.image.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">Start At</div>
+                  {{ popup_form.start_at }}
+                  {% for error in popup_form.start_at.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-label">End At</div>
+                  {{ popup_form.end_at }}
+                  {% for error in popup_form.end_at.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="field-card">
+                  <div class="field-row-inline">{{ popup_form.is_active }} <span class="tiny">Active on website</span></div>
+                </div>
+                <div class="field-card">
+                  <div class="field-row-inline">{{ popup_form.show_once_per_browser }} <span class="tiny">Show only once per browser</span></div>
+                </div>
+              </div>
+              <div class="action-row">
+                <button type="submit" class="btn-soft btn-soft-primary">Save Popup</button>
+                {% if popup_preview %}
+                  <button type="submit" class="btn-soft" onclick="this.form.elements['action'].value='deactivate_popup'">Deactivate Popup</button>
+                {% endif %}
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" id="marketing-tab-history" data-tab-panel="history" role="tabpanel" aria-labelledby="marketing-tab-button-history" hidden>
+      <section class="stack-grid">
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Recent Campaigns & Dispatch Logs</h2>
+            <div class="panel-sub">Review what has been launched recently and see how each recipient run was recorded.</div>
+          </div>
+          <div class="panel-body">
+            <div class="campaign-list">
+              {% for campaign in recent_campaigns %}
+                <article class="campaign-card">
+                  <div class="campaign-head">
+                    <div>
+                      <div class="campaign-title">{{ campaign.title }}</div>
+                      <div class="muted tiny">{{ campaign.get_channel_display }} · {{ campaign.audience_type }} · {{ campaign.created_at|date:"d M Y, H:i" }}</div>
+                    </div>
+                    <span class="chip {% if campaign.channel == 'EMAIL' %}chip-blue{% elif campaign.channel == 'SMS' %}chip-green{% else %}chip-gold{% endif %}">{{ campaign.sent_count }} sent</span>
+                  </div>
+                  <div class="chip-row">
+                    <span class="chip chip-slate">{{ campaign.get_status_display }}</span>
+                    {% if campaign.objective %}<span class="chip chip-blue">{{ campaign.objective }}</span>{% endif %}
+                    {% if campaign.template %}<span class="chip chip-gold">Template: {{ campaign.template.title }}</span>{% endif %}
+                  </div>
+                </article>
+              {% empty %}
+                <div class="note-box">Campaign history will appear here once you launch your first marketing run.</div>
+              {% endfor %}
+            </div>
+
+            <div class="panel-sub" style="margin-top:18px">Latest recipient-level logs</div>
+            <div class="table-wrap" style="margin-top:10px">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Recipient</th>
+                    <th>Channel</th>
+                    <th>Status</th>
+                    <th>Segment</th>
+                    <th>When</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for log in recent_dispatches %}
+                    <tr>
+                      <td>{{ log.recipient_name|default:log.recipient_phone|default:log.recipient_email }}</td>
+                      <td>{{ log.get_channel_display }}</td>
+                      <td>{{ log.get_status_display }}</td>
+                      <td>{{ log.recipient_segment|default:"—" }}</td>
+                      <td>{{ log.created_at|date:"d M Y, H:i" }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="5">No dispatch logs yet.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  (() => {
+    const tabButtons = Array.from(document.querySelectorAll("[data-tab-target]"));
+    const tabPanels = Array.from(document.querySelectorAll("[data-tab-panel]"));
+    const titleField = document.getElementById("{{ campaign_form.title.id_for_label }}");
+    const channelField = document.getElementById("{{ campaign_form.channel.id_for_label }}");
+    const objectiveField = document.getElementById("{{ campaign_form.objective.id_for_label }}");
+    const subjectField = document.getElementById("{{ campaign_form.subject.id_for_label }}");
+    const messageField = document.getElementById("{{ campaign_form.message.id_for_label }}");
+    const ctaLabelField = document.getElementById("{{ campaign_form.cta_label.id_for_label }}");
+    const ctaUrlField = document.getElementById("{{ campaign_form.cta_url.id_for_label }}");
+    const templateIdField = document.getElementById("{{ campaign_form.template_id.id_for_label }}");
+
+    const activateTab = (tabName, updateHash = true) => {
+      if (!tabName) return;
+      tabButtons.forEach((button) => {
+        const isActive = button.dataset.tabTarget === tabName;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-selected", isActive ? "true" : "false");
+      });
+      tabPanels.forEach((panel) => {
+        panel.hidden = panel.dataset.tabPanel !== tabName;
+      });
+      if (updateHash && window.location.hash !== `#${tabName}`) {
+        history.replaceState(null, "", `#${tabName}`);
+      }
+    };
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => activateTab(button.dataset.tabTarget));
+    });
+
+    const validTabs = new Set(tabPanels.map((panel) => panel.dataset.tabPanel));
+    const hashTab = window.location.hash ? window.location.hash.slice(1) : "";
+    const panelWithErrors = tabPanels.find((panel) => panel.querySelector(".field-error"));
+    const hasCampaignPreview = Boolean(document.querySelector("#marketing-tab-campaigns .preview-list"));
+    const initialTab = panelWithErrors
+      ? panelWithErrors.dataset.tabPanel
+      : hasCampaignPreview
+        ? "campaigns"
+        : validTabs.has(hashTab)
+          ? hashTab
+          : "campaigns";
+    activateTab(initialTab, false);
+
+    document.querySelectorAll(".use-template-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (titleField) titleField.value = button.dataset.title || "";
+        if (channelField) channelField.value = button.dataset.channel || "";
+        if (objectiveField) objectiveField.value = button.dataset.objective || "";
+        if (subjectField) subjectField.value = button.dataset.subject || "";
+        if (messageField) messageField.value = button.dataset.message || "";
+        if (ctaLabelField) ctaLabelField.value = button.dataset.ctaLabel || "";
+        if (ctaUrlField) ctaUrlField.value = button.dataset.ctaUrl || "";
+        if (templateIdField) templateIdField.value = button.dataset.templateId || "";
+        activateTab("campaigns");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    });
+  })();
+</script>
+
+{% endblock %}

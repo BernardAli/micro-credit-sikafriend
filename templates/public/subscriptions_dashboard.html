@@ -1,0 +1,1684 @@
+{% extends "public/base.html" %}
+{% load public_money %}
+{% block title %}SaaS Dashboard — {{ saas_name }}{% endblock %}
+{% block header_class %}pub-header--solid{% endblock %}
+{% block logo_class %}{% endblock %}
+
+{% block head_styles %}
+/* ── Reset & base ──────────────────────────────────────────────────────────── */
+body { background: #f1f5f9; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ── Hero ──────────────────────────────────────────────────────────────────── */
+.hero {
+  background: linear-gradient(135deg, #050e1f 0%, #0f2043 50%, #152f5c 100%);
+  padding: calc(var(--header-h) + 36px) var(--px) 36px;
+  position: relative; overflow: hidden;
+}
+.hero::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(circle at 80% 20%, rgba(232,160,32,.22) 0%, transparent 38%),
+    radial-gradient(circle at 10% 80%, rgba(22,163,74,.10) 0%, transparent 30%);
+}
+.hero__inner {
+  max-width: var(--container); margin: 0 auto;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 20px; flex-wrap: wrap; position: relative; z-index: 1;
+}
+.hero__eyebrow {
+  font-size: 11px; font-weight: 800; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.hero__eyebrow::before { content: ""; width: 24px; height: 2px; background: var(--gold); border-radius: 2px; }
+.hero__title {
+  font-family: var(--font-head); font-size: clamp(26px, 3.5vw, 40px);
+  font-weight: 800; color: #fff; line-height: 1.1; margin-bottom: 8px;
+}
+.hero__sub { font-size: 14px; color: rgba(255,255,255,.55); max-width: 560px; }
+.hero__actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ── Tab rail ──────────────────────────────────────────────────────────────── */
+.tab-rail {
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky; top: var(--header-h); z-index: 80;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+.tab-rail__inner {
+  max-width: var(--container); margin: 0 auto; padding: 0 var(--px);
+  display: flex; gap: 2px; overflow-x: auto;
+  scrollbar-width: none;
+}
+.tab-rail__inner::-webkit-scrollbar { display: none; }
+.tab-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 15px 18px 13px; font-size: 13px; font-weight: 700;
+  color: #64748b; border: none; border-bottom: 3px solid transparent;
+  background: none; cursor: pointer; white-space: nowrap;
+  transition: color .15s, border-color .15s;
+}
+.tab-btn:hover { color: var(--navy); }
+.tab-btn.tab-active { color: var(--navy); border-bottom-color: var(--navy); }
+.tab-count {
+  font-size: 10.5px; font-weight: 800; padding: 2px 7px;
+  border-radius: 999px; background: #f1f5f9; color: #64748b; line-height: 1.4;
+}
+.tab-btn.tab-active .tab-count { background: var(--navy); color: #fff; }
+.tab-count--alert { background: #fee2e2 !important; color: #dc2626 !important; }
+
+/* ── Shell ─────────────────────────────────────────────────────────────────── */
+.tab-panel { display: none; }
+.tab-panel.tab-active { display: block; }
+.shell {
+  max-width: var(--container); margin: 0 auto;
+  padding: 28px var(--px) 80px; display: grid; gap: 22px;
+}
+
+/* ── KPI grid ──────────────────────────────────────────────────────────────── */
+.kpi-grid { display: grid; gap: 16px; }
+.kpi-grid--4 { grid-template-columns: repeat(4, 1fr); }
+.kpi-grid--8 { grid-template-columns: repeat(4, 1fr); }
+.kpi-card {
+  background: #fff; border: 1px solid #e2e8f0;
+  border-radius: 16px; padding: 20px 20px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  position: relative; overflow: hidden;
+}
+.kpi-card::after {
+  content: ""; position: absolute; top: 0; left: 0; right: 0;
+  height: 3px; border-radius: 16px 16px 0 0;
+  background: var(--kpi-accent, var(--navy));
+}
+.kpi-card--gold   { --kpi-accent: #e8a020; }
+.kpi-card--green  { --kpi-accent: #16a34a; }
+.kpi-card--red    { --kpi-accent: #dc2626; }
+.kpi-card--purple { --kpi-accent: #8b5cf6; }
+.kpi-card--teal   { --kpi-accent: #0891b2; }
+.kpi-card--orange { --kpi-accent: #f97316; }
+.kpi-card--slate  { --kpi-accent: #64748b; }
+.kpi-icon { font-size: 20px; margin-bottom: 10px; }
+.kpi-label {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: #94a3b8; margin-bottom: 7px;
+}
+.kpi-value {
+  font-family: var(--font-head); font-size: clamp(20px, 2.4vw, 30px);
+  font-weight: 800; color: #0f172a; line-height: 1;
+}
+.kpi-value--sm { font-size: clamp(16px, 1.8vw, 22px); }
+.kpi-hint { font-size: 11.5px; color: #94a3b8; margin-top: 7px; }
+
+/* ── Card ──────────────────────────────────────────────────────────────────── */
+.card {
+  background: #fff; border: 1px solid #e2e8f0;
+  border-radius: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.05); overflow: hidden;
+}
+.card__head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 17px 22px 13px; border-bottom: 1px solid #f1f5f9;
+}
+.card__title {
+  font-family: var(--font-head); font-size: 12.5px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .1em; color: #64748b;
+}
+.card__body { padding: 20px 22px 22px; }
+
+/* ── Chart containers ──────────────────────────────────────────────────────── */
+.chart-xl { height: 300px; }
+.chart-md { height: 240px; }
+.chart-sm { height: 210px; }
+.charts-4col { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.charts-2col { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; }
+
+/* ── Tenant / Payment lists ────────────────────────────────────────────────── */
+.section-filter {
+  display: grid; grid-template-columns: 1.5fr 1fr 1fr auto; gap: 12px; margin-bottom: 18px;
+}
+.fi, .fs, .ft {
+  width: 100%; border: 1.5px solid #e2e8f0; border-radius: 12px;
+  background: #fff; color: #0f172a; padding: 10px 13px; font-size: 14px;
+}
+.fi:focus, .fs:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(15,32,67,.07); }
+
+.tenant-list, .payment-list { display: grid; gap: 14px; }
+.tenant-item {
+  border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px;
+  background: linear-gradient(180deg, #fff 0%, #f8faff 100%);
+}
+.tenant-item__top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; margin-bottom: 14px;
+}
+.tenant-item__name { font-family: var(--font-head); font-size: 18px; font-weight: 800; color: #0f172a; }
+.tenant-item__meta { font-size: 12.5px; color: #64748b; margin-top: 4px; }
+.tenant-item__link { font-size: 11.5px; font-weight: 700; color: var(--navy); word-break: break-all; }
+.tenant-chips {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px;
+}
+.tchip {
+  padding: 10px 12px; border-radius: 10px;
+  background: #f8faff; border: 1px solid #e2e8f0;
+}
+.tchip__label {
+  font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: #94a3b8;
+}
+.tchip__value { font-size: 13.5px; font-weight: 700; color: #1e293b; margin-top: 3px; }
+.tenant-form-row {
+  display: grid; grid-template-columns: 1.2fr 1fr auto auto; gap: 10px; align-items: end;
+}
+.field { display: grid; gap: 4px; }
+.field label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: #94a3b8;
+}
+
+.payment-item {
+  border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; background: #fff;
+}
+.payment-item__top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; margin-bottom: 12px;
+}
+.payment-item__name { font-size: 15px; font-weight: 800; color: #0f172a; }
+.payment-item__meta { font-size: 12px; color: #64748b; margin-top: 3px; }
+.payment-item__amount {
+  font-family: var(--font-head); font-size: 20px; font-weight: 800; color: var(--navy);
+}
+.payment-form-row {
+  display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end;
+}
+
+/* ── Plan cards ────────────────────────────────────────────────────────────── */
+.plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.plan-card {
+  background: #fff; border: 1.5px solid #e2e8f0; border-radius: 20px;
+  overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,.06);
+  display: flex; flex-direction: column;
+  transition: box-shadow .2s, transform .2s;
+}
+.plan-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,.1); transform: translateY(-2px); }
+.plan-card__header {
+  background: linear-gradient(135deg, var(--navy) 0%, #1a3564 100%);
+  padding: 24px 24px 20px; position: relative; overflow: hidden;
+}
+.plan-card__header::after {
+  content: ""; position: absolute; top: -20px; right: -20px;
+  width: 100px; height: 100px; border-radius: 50%;
+  background: rgba(255,255,255,.06);
+}
+.plan-card--starter .plan-card__header { background: linear-gradient(135deg, #1e3a5f 0%, #2d5282 100%); }
+.plan-card--professional .plan-card__header { background: linear-gradient(135deg, #0f2043 0%, #1a3a6e 100%); }
+.plan-card--enterprise .plan-card__header { background: linear-gradient(135deg, #1a0533 0%, #2d1b69 100%); }
+.plan-tier {
+  display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 10px;
+  background: rgba(232,160,32,.15); padding: 3px 10px; border-radius: 999px;
+  border: 1px solid rgba(232,160,32,.3);
+}
+.plan-name { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: #fff; }
+.plan-price-row {
+  display: flex; align-items: baseline; gap: 6px; margin-top: 14px; flex-wrap: wrap;
+}
+.plan-price-main { font-family: var(--font-head); font-size: 30px; font-weight: 800; color: #fff; }
+.plan-price-period { font-size: 13px; color: rgba(255,255,255,.55); }
+.plan-price-yearly { font-size: 12px; color: rgba(255,255,255,.45); margin-top: 4px; }
+.plan-card__body { padding: 22px 24px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+.plan-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.plan-metric {
+  background: #f8faff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px;
+}
+.plan-metric__label {
+  font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: #94a3b8; margin-bottom: 4px;
+}
+.plan-metric__value { font-size: 20px; font-weight: 800; color: #0f172a; }
+.plan-metric__sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+.plan-limits { display: flex; flex-wrap: wrap; gap: 6px; }
+.plan-limit-chip {
+  font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+  background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;
+}
+.plan-features { display: grid; gap: 6px; }
+.plan-feature {
+  display: flex; align-items: center; gap: 8px; font-size: 13px; color: #374151;
+}
+.plan-feature--on  { color: #16a34a; }
+.plan-feature--off { color: #94a3b8; text-decoration: line-through; }
+.plan-feature svg { flex-shrink: 0; }
+.plan-revenue {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #86efac; border-radius: 12px; padding: 14px 16px;
+  margin-top: auto;
+}
+.plan-revenue__label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #16a34a; }
+.plan-revenue__value { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: #15803d; margin-top: 4px; }
+.plan-revenue__sub { font-size: 11.5px; color: #4ade80; }
+
+/* ── Health / alert sections ───────────────────────────────────────────────── */
+.health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.alert-card { border-radius: 16px; overflow: hidden; }
+.alert-card__head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; gap: 12px;
+}
+.alert-card--critical .alert-card__head { background: #fef2f2; border-bottom: 1px solid #fecaca; }
+.alert-card--warning  .alert-card__head { background: #fffbeb; border-bottom: 1px solid #fcd29a; }
+.alert-card--info     .alert-card__head { background: #eff6ff; border-bottom: 1px solid #bfdbfe; }
+.alert-card--neutral  .alert-card__head { background: #f8faff; border-bottom: 1px solid #e2e8f0; }
+.alert-card__title-group { display: flex; align-items: center; gap: 10px; }
+.alert-card__icon { font-size: 20px; }
+.alert-card__title { font-size: 14px; font-weight: 800; }
+.alert-card--critical .alert-card__title { color: #dc2626; }
+.alert-card--warning  .alert-card__title { color: #d97706; }
+.alert-card--info     .alert-card__title { color: #1d4ed8; }
+.alert-card--neutral  .alert-card__title { color: #374151; }
+.alert-card__body { background: #fff; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 16px 16px; }
+.alert-empty {
+  padding: 28px; text-align: center; color: #94a3b8;
+  font-size: 13.5px;
+}
+.alert-empty::before { content: "✓"; display: block; font-size: 26px; margin-bottom: 8px; color: #4ade80; }
+
+.alert-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; padding: 14px 18px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.alert-row:last-child { border-bottom: none; }
+.alert-row__info { min-width: 0; }
+.alert-row__name { font-size: 14px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alert-row__meta { font-size: 12px; color: #64748b; margin-top: 2px; }
+.alert-row__actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* ── Health summary strip ──────────────────────────────────────────────────── */
+.health-summary {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px;
+}
+.hsm-card {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+  padding: 18px 18px 14px; text-align: center;
+}
+.hsm-card__value { font-family: var(--font-head); font-size: 28px; font-weight: 800; color: #0f172a; }
+.hsm-card__label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #94a3b8; margin-top: 6px; }
+
+/* ── Tenant mini-stats ─────────────────────────────────────────────────────── */
+.mini-stats {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px;
+}
+.mstat {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px;
+}
+.mstat__value { font-family: var(--font-head); font-size: 24px; font-weight: 800; color: #0f172a; }
+.mstat__label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #94a3b8; margin-top: 4px; }
+
+/* ── Payment summary strip ─────────────────────────────────────────────────── */
+.pay-summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+.pay-sum-card {
+  border-radius: 14px; padding: 18px 20px;
+  display: flex; align-items: center; gap: 16px;
+}
+.pay-sum-card--confirmed { background: #f0fdf4; border: 1px solid #86efac; }
+.pay-sum-card--pending   { background: #fffbeb; border: 1px solid #fcd29a; }
+.pay-sum-card--failed    { background: #fef2f2; border: 1px solid #fca5a5; }
+.pay-sum-icon { font-size: 28px; flex-shrink: 0; }
+.pay-sum-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; }
+.pay-sum-card--confirmed .pay-sum-label { color: #16a34a; }
+.pay-sum-card--pending   .pay-sum-label { color: #d97706; }
+.pay-sum-card--failed    .pay-sum-label { color: #dc2626; }
+.pay-sum-value { font-family: var(--font-head); font-size: 22px; font-weight: 800; margin-top: 4px; }
+.pay-sum-card--confirmed .pay-sum-value { color: #15803d; }
+.pay-sum-card--pending   .pay-sum-value { color: #92400e; }
+.pay-sum-card--failed    .pay-sum-value { color: #991b1b; }
+.pay-sum-sub { font-size: 12px; color: #94a3b8; margin-top: 3px; }
+
+/* ── Badges ────────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px; border-radius: 999px; font-size: 10.5px; font-weight: 800;
+  letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
+}
+.badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.badge--trial     { background: #fffbeb; color: #d97706;  border: 1px solid #fcd29a; }
+.badge--active    { background: #f0fdf4; color: #16a34a;  border: 1px solid #86efac; }
+.badge--suspended { background: #fef2f2; color: #dc2626;  border: 1px solid #fca5a5; }
+.badge--cancelled { background: #f8faff; color: #64748b;  border: 1px solid #e2e8f0; }
+.badge--confirmed { background: #f0fdf4; color: #16a34a;  border: 1px solid #86efac; }
+.badge--pending   { background: #f8faff; color: #64748b;  border: 1px solid #e2e8f0; }
+.badge--failed    { background: #fef2f2; color: #dc2626;  border: 1px solid #fca5a5; }
+.badge--starter      { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.badge--professional { background: #faf5ff; color: #7c3aed; border: 1px solid #ddd6fe; }
+.badge--enterprise   { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+
+.textarea-field { width: 100%; border: 1.5px solid #e2e8f0; border-radius: 10px; background: #fff; color: #0f172a; padding: 10px 12px; font-size: 13px; min-height: 70px; resize: vertical; }
+.textarea-field:focus { outline: none; border-color: var(--navy); }
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.btn-sm { padding: 7px 14px; font-size: 12.5px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; transition: opacity .15s; }
+.btn-sm:hover { opacity: .85; }
+.btn-sm--green  { background: #16a34a; color: #fff; }
+.btn-sm--red    { background: #dc2626; color: #fff; }
+.btn-sm--navy   { background: var(--navy); color: #fff; }
+.btn-sm--gold   { background: var(--gold); color: #0f172a; }
+.btn-sm--gray   { background: #f1f5f9; color: #374151; border: 1px solid #e2e8f0; }
+
+.empty-state {
+  padding: 20px; text-align: center; color: #94a3b8;
+  font-size: 13.5px; background: #f8faff; border-radius: 12px;
+}
+
+/* ── Plan modal ────────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 900;
+  background: rgba(5,14,31,.55); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay[hidden] { display: none; }
+.modal-box {
+  background: #fff; border-radius: 20px; width: 100%; max-width: 640px;
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0,0,0,.22);
+  display: flex; flex-direction: column;
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 22px 26px 18px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0;
+}
+.modal-title { font-family: var(--font-head); font-size: 20px; font-weight: 800; color: #0f172a; }
+.modal-close {
+  width: 34px; height: 34px; border-radius: 50%; border: none; background: #f1f5f9;
+  font-size: 20px; color: #64748b; cursor: pointer; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.modal-close:hover { background: #e2e8f0; }
+.modal-body { padding: 22px 26px; display: grid; gap: 18px; overflow-y: auto; }
+.modal-foot {
+  padding: 16px 26px 22px; border-top: 1px solid #f1f5f9;
+  display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0;
+}
+.mform-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.mform-row--3 { grid-template-columns: 1fr 1fr 1fr; }
+.mfield { display: grid; gap: 5px; }
+.mfield__label { font-size: 12px; font-weight: 700; color: #374151; }
+.mfield__label .req { color: #dc2626; }
+.mfield__input {
+  border: 1.5px solid #e2e8f0; border-radius: 10px; background: #fff;
+  color: #0f172a; padding: 10px 12px; font-size: 14px; width: 100%;
+}
+.mfield__input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(15,32,67,.07); }
+.mfield__hint { font-size: 11px; color: #94a3b8; }
+.mcheck-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mcheck {
+  display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500;
+  color: #374151; cursor: pointer; padding: 8px 12px;
+  border: 1.5px solid #e2e8f0; border-radius: 10px;
+  transition: border-color .15s, background .15s;
+}
+.mcheck:hover { border-color: var(--navy); background: #f8faff; }
+.mcheck input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--navy); flex-shrink: 0; }
+.mcheck--lg { font-size: 14px; font-weight: 600; padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 12px; }
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .kpi-grid--4, .kpi-grid--8 { grid-template-columns: repeat(2, 1fr); }
+  .charts-4col { grid-template-columns: 1fr 1fr; }
+  .charts-2col { grid-template-columns: 1fr; }
+  .plans-grid  { grid-template-columns: 1fr 1fr; }
+  .health-grid { grid-template-columns: 1fr; }
+  .mini-stats  { grid-template-columns: repeat(3, 1fr); }
+  .health-summary { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 860px) {
+  .section-filter, .tenant-form-row, .payment-form-row { grid-template-columns: 1fr; }
+  .tenant-chips { grid-template-columns: 1fr 1fr; }
+  .pay-summary  { grid-template-columns: 1fr; }
+  .plans-grid   { grid-template-columns: 1fr; }
+  .mini-stats   { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .kpi-grid--4, .kpi-grid--8 { grid-template-columns: 1fr 1fr; }
+  .charts-4col { grid-template-columns: 1fr; }
+  .health-summary { grid-template-columns: 1fr 1fr; }
+}
+{% endblock %}
+
+{% block content %}
+<!-- ═══ HERO ════════════════════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero__inner">
+    <div>
+      <div class="hero__eyebrow">SaaS Operations</div>
+      <h1 class="hero__title">{{ saas_name }} Control Centre</h1>
+      <p class="hero__sub">Analytics, tenant management, subscription billing, and platform health — all in one place.</p>
+    </div>
+    <div class="hero__actions">
+      <a href="{% url 'tenants:account' %}" class="btn btn-outline" style="border-color:rgba(255,255,255,.3);color:#fff;">My Account</a>
+      <form method="post" action="{% url 'logout' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn btn-gold">Sign Out</button></form>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TAB RAIL ════════════════════════════════════════════════════════════ -->
+<div class="tab-rail">
+  <div class="tab-rail__inner">
+    <button class="tab-btn tab-active" data-tab="overview">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Overview
+    </button>
+    <button class="tab-btn" data-tab="tenants">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Tenants <span class="tab-count">{{ total_tenants }}</span>
+    </button>
+    <button class="tab-btn" data-tab="payments">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+      Payments <span class="tab-count">{{ payments|length }}</span>
+    </button>
+    <button class="tab-btn" data-tab="plans">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Plans <span class="tab-count">{{ plans|length }}</span>
+    </button>
+    <button class="tab-btn" data-tab="health">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Health
+      {% with alert_count=expiring_soon|length|add:expired_trials|length|add:pending_payments|add:suspended_tenants %}
+      {% if alert_count %}<span class="tab-count tab-count--alert">{{ alert_count }}</span>{% endif %}
+      {% endwith %}
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TAB 1: OVERVIEW
+════════════════════════════════════════════════════════════════════════════ -->
+<div class="tab-panel tab-active" id="tab-overview">
+  <div class="shell">
+
+    <!-- KPI Row 1: Tenant counts -->
+    <div class="kpi-grid kpi-grid--4">
+      <div class="kpi-card">
+        <div class="kpi-icon">🏢</div>
+        <div class="kpi-label">Total Workspaces</div>
+        <div class="kpi-value">{{ total_tenants }}</div>
+        <div class="kpi-hint">{{ white_label_count }} white-label</div>
+      </div>
+      <div class="kpi-card kpi-card--green">
+        <div class="kpi-icon">✅</div>
+        <div class="kpi-label">Active Subscribers</div>
+        <div class="kpi-value">{{ active_tenants }}</div>
+        <div class="kpi-hint">Paying customers</div>
+      </div>
+      <div class="kpi-card kpi-card--gold">
+        <div class="kpi-icon">⏳</div>
+        <div class="kpi-label">On Trial</div>
+        <div class="kpi-value">{{ trial_tenants }}</div>
+        <div class="kpi-hint">{{ expiring_soon|length }} expiring in 7 days</div>
+      </div>
+      <div class="kpi-card kpi-card--red">
+        <div class="kpi-icon">⚠️</div>
+        <div class="kpi-label">Suspended / Cancelled</div>
+        <div class="kpi-value">{{ suspended_tenants|add:cancelled_tenants }}</div>
+        <div class="kpi-hint">{{ suspended_tenants }} suspended · {{ cancelled_tenants }} cancelled</div>
+      </div>
+    </div>
+
+    <!-- KPI Row 2: Revenue -->
+    <div class="kpi-grid kpi-grid--4">
+      <div class="kpi-card kpi-card--purple">
+        <div class="kpi-icon">💰</div>
+        <div class="kpi-label">Confirmed Revenue</div>
+        <div class="kpi-value kpi-value--sm">{{ confirmed_revenue|public_money }}</div>
+        <div class="kpi-hint">{{ confirmed_count }} confirmed payments</div>
+      </div>
+      <div class="kpi-card kpi-card--teal">
+        <div class="kpi-icon">📈</div>
+        <div class="kpi-label">MRR (Projected)</div>
+        <div class="kpi-value kpi-value--sm">{{ monthly_projection|public_money }}</div>
+        <div class="kpi-hint">Active + trial tenants</div>
+      </div>
+      <div class="kpi-card kpi-card--slate">
+        <div class="kpi-icon">📊</div>
+        <div class="kpi-label">ARR (Projected)</div>
+        <div class="kpi-value kpi-value--sm">{{ arr|public_money }}</div>
+        <div class="kpi-hint">MRR × 12</div>
+      </div>
+      <div class="kpi-card kpi-card--orange">
+        <div class="kpi-icon">🔔</div>
+        <div class="kpi-label">Pending Payments</div>
+        <div class="kpi-value">{{ pending_payments }}</div>
+        <div class="kpi-hint">{{ pending_amount|public_money }} pending</div>
+      </div>
+    </div>
+
+    <!-- Revenue & Signups Combo Chart -->
+    <div class="card">
+      <div class="card__head">
+        <div class="card__title">Revenue & Tenant Growth — Last 12 Months</div>
+        <span class="badge badge--confirmed">Confirmed payments only</span>
+      </div>
+      <div class="card__body">
+        <div class="chart-xl" id="chartRevenue"></div>
+      </div>
+    </div>
+
+    <!-- 4 smaller charts -->
+    <div class="charts-4col">
+      <div class="card">
+        <div class="card__head"><div class="card__title">Tenant Status</div></div>
+        <div class="card__body"><div class="chart-sm" id="chartStatus"></div></div>
+      </div>
+      <div class="card">
+        <div class="card__head"><div class="card__title">Plan Distribution</div></div>
+        <div class="card__body"><div class="chart-sm" id="chartPlans"></div></div>
+      </div>
+      <div class="card">
+        <div class="card__head"><div class="card__title">Payment Methods</div><span class="badge badge--confirmed">Confirmed</span></div>
+        <div class="card__body"><div class="chart-sm" id="chartMethods"></div></div>
+      </div>
+      <div class="card">
+        <div class="card__head"><div class="card__title">Active Rate</div></div>
+        <div class="card__body"><div class="chart-sm" id="chartGauge"></div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TAB 2: TENANTS
+════════════════════════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-tenants">
+  <div class="shell">
+
+    <!-- Mini stats -->
+    <div class="mini-stats">
+      <div class="mstat">
+        <div class="mstat__value">{{ total_tenants }}</div>
+        <div class="mstat__label">Total</div>
+      </div>
+      <div class="mstat">
+        <div class="mstat__value" style="color:#16a34a;">{{ active_tenants }}</div>
+        <div class="mstat__label">Active</div>
+      </div>
+      <div class="mstat">
+        <div class="mstat__value" style="color:#d97706;">{{ trial_tenants }}</div>
+        <div class="mstat__label">Trial</div>
+      </div>
+      <div class="mstat">
+        <div class="mstat__value" style="color:#dc2626;">{{ suspended_tenants }}</div>
+        <div class="mstat__label">Suspended</div>
+      </div>
+      <div class="mstat">
+        <div class="mstat__value" style="color:#64748b;">{{ cancelled_tenants }}</div>
+        <div class="mstat__label">Cancelled</div>
+      </div>
+      <div class="mstat">
+        <div class="mstat__value" style="color:#7c3aed;">{{ white_label_count }}</div>
+        <div class="mstat__label">White Label</div>
+      </div>
+    </div>
+
+    <!-- Filter + List -->
+    <div class="card">
+      <div class="card__head">
+        <div class="card__title">Tenant Workspaces</div>
+        <span class="badge badge--active">{{ tenants|length }} shown</span>
+      </div>
+      <div class="card__body">
+        <form method="get" class="section-filter">
+          <input class="fi" type="text" name="q" value="{{ search }}" placeholder="Search by company, email, or schema…">
+          <select class="fs" name="status">
+            <option value="">All statuses</option>
+            <option value="TRIAL"     {% if status_filter == "TRIAL"     %}selected{% endif %}>Trial</option>
+            <option value="ACTIVE"    {% if status_filter == "ACTIVE"    %}selected{% endif %}>Active</option>
+            <option value="SUSPENDED" {% if status_filter == "SUSPENDED" %}selected{% endif %}>Suspended</option>
+            <option value="CANCELLED" {% if status_filter == "CANCELLED" %}selected{% endif %}>Cancelled</option>
+          </select>
+          <select class="fs" name="plan">
+            <option value="">All plans</option>
+            {% for plan in plans %}
+            <option value="{{ plan.pk }}" {% if plan_filter == plan.pk|stringformat:"s" %}selected{% endif %}>{{ plan.name }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn btn-navy">Filter</button>
+        </form>
+
+        {% if tenants %}
+        <div class="tenant-list">
+          {% for tenant in tenants %}
+          <form method="post" class="tenant-item">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_tenant">
+            <input type="hidden" name="tenant_id" value="{{ tenant.pk }}">
+
+            <div class="tenant-item__top">
+              <div style="min-width:0;">
+                <div class="tenant-item__name">{{ tenant.name }}</div>
+                <div class="tenant-item__meta">{{ tenant.owner_email }} · {{ tenant.schema_name }}</div>
+                <a href="{{ tenant.workspace_url }}" target="_blank" class="tenant-item__link">{{ tenant.workspace_url }}</a>
+              </div>
+              <div style="flex-shrink:0;">
+                {% if tenant.status == "TRIAL"     %}<span class="badge badge--trial">Trial</span>
+                {% elif tenant.status == "ACTIVE"    %}<span class="badge badge--active">Active</span>
+                {% elif tenant.status == "SUSPENDED" %}<span class="badge badge--suspended">Suspended</span>
+                {% else                             %}<span class="badge badge--cancelled">Cancelled</span>
+                {% endif %}
+                {% if tenant.is_white_label %}<span class="badge" style="background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;margin-left:6px;">White Label</span>{% endif %}
+              </div>
+            </div>
+
+            <div class="tenant-chips">
+              <div class="tchip">
+                <div class="tchip__label">Plan</div>
+                <div class="tchip__value">{{ tenant.plan.name|default:"—" }}</div>
+              </div>
+              <div class="tchip">
+                <div class="tchip__label">Borrowers</div>
+                <div class="tchip__value">{{ tenant.borrower_count }}</div>
+              </div>
+              <div class="tchip">
+                <div class="tchip__label">Agents</div>
+                <div class="tchip__value">{{ tenant.agent_count }}</div>
+              </div>
+              <div class="tchip">
+                <div class="tchip__label">Billing Ends</div>
+                <div class="tchip__value">{% if tenant.current_period_end %}{{ tenant.current_period_end|date:"M d, Y" }}{% elif tenant.trial_ends_at %}Trial: {{ tenant.trial_ends_at|date:"M d" }}{% else %}—{% endif %}</div>
+              </div>
+            </div>
+
+            <div class="tenant-form-row">
+              <div class="field">
+                <label>Subscription Plan</label>
+                <select class="fs" name="plan_id">
+                  <option value="">No plan</option>
+                  {% for plan in plans %}
+                  <option value="{{ plan.pk }}" {% if tenant.plan_id == plan.pk %}selected{% endif %}>{{ plan.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="field">
+                <label>Status</label>
+                <select class="fs" name="status">
+                  <option value="TRIAL"     {% if tenant.status == "TRIAL"     %}selected{% endif %}>Trial</option>
+                  <option value="ACTIVE"    {% if tenant.status == "ACTIVE"    %}selected{% endif %}>Active</option>
+                  <option value="SUSPENDED" {% if tenant.status == "SUSPENDED" %}selected{% endif %}>Suspended</option>
+                  <option value="CANCELLED" {% if tenant.status == "CANCELLED" %}selected{% endif %}>Cancelled</option>
+                </select>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;padding-bottom:10px;cursor:pointer;">
+                <input type="checkbox" name="is_white_label" {% if tenant.is_white_label %}checked{% endif %}>
+                <span style="font-size:13px;font-weight:700;color:#374151;">White label</span>
+              </label>
+              <button type="submit" class="btn btn-gold" style="white-space:nowrap;">Save Changes</button>
+            </div>
+          </form>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">No tenants matched your filters.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TAB 3: PAYMENTS
+════════════════════════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-payments">
+  <div class="shell">
+
+    <!-- Payment summary strip -->
+    <div class="pay-summary">
+      <div class="pay-sum-card pay-sum-card--confirmed">
+        <div class="pay-sum-icon">✅</div>
+        <div>
+          <div class="pay-sum-label">Confirmed</div>
+          <div class="pay-sum-value">{{ confirmed_revenue|public_money }}</div>
+          <div class="pay-sum-sub">{{ confirmed_count }} payments</div>
+        </div>
+      </div>
+      <div class="pay-sum-card pay-sum-card--pending">
+        <div class="pay-sum-icon">⏳</div>
+        <div>
+          <div class="pay-sum-label">Pending Verification</div>
+          <div class="pay-sum-value">{{ pending_amount|public_money }}</div>
+          <div class="pay-sum-sub">{{ pending_payments }} payments</div>
+        </div>
+      </div>
+      <div class="pay-sum-card pay-sum-card--failed">
+        <div class="pay-sum-icon">❌</div>
+        <div>
+          <div class="pay-sum-label">Failed / Rejected</div>
+          <div class="pay-sum-value">{{ failed_amount|public_money }}</div>
+          <div class="pay-sum-sub">{{ failed_payments }} payments</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payments list -->
+    <div class="card">
+      <div class="card__head">
+        <div class="card__title">All Payments</div>
+        <span class="badge badge--pending">{{ payments|length }} recent</span>
+      </div>
+      <div class="card__body">
+        {% if payments %}
+        <div class="payment-list">
+          {% for payment in payments %}
+          <form method="post" class="payment-item">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_payment">
+            <input type="hidden" name="payment_id" value="{{ payment.pk }}">
+
+            <div class="payment-item__top">
+              <div style="min-width:0;">
+                <div class="payment-item__name">{{ payment.tenant.name }}</div>
+                <div class="payment-item__meta">
+                  {{ payment.get_method_display }} · {{ payment.get_billing_cycle_display }} ·
+                  {{ payment.created_at|date:"M d, Y H:i" }}
+                </div>
+                <div class="payment-item__meta">
+                  Period: {{ payment.period_start|date:"M d" }} – {{ payment.period_end|date:"M d, Y" }}
+                  {% if payment.reference %} · Ref: <strong>{{ payment.reference }}</strong>{% endif %}
+                  {% if payment.phone_or_account %} · {{ payment.phone_or_account }}{% endif %}
+                </div>
+              </div>
+              <div style="text-align:right;flex-shrink:0;">
+                <div class="payment-item__amount">{{ payment.amount|public_money }}</div>
+                {% if payment.status == "CONFIRMED" %}<span class="badge badge--confirmed">Confirmed</span>
+                {% elif payment.status == "FAILED"  %}<span class="badge badge--failed">Failed</span>
+                {% else                             %}<span class="badge badge--pending">Pending</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div style="display:grid;gap:10px;">
+              <div class="payment-form-row">
+                <div class="field">
+                  <label>Payment Status</label>
+                  <select class="fs" name="payment_status">
+                    <option value="PENDING"   {% if payment.status == "PENDING"   %}selected{% endif %}>Pending Verification</option>
+                    <option value="CONFIRMED" {% if payment.status == "CONFIRMED" %}selected{% endif %}>Confirmed</option>
+                    <option value="FAILED"    {% if payment.status == "FAILED"    %}selected{% endif %}>Failed</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-navy">Update</button>
+              </div>
+              {% if payment.notes or payment.status == "PENDING" %}
+              <div class="field">
+                <label>Internal Notes</label>
+                <textarea class="textarea-field" name="notes" placeholder="Verification notes…">{{ payment.notes }}</textarea>
+              </div>
+              {% endif %}
+            </div>
+          </form>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">No payments recorded yet.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TAB 4: PLANS
+════════════════════════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-plans">
+  <div class="shell">
+
+    <!-- Toolbar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <div>
+        <div style="font-family:var(--font-head);font-size:18px;font-weight:800;color:#0f172a;">Subscription Plans</div>
+        <div style="font-size:13px;color:#64748b;margin-top:3px;">{{ plan_stats|length }} plan{{ plan_stats|length|pluralize }} configured</div>
+      </div>
+      <button class="btn btn-gold" onclick="openPlanModal()">+ New Plan</button>
+    </div>
+
+    {% if plan_stats %}
+    <div class="plans-grid">
+      {% for ps in plan_stats %}
+      <div class="plan-card plan-card--{{ ps.tier|lower }}">
+        <div class="plan-card__header">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">
+            <div class="plan-tier">{{ ps.get_tier_display }}</div>
+            {% if not ps.is_active %}<span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);">INACTIVE</span>{% endif %}
+          </div>
+          <div class="plan-name">{{ ps.name }}</div>
+          <div class="plan-price-row">
+            <div class="plan-price-main">{{ ps.price_monthly|public_money }}</div>
+            <div class="plan-price-period">/ month</div>
+          </div>
+          <div class="plan-price-yearly">{{ ps.price_yearly|public_money }} / year</div>
+        </div>
+
+        <div class="plan-card__body">
+          <!-- Tenant metrics -->
+          <div class="plan-metrics">
+            <div class="plan-metric">
+              <div class="plan-metric__label">Total Tenants</div>
+              <div class="plan-metric__value">{{ ps.tenant_count }}</div>
+            </div>
+            <div class="plan-metric">
+              <div class="plan-metric__label">Active</div>
+              <div class="plan-metric__value" style="color:#16a34a;">{{ ps.active_count }}</div>
+            </div>
+            <div class="plan-metric">
+              <div class="plan-metric__label">On Trial</div>
+              <div class="plan-metric__value" style="color:#d97706;">{{ ps.trial_count }}</div>
+            </div>
+            <div class="plan-metric">
+              <div class="plan-metric__label">Suspended</div>
+              <div class="plan-metric__value" style="color:#dc2626;">{{ ps.suspended_count }}</div>
+            </div>
+          </div>
+
+          <!-- Seat limits -->
+          <div>
+            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#94a3b8;margin-bottom:8px;">Seat Limits</div>
+            <div class="plan-limits">
+              <span class="plan-limit-chip">{% if ps.max_borrowers == -1 %}∞{% else %}{{ ps.max_borrowers }}{% endif %} Borrowers</span>
+              <span class="plan-limit-chip">{% if ps.max_agents == -1 %}∞{% else %}{{ ps.max_agents }}{% endif %} Agents</span>
+              <span class="plan-limit-chip">{% if ps.max_admins == -1 %}∞{% else %}{{ ps.max_admins }}{% endif %} Admins</span>
+              <span class="plan-limit-chip">{{ ps.trial_days }}-day Trial</span>
+            </div>
+          </div>
+
+          <!-- Features -->
+          <div>
+            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#94a3b8;margin-bottom:8px;">Features</div>
+            <div class="plan-features">
+              {% with f=ps.features %}
+              <span class="plan-feature {% if f.public_website|default:True %}plan-feature--on{% else %}plan-feature--off{% endif %}">{% if f.public_website|default:True %}✓{% else %}✗{% endif %} Public Website</span>
+              <span class="plan-feature {% if f.accounting %}plan-feature--on{% else %}plan-feature--off{% endif %}">{% if f.accounting %}✓{% else %}✗{% endif %} Accounting &amp; Ledger</span>
+              <span class="plan-feature {% if f.assets %}plan-feature--on{% else %}plan-feature--off{% endif %}">{% if f.assets %}✓{% else %}✗{% endif %} Asset Management</span>
+              <span class="plan-feature {% if f.payroll %}plan-feature--on{% else %}plan-feature--off{% endif %}">{% if f.payroll %}✓{% else %}✗{% endif %} Payroll Processing</span>
+              <span class="plan-feature {% if f.marketing %}plan-feature--on{% else %}plan-feature--off{% endif %}">{% if f.marketing %}✓{% else %}✗{% endif %} Marketing Tools</span>
+              <span class="plan-feature {% if f.api %}plan-feature--on{% else %}plan-feature--off{% endif %}">{% if f.api %}✓{% else %}✗{% endif %} API Access</span>
+              {% endwith %}
+            </div>
+          </div>
+
+          <!-- Revenue -->
+          <div class="plan-revenue" style="margin-top:auto;">
+            <div class="plan-revenue__label">Monthly Revenue Contribution</div>
+            <div class="plan-revenue__value">{{ ps.monthly_revenue|public_money }}</div>
+            <div class="plan-revenue__sub">ARR: {{ ps.arr_contribution|public_money }}</div>
+          </div>
+
+          <!-- Actions -->
+          <div style="display:flex;gap:10px;margin-top:4px;">
+            <button type="button" class="btn-sm btn-sm--navy" style="flex:1;"
+              onclick="openPlanModal({
+                pk:{{ ps.pk }},
+                name:'{{ ps.name|escapejs }}',
+                tier:'{{ ps.tier }}',
+                price_monthly:'{{ ps.price_monthly }}',
+                price_yearly:'{{ ps.price_yearly }}',
+                max_borrowers:{{ ps.max_borrowers }},
+                max_agents:{{ ps.max_agents }},
+                max_admins:{{ ps.max_admins }},
+                trial_days:{{ ps.trial_days }},
+                sort_order:{{ ps.sort_order }},
+                is_active:{{ ps.is_active|yesno:'true,false' }},
+                feat_accounting:{{ ps.features.accounting|yesno:'true,false' }},
+                feat_assets:{{ ps.features.assets|yesno:'true,false' }},
+                feat_marketing:{{ ps.features.marketing|yesno:'true,false' }},
+                feat_payroll:{{ ps.features.payroll|yesno:'true,false' }},
+                feat_api:{{ ps.features.api|yesno:'true,false' }},
+                feat_public_website:{{ ps.features.public_website|default:True|yesno:'true,false' }}
+              })">Edit Plan</button>
+            {% if ps.tenant_count == 0 %}
+            <form method="post" action="{% url 'tenants:plan_delete' pk=ps.pk %}" style="display:inline;"
+              onsubmit="return confirm('Delete plan \'{{ ps.name|escapejs }}\'? This cannot be undone.');">
+              {% csrf_token %}
+              <button type="submit" class="btn-sm btn-sm--red">Delete</button>
+            </form>
+            {% else %}
+            <button type="button" class="btn-sm btn-sm--gray" title="{{ ps.tenant_count }} tenant(s) on this plan — cannot delete" disabled style="opacity:.45;cursor:not-allowed;">Delete</button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:40px;">No subscription plans yet. Click <strong>+ New Plan</strong> to create one.</div>
+    {% endif %}
+
+    <div class="card" style="margin-top:24px;">
+      <div class="card__head">
+        <div class="card__title">Growth Programs</div>
+        <span class="badge badge--confirmed">{{ promo_codes|length }} promo codes</span>
+      </div>
+      <div class="card__body" style="display:grid;gap:22px;">
+        <div class="mini-stats">
+          <div class="mini-stat">
+            <div class="mini-stat__label">Referral Signups</div>
+            <div class="mini-stat__value">{{ referral_signups }}</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat__label">Referral Conversions</div>
+            <div class="mini-stat__value">{{ referral_converted }}</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat__label">Active Promos</div>
+            <div class="mini-stat__value">{{ promo_codes|length }}</div>
+          </div>
+        </div>
+
+        <form method="post" style="display:grid;gap:14px;padding:18px;border:1px solid #e2e8f0;border-radius:18px;background:#f8fafc;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="save_promo">
+          <div style="font-family:var(--font-head);font-size:16px;font-weight:800;color:#0f172a;">Create Promo Code</div>
+          <div class="mform-row">
+            <div class="mfield">
+              <label class="mfield__label">Promo Code</label>
+              <input class="mfield__input" type="text" name="code" placeholder="e.g. LAUNCH25" required>
+            </div>
+            <div class="mfield">
+              <label class="mfield__label">Description</label>
+              <input class="mfield__input" type="text" name="description" placeholder="Launch campaign">
+            </div>
+          </div>
+          <div class="mform-row">
+            <div class="mfield">
+              <label class="mfield__label">Discount Type</label>
+              <select class="mfield__input" name="discount_type">
+                <option value="PERCENT">Percentage</option>
+                <option value="FIXED">Fixed Amount</option>
+              </select>
+            </div>
+            <div class="mfield">
+              <label class="mfield__label">Discount Value</label>
+              <input class="mfield__input" type="number" min="0" step="0.01" name="discount_value" placeholder="25" required>
+            </div>
+          </div>
+          <div class="mform-row">
+            <div class="mfield">
+              <label class="mfield__label">Plan Tier</label>
+              <select class="mfield__input" name="applicable_tier">
+                <option value="">All Plans</option>
+                <option value="STARTER">Starter</option>
+                <option value="PROFESSIONAL">Professional</option>
+                <option value="ENTERPRISE">Enterprise</option>
+              </select>
+            </div>
+            <div class="mfield">
+              <label class="mfield__label">Trial Bonus Days</label>
+              <input class="mfield__input" type="number" min="0" step="1" name="trial_bonus_days" value="0">
+            </div>
+          </div>
+          <div class="mform-row">
+            <div class="mfield">
+              <label class="mfield__label">Usage Limit</label>
+              <input class="mfield__input" type="number" min="1" step="1" name="usage_limit" placeholder="Leave blank for unlimited">
+            </div>
+            <div class="mfield">
+              <label class="mfield__label">Active Window</label>
+              <div class="mform-row">
+                <input class="mfield__input" type="date" name="valid_from">
+                <input class="mfield__input" type="date" name="valid_to">
+              </div>
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#475569;">
+            <input type="checkbox" name="is_active" checked>
+            Activate immediately
+          </label>
+          <div style="display:flex;justify-content:flex-end;">
+            <button type="submit" class="btn btn-gold">Create Promo Code</button>
+          </div>
+        </form>
+
+        <div style="display:grid;gap:14px;">
+          <div style="font-family:var(--font-head);font-size:16px;font-weight:800;color:#0f172a;">Active and Recent Promo Codes</div>
+          {% if promo_codes %}
+          <div class="payment-list">
+            {% for promo in promo_codes %}
+            <form method="post" class="payment-item">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="toggle_promo">
+              <input type="hidden" name="promo_id" value="{{ promo.pk }}">
+              <div class="payment-item__top">
+                <div style="min-width:0;">
+                  <div class="payment-item__name">{{ promo.code }}</div>
+                  <div class="payment-item__meta">
+                    {{ promo.description|default:"No description" }} ·
+                    {% if promo.discount_type == "PERCENT" %}
+                      {{ promo.discount_value }}% off
+                    {% else %}
+                      {{ promo.discount_value|public_money }} off
+                    {% endif %}
+                    {% if promo.trial_bonus_days %} · +{{ promo.trial_bonus_days }} trial days{% endif %}
+                  </div>
+                  <div class="payment-item__meta">
+                    {% if promo.applicable_tier %}{{ promo.applicable_tier|title }} only{% else %}All plans{% endif %}
+                    · Used {{ promo.usage_count }}{% if promo.usage_limit %}/{{ promo.usage_limit }}{% endif %}
+                    {% if promo.valid_from or promo.valid_to %}
+                      · {{ promo.valid_from|date:"M d, Y"|default:"Any time" }} to {{ promo.valid_to|date:"M d, Y"|default:"Open ended" }}
+                    {% endif %}
+                  </div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                  {% if promo.is_active %}<span class="badge badge--confirmed">Active</span>{% else %}<span class="badge badge--failed">Inactive</span>{% endif %}
+                  <div style="margin-top:10px;">
+                    <button type="submit" class="btn-sm btn-sm--navy">{% if promo.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+                  </div>
+                </div>
+              </div>
+            </form>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-state">No promo codes created yet.</div>
+          {% endif %}
+        </div>
+
+        <div style="display:grid;gap:14px;">
+          <div style="font-family:var(--font-head);font-size:16px;font-weight:800;color:#0f172a;">Recent Referrals</div>
+          {% if recent_referrals %}
+          <div class="payment-list">
+            {% for referral in recent_referrals %}
+            <div class="payment-item">
+              <div class="payment-item__top">
+                <div style="min-width:0;">
+                  <div class="payment-item__name">{{ referral.referrer.name }} referred {{ referral.referred_tenant.name }}</div>
+                  <div class="payment-item__meta">
+                    {{ referral.code_used }} · Signed up {{ referral.signup_at|date:"M d, Y H:i" }}
+                    {% if referral.converted_at %} · Converted {{ referral.converted_at|date:"M d, Y H:i" }}{% endif %}
+                  </div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                  {% if referral.status == "CONVERTED" %}<span class="badge badge--confirmed">Converted</span>{% else %}<span class="badge badge--pending">Signed Up</span>{% endif %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-state">No referral activity yet.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PLAN MODAL (Create / Edit)
+════════════════════════════════════════════════════════════════════════════ -->
+<div id="planModal" class="modal-overlay" hidden aria-modal="true" role="dialog">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h2 class="modal-title" id="planModalTitle">Create Plan</h2>
+      <button class="modal-close" onclick="closePlanModal()" aria-label="Close">&times;</button>
+    </div>
+
+    <form method="post" id="planForm" action="{% url 'tenants:plan_create' %}">
+      {% csrf_token %}
+      <div class="modal-body">
+
+        <!-- Row 1: Name + Tier -->
+        <div class="mform-row">
+          <div class="mfield">
+            <label class="mfield__label">Plan Name <span class="req">*</span></label>
+            <input class="mfield__input" type="text" name="name" id="mf_name" required placeholder="e.g. Starter">
+          </div>
+          <div class="mfield">
+            <label class="mfield__label">Tier <span class="req">*</span></label>
+            <select class="mfield__input" name="tier" id="mf_tier">
+              <option value="STARTER">Starter</option>
+              <option value="PROFESSIONAL">Professional</option>
+              <option value="ENTERPRISE">Enterprise</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Row 2: Prices -->
+        <div class="mform-row">
+          <div class="mfield">
+            <label class="mfield__label">Monthly Price (GH₵) <span class="req">*</span></label>
+            <input class="mfield__input" type="number" name="price_monthly" id="mf_price_monthly" min="0" step="0.01" required placeholder="0.00">
+          </div>
+          <div class="mfield">
+            <label class="mfield__label">Yearly Price (GH₵) <span class="req">*</span></label>
+            <input class="mfield__input" type="number" name="price_yearly" id="mf_price_yearly" min="0" step="0.01" required placeholder="0.00">
+          </div>
+        </div>
+
+        <!-- Row 3: Seat limits -->
+        <div class="mform-row mform-row--3">
+          <div class="mfield">
+            <label class="mfield__label">Max Borrowers</label>
+            <input class="mfield__input" type="number" name="max_borrowers" id="mf_max_borrowers" placeholder="50 (−1 = unlimited)">
+            <div class="mfield__hint">Use −1 for unlimited</div>
+          </div>
+          <div class="mfield">
+            <label class="mfield__label">Max Agents</label>
+            <input class="mfield__input" type="number" name="max_agents" id="mf_max_agents" placeholder="2">
+          </div>
+          <div class="mfield">
+            <label class="mfield__label">Max Admins</label>
+            <input class="mfield__input" type="number" name="max_admins" id="mf_max_admins" placeholder="1">
+          </div>
+        </div>
+
+        <!-- Row 4: Trial days + Sort order -->
+        <div class="mform-row">
+          <div class="mfield">
+            <label class="mfield__label">Trial Days</label>
+            <input class="mfield__input" type="number" name="trial_days" id="mf_trial_days" min="0" placeholder="14">
+          </div>
+          <div class="mfield">
+            <label class="mfield__label">Sort Order</label>
+            <input class="mfield__input" type="number" name="sort_order" id="mf_sort_order" placeholder="0">
+          </div>
+        </div>
+
+        <!-- Features -->
+        <div class="mfield">
+          <label class="mfield__label">Features Included</label>
+          <div class="mcheck-grid">
+            <label class="mcheck"><input type="checkbox" checked disabled> Public Website</label>
+            <label class="mcheck"><input type="checkbox" name="feat_accounting" id="mf_feat_accounting"> Accounting &amp; Ledger</label>
+            <label class="mcheck"><input type="checkbox" name="feat_assets"     id="mf_feat_assets">     Asset Management</label>
+            <label class="mcheck"><input type="checkbox" name="feat_payroll"    id="mf_feat_payroll">    Payroll Processing</label>
+            <label class="mcheck"><input type="checkbox" name="feat_marketing"  id="mf_feat_marketing">  Marketing Tools</label>
+            <label class="mcheck"><input type="checkbox" name="feat_api"        id="mf_feat_api">        API Access</label>
+          </div>
+        </div>
+
+        <!-- Active toggle -->
+        <label class="mcheck mcheck--lg">
+          <input type="checkbox" name="is_active" id="mf_is_active" checked>
+          Plan is active and available to new tenants
+        </label>
+
+      </div><!-- /modal-body -->
+      <div class="modal-foot">
+        <button type="button" class="btn btn-outline" onclick="closePlanModal()">Cancel</button>
+        <button type="submit" class="btn btn-gold" id="planModalSubmit">Create Plan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TAB 5: HEALTH
+════════════════════════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-health">
+  <div class="shell">
+
+    <!-- Health summary strip -->
+    <div class="health-summary">
+      <div class="hsm-card">
+        <div class="hsm-card__value" style="color:#dc2626;">{{ expired_trials|length }}</div>
+        <div class="hsm-card__label">Expired Trials</div>
+      </div>
+      <div class="hsm-card">
+        <div class="hsm-card__value" style="color:#d97706;">{{ expiring_soon|length }}</div>
+        <div class="hsm-card__label">Expiring in 7 Days</div>
+      </div>
+      <div class="hsm-card">
+        <div class="hsm-card__value" style="color:#d97706;">{{ pending_payments }}</div>
+        <div class="hsm-card__label">Pending Payments</div>
+      </div>
+      <div class="hsm-card">
+        <div class="hsm-card__value" style="color:#dc2626;">{{ suspended_tenants }}</div>
+        <div class="hsm-card__label">Suspended</div>
+      </div>
+      <div class="hsm-card">
+        <div class="hsm-card__value" style="color:#dc2626;">{{ failed_payments }}</div>
+        <div class="hsm-card__label">Failed Payments</div>
+      </div>
+    </div>
+
+    <div class="health-grid">
+
+      <!-- Expired Trials -->
+      <div class="alert-card alert-card--critical">
+        <div class="alert-card__head">
+          <div class="alert-card__title-group">
+            <span class="alert-card__icon">🚨</span>
+            <span class="alert-card__title">Expired Trials — Awaiting Decision</span>
+          </div>
+          <span class="badge badge--failed">{{ expired_trials|length }}</span>
+        </div>
+        <div class="alert-card__body">
+          {% if expired_trials %}
+            {% for t in expired_trials %}
+            <div class="alert-row">
+              <div class="alert-row__info">
+                <div class="alert-row__name">{{ t.name }}</div>
+                <div class="alert-row__meta">{{ t.owner_email }} · Trial ended: {{ t.trial_ends_at|date:"M d, Y" }}</div>
+              </div>
+              <div class="alert-row__actions">
+                <form method="post" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update_tenant">
+                  <input type="hidden" name="tenant_id" value="{{ t.pk }}">
+                  <input type="hidden" name="status" value="ACTIVE">
+                  <input type="hidden" name="plan_id" value="{{ t.plan_id|default:'' }}">
+                  <button type="submit" class="btn-sm btn-sm--green">Activate</button>
+                </form>
+                <form method="post" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update_tenant">
+                  <input type="hidden" name="tenant_id" value="{{ t.pk }}">
+                  <input type="hidden" name="status" value="SUSPENDED">
+                  <input type="hidden" name="plan_id" value="{{ t.plan_id|default:'' }}">
+                  <button type="submit" class="btn-sm btn-sm--red">Suspend</button>
+                </form>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+          <div class="alert-empty">No expired trials — all good!</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Expiring Soon -->
+      <div class="alert-card alert-card--warning">
+        <div class="alert-card__head">
+          <div class="alert-card__title-group">
+            <span class="alert-card__icon">⏰</span>
+            <span class="alert-card__title">Trials Expiring in 7 Days</span>
+          </div>
+          <span class="badge badge--trial">{{ expiring_soon|length }}</span>
+        </div>
+        <div class="alert-card__body">
+          {% if expiring_soon %}
+            {% for t in expiring_soon %}
+            <div class="alert-row">
+              <div class="alert-row__info">
+                <div class="alert-row__name">{{ t.name }}</div>
+                <div class="alert-row__meta">{{ t.owner_email }} · Expires: {{ t.trial_ends_at|date:"M d, Y" }}</div>
+              </div>
+              <div class="alert-row__actions">
+                <form method="post" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update_tenant">
+                  <input type="hidden" name="tenant_id" value="{{ t.pk }}">
+                  <input type="hidden" name="status" value="ACTIVE">
+                  <input type="hidden" name="plan_id" value="{{ t.plan_id|default:'' }}">
+                  <button type="submit" class="btn-sm btn-sm--green">Convert</button>
+                </form>
+                <a href="mailto:{{ t.owner_email }}" class="btn-sm btn-sm--gray">Email</a>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+          <div class="alert-empty">No trials expiring in the next 7 days.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Pending Payments -->
+      <div class="alert-card alert-card--warning">
+        <div class="alert-card__head">
+          <div class="alert-card__title-group">
+            <span class="alert-card__icon">💳</span>
+            <span class="alert-card__title">Payments Awaiting Verification</span>
+          </div>
+          <span class="badge badge--pending">{{ pending_payments }}</span>
+        </div>
+        <div class="alert-card__body">
+          {% with pending_list=payments %}
+          {% if pending_list %}
+            {% for payment in pending_list %}
+            {% if payment.status == "PENDING" %}
+            <form method="post" class="alert-row">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="update_payment">
+              <input type="hidden" name="payment_id" value="{{ payment.pk }}">
+              <input type="hidden" name="payment_status" value="CONFIRMED">
+              <div class="alert-row__info">
+                <div class="alert-row__name">{{ payment.tenant.name }}</div>
+                <div class="alert-row__meta">
+                  {{ payment.amount|public_money }} · {{ payment.get_method_display }} · {{ payment.created_at|date:"M d, Y" }}
+                  {% if payment.reference %} · Ref: {{ payment.reference }}{% endif %}
+                </div>
+              </div>
+              <div class="alert-row__actions">
+                <button type="submit" class="btn-sm btn-sm--green">Confirm</button>
+                <button type="submit" name="payment_status" value="FAILED" class="btn-sm btn-sm--red">Reject</button>
+              </div>
+            </form>
+            {% endif %}
+            {% endfor %}
+          {% else %}
+          <div class="alert-empty">No pending payments to verify.</div>
+          {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+
+      <!-- Suspended Accounts -->
+      <div class="alert-card alert-card--neutral">
+        <div class="alert-card__head">
+          <div class="alert-card__title-group">
+            <span class="alert-card__icon">⛔</span>
+            <span class="alert-card__title">Suspended Accounts</span>
+          </div>
+          <span class="badge badge--suspended">{{ suspended_list|length }}</span>
+        </div>
+        <div class="alert-card__body">
+          {% if suspended_list %}
+            {% for t in suspended_list %}
+            <div class="alert-row">
+              <div class="alert-row__info">
+                <div class="alert-row__name">{{ t.name }}</div>
+                <div class="alert-row__meta">{{ t.owner_email }} · Suspended {{ t.updated_at|date:"M d, Y" }}</div>
+              </div>
+              <div class="alert-row__actions">
+                <form method="post" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update_tenant">
+                  <input type="hidden" name="tenant_id" value="{{ t.pk }}">
+                  <input type="hidden" name="status" value="ACTIVE">
+                  <input type="hidden" name="plan_id" value="{{ t.plan_id|default:'' }}">
+                  <button type="submit" class="btn-sm btn-sm--green">Reactivate</button>
+                </form>
+                <form method="post" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update_tenant">
+                  <input type="hidden" name="tenant_id" value="{{ t.pk }}">
+                  <input type="hidden" name="status" value="CANCELLED">
+                  <input type="hidden" name="plan_id" value="{{ t.plan_id|default:'' }}">
+                  <button type="submit" class="btn-sm btn-sm--gray">Cancel</button>
+                </form>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+          <div class="alert-empty">No suspended accounts.</div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div><!-- /health-grid -->
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ── Tab switching ─────────────────────────────────────────────────────── */
+  const tabs    = document.querySelectorAll('.tab-btn');
+  const panels  = document.querySelectorAll('.tab-panel');
+  const STORAGE_KEY = 'saas_dash_tab';
+
+  function activateTab(name) {
+    tabs.forEach(b   => b.classList.toggle('tab-active',    b.dataset.tab === name));
+    panels.forEach(p => p.classList.toggle('tab-active', p.id === 'tab-' + name));
+    sessionStorage.setItem(STORAGE_KEY, name);
+    if (name === 'overview') {
+      setTimeout(() => [cRevenue, cStatus, cPlans, cMethods, cGauge].forEach(c => c && c.resize()), 50);
+    }
+  }
+
+  tabs.forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
+
+  const saved = sessionStorage.getItem(STORAGE_KEY);
+  if (saved && document.getElementById('tab-' + saved)) activateTab(saved);
+
+  /* ── ECharts palette ───────────────────────────────────────────────────── */
+  const C = {
+    navy:   '#0f2043', gold:  '#e8a020', green: '#16a34a',
+    red:    '#dc2626', purple:'#8b5cf6', teal:  '#0891b2',
+    orange: '#f97316', slate: '#64748b',
+  };
+  const PALETTE = [C.navy, C.gold, C.green, C.red, C.purple, C.teal, C.orange, C.slate];
+  const STATUS_COLORS = { Trial: C.gold, Active: C.green, Suspended: C.red, Cancelled: C.slate };
+  const FONT = 'Inter, ui-sans-serif, system-ui, sans-serif';
+  const BASE_TEXT = { fontFamily: FONT, color: '#374151' };
+  const card = { backgroundColor: '#fff', borderColor: '#e2e8f0', borderWidth: 1, textStyle: BASE_TEXT };
+
+  /* ── Data ──────────────────────────────────────────────────────────────── */
+  const months   = {{ chart_months|safe }};
+  const signups  = {{ chart_signups|safe }};
+  const revenue  = {{ chart_revenue|safe }};
+  const plans    = {{ chart_plans|safe }};
+  const statuses = {{ chart_statuses|safe }};
+  const methods  = {{ chart_methods|safe }};
+  const total    = {{ total_tenants }};
+  const active   = {{ active_tenants }};
+
+  /* ── 1. Revenue & Signups combo ────────────────────────────────────────── */
+  const cRevenue = echarts.init(document.getElementById('chartRevenue'));
+  cRevenue.setOption({
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'cross', crossStyle: { color: '#e2e8f0' } },
+      ...card,
+      formatter(params) {
+        let h = `<div style="font-weight:800;margin-bottom:8px;color:#0f172a;">${params[0].axisValue}</div>`;
+        params.forEach(p => {
+          const clr = typeof p.color === 'object' ? p.color.colorStops[0].color : p.color;
+          h += `<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+            <span style="width:9px;height:9px;border-radius:50%;background:${clr};flex-shrink:0;"></span>
+            <span style="color:#64748b;">${p.seriesName}:</span>
+            <strong style="color:#0f172a;">${p.seriesIndex === 0 ? 'GH₵' + Number(p.value).toLocaleString() : p.value}</strong>
+          </div>`;
+        });
+        return h;
+      },
+    },
+    legend: { data: ['Revenue (GH₵)', 'New Signups'], bottom: 0, textStyle: BASE_TEXT, itemWidth: 14, itemHeight: 8 },
+    grid: { top: 16, right: 56, bottom: 46, left: 60, containLabel: false },
+    xAxis: {
+      type: 'category', data: months, boundaryGap: true,
+      axisLine: { lineStyle: { color: '#e2e8f0' } }, axisTick: { show: false },
+      axisLabel: { color: '#94a3b8', fontSize: 11, rotate: 30 },
+    },
+    yAxis: [
+      {
+        type: 'value', name: 'GH₵', nameTextStyle: { color: '#94a3b8', fontSize: 11 },
+        axisLine: { show: false }, axisTick: { show: false },
+        splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } },
+        axisLabel: { color: '#94a3b8', fontSize: 11, formatter: v => v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v },
+      },
+      {
+        type: 'value', name: 'Signups', nameTextStyle: { color: '#94a3b8', fontSize: 11 },
+        axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false },
+        axisLabel: { color: '#94a3b8', fontSize: 11 }, minInterval: 1,
+      },
+    ],
+    series: [
+      {
+        name: 'Revenue (GH₵)', type: 'bar', yAxisIndex: 0, data: revenue, barMaxWidth: 40,
+        itemStyle: {
+          borderRadius: [5, 5, 0, 0],
+          color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [{ offset: 0, color: C.navy }, { offset: 1, color: '#1e3a5f' }] },
+        },
+        emphasis: { itemStyle: { color: C.gold } },
+      },
+      {
+        name: 'New Signups', type: 'line', yAxisIndex: 1, data: signups, smooth: true,
+        symbol: 'circle', symbolSize: 7,
+        lineStyle: { color: C.gold, width: 2.5 },
+        itemStyle: { color: C.gold, borderWidth: 2.5, borderColor: '#fff' },
+        areaStyle: {
+          color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [{ offset: 0, color: 'rgba(232,160,32,.2)' }, { offset: 1, color: 'rgba(232,160,32,0)' }] },
+        },
+      },
+    ],
+  });
+
+  /* ── 2. Status donut ───────────────────────────────────────────────────── */
+  const cStatus = echarts.init(document.getElementById('chartStatus'));
+  cStatus.setOption({
+    tooltip: { trigger: 'item', ...card, formatter: p => `<strong>${p.name}</strong><br/>${p.value} tenants (${p.percent}%)` },
+    legend: { orient: 'vertical', right: 4, top: 'center', textStyle: BASE_TEXT, itemWidth: 11, itemHeight: 11 },
+    series: [{
+      type: 'pie', radius: ['42%', '68%'], center: ['36%', '50%'], padAngle: 3,
+      itemStyle: { borderRadius: 6 }, label: { show: false },
+      emphasis: { label: { show: true, fontSize: 13, fontWeight: 700, fontFamily: FONT } },
+      data: statuses.map(s => ({ name: s.name, value: s.value, itemStyle: { color: STATUS_COLORS[s.name] || C.slate } })),
+    }],
+  });
+
+  /* ── 3. Plan distribution donut ────────────────────────────────────────── */
+  const cPlans = echarts.init(document.getElementById('chartPlans'));
+  cPlans.setOption({
+    tooltip: { trigger: 'item', ...card, formatter: p => `<strong>${p.name}</strong><br/>${p.value} tenants (${p.percent}%)` },
+    legend: { orient: 'vertical', right: 4, top: 'center', textStyle: BASE_TEXT, itemWidth: 11, itemHeight: 11 },
+    series: [{
+      type: 'pie', radius: ['42%', '68%'], center: ['36%', '50%'], padAngle: 3,
+      itemStyle: { borderRadius: 6 }, label: { show: false },
+      emphasis: { label: { show: true, fontSize: 13, fontWeight: 700, fontFamily: FONT } },
+      data: plans.map((p, i) => ({ name: p.name, value: p.value, itemStyle: { color: PALETTE[i % PALETTE.length] } })),
+    }],
+  });
+
+  /* ── 4. Payment methods horizontal bar ─────────────────────────────────── */
+  const cMethods = echarts.init(document.getElementById('chartMethods'));
+  if (methods.length) {
+    cMethods.setOption({
+      tooltip: {
+        trigger: 'axis', axisPointer: { type: 'shadow' }, ...card,
+        formatter(params) {
+          const m = methods[params[0].dataIndex];
+          return `<strong>${params[0].name}</strong><br/>
+            Transactions: <strong>${m.value}</strong><br/>
+            Total: <strong>GH₵${Number(m.total).toLocaleString()}</strong>`;
+        },
+      },
+      grid: { top: 8, right: 14, bottom: 28, left: 0, containLabel: true },
+      xAxis: {
+        type: 'value', minInterval: 1,
+        axisLabel: { color: '#94a3b8', fontSize: 11 },
+        splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } },
+      },
+      yAxis: {
+        type: 'category', data: methods.map(m => m.name),
+        axisLabel: { color: '#374151', fontSize: 12 },
+        axisLine: { lineStyle: { color: '#e2e8f0' } }, axisTick: { show: false },
+      },
+      series: [{
+        type: 'bar', barMaxWidth: 28,
+        data: methods.map((m, i) => ({ value: m.value, itemStyle: { color: PALETTE[i], borderRadius: [0, 6, 6, 0] } })),
+        label: { show: true, position: 'right', color: '#374151', fontSize: 12, fontWeight: 700 },
+      }],
+    });
+  } else {
+    document.getElementById('chartMethods').innerHTML =
+      '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:13px;">No confirmed payments</div>';
+  }
+
+  /* ── 5. Active rate gauge ──────────────────────────────────────────────── */
+  const pct = total > 0 ? Math.round(active / total * 100) : 0;
+  const cGauge = echarts.init(document.getElementById('chartGauge'));
+  cGauge.setOption({
+    tooltip: { show: false },
+    series: [{
+      type: 'gauge', startAngle: 210, endAngle: -30, min: 0, max: 100,
+      radius: '88%', center: ['50%', '58%'], pointer: { show: false },
+      progress: {
+        show: true, width: 16, roundCap: true,
+        itemStyle: {
+          color: { type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
+            colorStops: [{ offset: 0, color: C.green }, { offset: 1, color: C.teal }] },
+        },
+      },
+      axisLine: { lineStyle: { width: 16, color: [[1, '#f1f5f9']] } },
+      axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false },
+      detail: {
+        valueAnimation: true, offsetCenter: [0, '5%'],
+        fontSize: 32, fontWeight: 800, fontFamily: FONT, color: C.navy,
+        formatter: '{value}%',
+      },
+      title: { offsetCenter: [0, '32%'], fontSize: 12, color: '#94a3b8', fontWeight: 600 },
+      data: [{ value: pct, name: 'Active Rate' }],
+    }],
+  });
+
+  /* ── Resize on window change ───────────────────────────────────────────── */
+  const allCharts = [cRevenue, cStatus, cPlans, cMethods, cGauge];
+  window.addEventListener('resize', () => allCharts.forEach(c => c && c.resize()));
+
+  /* ── Plan modal ────────────────────────────────────────────────────────── */
+  const planModal  = document.getElementById('planModal');
+  const planForm   = document.getElementById('planForm');
+  const modalTitle = document.getElementById('planModalTitle');
+  const submitBtn  = document.getElementById('planModalSubmit');
+  const CREATE_URL = '{% url "tenants:plan_create" %}';
+
+  function openPlanModal(data) {
+    const isEdit = !!data;
+    modalTitle.textContent = isEdit ? 'Edit Plan' : 'Create Plan';
+    submitBtn.textContent  = isEdit ? 'Save Changes' : 'Create Plan';
+    planForm.action        = isEdit
+      ? '/dashboard/plans/' + data.pk + '/edit/'
+      : CREATE_URL;
+
+    // Reset then optionally populate
+    planForm.reset();
+    if (isEdit) {
+      _set('mf_name',           data.name);
+      _set('mf_tier',           data.tier);
+      _set('mf_price_monthly',  data.price_monthly);
+      _set('mf_price_yearly',   data.price_yearly);
+      _set('mf_max_borrowers',  data.max_borrowers);
+      _set('mf_max_agents',     data.max_agents);
+      _set('mf_max_admins',     data.max_admins);
+      _set('mf_trial_days',     data.trial_days);
+      _set('mf_sort_order',     data.sort_order);
+      _chk('mf_is_active',         data.is_active);
+      _chk('mf_feat_accounting',   data.feat_accounting);
+      _chk('mf_feat_assets',       data.feat_assets);
+      _chk('mf_feat_marketing',    data.feat_marketing);
+      _chk('mf_feat_payroll',      data.feat_payroll);
+      _chk('mf_feat_api',          data.feat_api);
+    } else {
+      // Defaults for new plan
+      _set('mf_max_borrowers', 50);
+      _set('mf_max_agents', 2);
+      _set('mf_max_admins', 1);
+      _set('mf_trial_days', 14);
+      _set('mf_sort_order', 0);
+      _chk('mf_is_active', true);
+    }
+
+    planModal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    document.getElementById('mf_name').focus();
+  }
+
+  function closePlanModal() {
+    planModal.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  function _set(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  }
+  function _chk(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.checked = !!val;
+  }
+
+  // Close on overlay click or Escape
+  planModal.addEventListener('click', closePlanModal);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePlanModal(); });
+
+  // Expose to global scope (called from onclick attributes)
+  window.openPlanModal  = openPlanModal;
+  window.closePlanModal = closePlanModal;
+})();
+</script>
+{% endblock %}

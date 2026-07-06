@@ -1,0 +1,434 @@
+{% extends "public/base.html" %}
+{% load public_money %}
+
+{% block title %}Create Your Account — {{ saas_name }}{% endblock %}
+{% block meta_description %}Sign up for {{ saas_name }} and get your micro-credit management platform running in minutes. 14-day free trial, no credit card required.{% endblock %}
+{% block header_class %}pub-header--solid{% endblock %}
+{% block logo_class %}{% endblock %}
+
+{% block head_styles %}
+body { background: var(--gray-50); }
+
+.signup-page { min-height: calc(100vh - var(--header-h)); display:flex; padding: calc(var(--header-h) + 0px) 0 0; }
+.signup-wrap { display:grid; grid-template-columns:1fr 1.1fr; min-height:calc(100vh - var(--header-h)); width:100%; max-width:1100px; margin:0 auto; box-shadow:var(--sh-xl); border-radius:var(--r-xl) var(--r-xl) 0 0; overflow:hidden; }
+
+/* Left panel */
+.signup-panel {
+  background: linear-gradient(155deg, #060e20 0%, #0f2043 60%, #1a3460 100%);
+  padding: clamp(40px,5vw,64px) clamp(32px,4vw,56px);
+  display: flex; flex-direction: column; justify-content: space-between;
+  position: sticky; top: var(--header-h); height: calc(100vh - var(--header-h)); overflow-y: auto;
+}
+.signup-panel__logo .pub-logo__mark { background:var(--gold); color:var(--navy); }
+.signup-panel__logo .pub-logo__name { color:#fff; font-size:24px; }
+.signup-panel__hero { flex:1; display:flex; flex-direction:column; justify-content:center; padding: 32px 0; }
+.signup-panel__headline { font-family:var(--font-head); font-size:clamp(28px,3vw,38px); font-weight:800; color:#fff; line-height:1.2; margin-bottom:20px; }
+.signup-panel__headline em { color:var(--gold); font-style:italic; }
+.signup-panel__sub { font-size:16px; color:rgba(255,255,255,.62); line-height:1.7; margin-bottom:36px; }
+.panel-perks { display:flex; flex-direction:column; gap:16px; }
+.panel-perk { display:flex; align-items:flex-start; gap:14px; }
+.perk-icon { width:36px; height:36px; border-radius:var(--r-sm); background:rgba(255,255,255,.08); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.perk-text strong { display:block; font-size:14px; font-weight:700; color:#fff; margin-bottom:3px; }
+.perk-text span { font-size:13px; color:rgba(255,255,255,.55); line-height:1.5; }
+
+.signup-panel__quote { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:var(--r-md); padding:20px 22px; margin-top:24px; }
+.panel-quote-text { font-size:14px; color:rgba(255,255,255,.75); line-height:1.65; font-style:italic; margin-bottom:14px; }
+.panel-quote-author { display:flex; align-items:center; gap:10px; }
+.panel-quote-av { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--gold),#c4851a); flex-shrink:0; }
+.panel-quote-name { font-size:13px; font-weight:700; color:#fff; }
+.panel-quote-role { font-size:12px; color:rgba(255,255,255,.5); }
+
+/* Right panel — form */
+.signup-form-wrap { background:#fff; padding: clamp(36px,4vw,60px) clamp(28px,4vw,56px); overflow-y:auto; }
+.signup-form-wrap h2 { font-family:var(--font-head); font-size:clamp(22px,2.5vw,28px); font-weight:800; color:var(--gray-900); margin-bottom:6px; }
+.signup-form-wrap .form-sub { font-size:15px; color:var(--gray-500); margin-bottom:36px; }
+.form-sub a { color:var(--navy); font-weight:600; border-bottom:1.5px solid var(--gold); }
+
+/* Plan select */
+.plan-radio-group { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:4px; }
+.plan-radio { position:relative; }
+.plan-radio input[type=radio] { position:absolute; opacity:0; width:0; height:0; }
+.plan-radio label {
+  display:flex; flex-direction:column; align-items:center; gap:3px; padding:12px 8px;
+  border:1.5px solid var(--gray-200); border-radius:var(--r); cursor:pointer; text-align:center;
+  transition:all .2s; background:#fff;
+}
+.plan-radio label:hover { border-color:var(--navy-200); background:var(--navy-50); }
+.plan-radio input[type=radio]:checked + label { border-color:var(--navy); background:var(--navy-50); box-shadow:0 0 0 3px rgba(15,32,67,.08); }
+.plan-radio label .plan-r-tier { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--gold-dark); }
+.plan-radio label .plan-r-name { font-family:var(--font-head); font-size:14px; font-weight:700; color:var(--gray-900); }
+.plan-radio label .plan-r-price { font-size:12px; color:var(--gray-500); }
+
+/* Form sections */
+.form-section { margin-bottom:28px; }
+.form-section-title { font-family:var(--font-head); font-size:13.5px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--gray-400); margin-bottom:18px; padding-bottom:10px; border-bottom:1px solid var(--gray-100); }
+.form-row-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+
+/* Subdomain input */
+.subdomain-wrap { display:flex; border:1.5px solid var(--gray-200); border-radius:var(--r); overflow:hidden; transition:border-color .15s, box-shadow .15s; }
+.subdomain-wrap:focus-within { border-color:var(--navy); box-shadow:0 0 0 4px rgba(15,32,67,.07); }
+.subdomain-wrap.is-invalid { border-color:var(--red); box-shadow:0 0 0 4px rgba(220,38,38,.07); }
+.subdomain-wrap input { flex:1; border:none; padding:12px 14px; font-size:15px; outline:none; background:transparent; color:var(--gray-900); min-width:0; }
+.subdomain-suffix { display:flex; align-items:center; padding:0 14px; background:var(--gray-50); border-left:1.5px solid var(--gray-200); font-size:13.5px; color:var(--gray-500); font-weight:500; white-space:nowrap; }
+
+/* Password toggle */
+.password-input-wrap { position:relative; }
+.password-input-wrap .pub-input { padding-right:62px; }
+.password-toggle {
+  position:absolute; right:14px; top:50%; transform:translateY(-50%);
+  border:none; background:transparent; padding:0; cursor:pointer;
+  font-size:13px; font-weight:700; color:var(--navy);
+}
+.password-toggle:hover { color:var(--navy-800); }
+.password-toggle:focus-visible {
+  outline:2px solid rgba(15,32,67,.18);
+  outline-offset:4px;
+  border-radius:999px;
+}
+
+/* Password strength */
+.password-strength { height:4px; border-radius:2px; background:var(--gray-200); margin-top:8px; overflow:hidden; }
+.password-strength__bar { height:100%; border-radius:2px; width:0; transition:width .3s, background .3s; }
+
+/* Terms */
+.terms-check { display:flex; align-items:flex-start; gap:12px; }
+.terms-check input[type=checkbox] { width:18px; height:18px; border:1.5px solid var(--gray-300); border-radius:4px; cursor:pointer; flex-shrink:0; margin-top:2px; accent-color:var(--navy); }
+.terms-check label { font-size:14px; color:var(--gray-600); line-height:1.55; cursor:pointer; }
+.terms-check label a { color:var(--navy); font-weight:600; border-bottom:1px solid var(--gold); }
+
+/* Submit */
+.signup-submit { width:100%; padding:16px; font-family:var(--font-head); font-size:17px; font-weight:800; background:var(--navy); color:#fff; border:none; border-radius:var(--r-pill); cursor:pointer; transition:all .25s; box-shadow:0 4px 20px rgba(15,32,67,.2); }
+.signup-submit:hover { background:var(--navy-800); transform:translateY(-2px); box-shadow:0 8px 28px rgba(15,32,67,.3); }
+.signup-submit:active { transform:translateY(0); }
+.form-login-link { text-align:center; margin-top:18px; font-size:14px; color:var(--gray-500); }
+.form-login-link a { color:var(--navy); font-weight:600; }
+
+/* Error summary */
+.form-errors-summary { background:var(--red-50); border:1px solid #fca5a5; border-radius:var(--r); padding:14px 18px; margin-bottom:24px; }
+.form-errors-summary p { font-size:14px; color:var(--red); font-weight:600; margin-bottom:6px; }
+.form-errors-summary ul { list-style:disc; padding-left:18px; }
+.form-errors-summary li { font-size:13.5px; color:var(--red); margin-top:4px; }
+
+@media (max-width: 900px) {
+  .signup-wrap { grid-template-columns:1fr; border-radius:0; box-shadow:none; }
+  .signup-panel { position:static; height:auto; }
+  .plan-radio-group { grid-template-columns:1fr; }
+  .form-row-2 { grid-template-columns:1fr; }
+}
+{% endblock %}
+
+{% block content %}
+<div class="signup-page">
+  <div class="signup-wrap">
+
+    <!-- Left: Benefits panel -->
+    <aside class="signup-panel">
+      <div class="signup-panel__logo">
+        <a href="/" class="pub-logo">
+          <div class="pub-logo__mark">{{ saas_name|first|upper }}</div>
+          <span class="pub-logo__name">{{ saas_name }}</span>
+        </a>
+      </div>
+
+      <div class="signup-panel__hero">
+        <h2 class="signup-panel__headline">
+          Your micro-credit<br>platform is <em>ready</em><br>in minutes.
+        </h2>
+        <p class="signup-panel__sub">
+          Set up your isolated, secure workspace. Add borrowers. Start disbursing — all today.
+        </p>
+
+        <div class="panel-perks">
+          <div class="panel-perk">
+            <div class="perk-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div class="perk-text">
+              <strong>Your data, completely isolated</strong>
+              <span>Private PostgreSQL schema — no data mixing with other companies.</span>
+            </div>
+          </div>
+          <div class="panel-perk">
+            <div class="perk-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="perk-text">
+              <strong>Up and running in &lt; 5 minutes</strong>
+              <span>No installation. No IT department. Works immediately.</span>
+            </div>
+          </div>
+          <div class="panel-perk">
+            <div class="perk-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="perk-text">
+              <strong>Full features during your trial</strong>
+              <span>Every feature unlocked. No artificial limits during the trial period.</span>
+            </div>
+          </div>
+          <div class="panel-perk">
+            <div class="perk-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="perk-text">
+              <strong>Cancel anytime</strong>
+              <span>No long-term contracts. Export your data whenever you want.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="signup-panel__quote">
+          <div class="panel-quote-text">"We went from spreadsheets to managing 400 borrowers professionally in one afternoon. The setup was shockingly easy."</div>
+          <div class="panel-quote-author">
+            <div class="panel-quote-av"></div>
+            <div>
+              <div class="panel-quote-name">Abena Mensah</div>
+              <div class="panel-quote-role">Golden Credit Co.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:12px;color:rgba(255,255,255,.3)">
+        © {% now "Y" %} {{ saas_name }} · <a href="/terms/" style="color:rgba(255,255,255,.4)">Terms</a> · <a href="/privacy/" style="color:rgba(255,255,255,.4)">Privacy</a>
+      </div>
+    </aside>
+
+    <!-- Right: Form -->
+    <div class="signup-form-wrap">
+      <h2>Create your account</h2>
+      <p class="form-sub">Already have an account? <a href="/login/">Sign in →</a></p>
+
+      {% if form.non_field_errors %}
+      <div class="form-errors-summary">
+        <p>Please fix the following errors:</p>
+        <ul>
+          {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+          {% for field in form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <form method="post" novalidate autocomplete="off" id="signupForm">
+        {% csrf_token %}
+
+        <!-- Plan selection -->
+        <div class="form-section">
+          <div class="form-section-title">Choose your plan</div>
+          <div class="plan-radio-group">
+            {% for plan in plans %}
+            <div class="plan-radio">
+              <input type="radio"
+                     name="{{ form.plan.html_name }}"
+                     value="{{ plan.pk }}"
+                     id="plan_opt_{{ plan.pk }}"
+                     data-trial-days="{{ plan.trial_days }}"
+                     {% if form.plan.value == plan.pk|stringformat:"s" %}checked
+                     {% elif forloop.first and not form.plan.value %}checked{% endif %}>
+              <label for="plan_opt_{{ plan.pk }}">
+                <span class="plan-r-tier">{{ plan.get_tier_display }}</span>
+                <span class="plan-r-name">{{ plan.name }}</span>
+                <span class="plan-r-price">{{ plan.price_monthly|public_money0 }}/mo</span>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+          {% if form.plan.errors %}<div class="pub-field-error" style="margin-top:8px">{% for e in form.plan.errors %}{{ e }}{% endfor %}</div>{% endif %}
+          <div class="pub-field-hint" style="margin-top:8px">All plans include a free trial. No credit card required.</div>
+        </div>
+
+        <!-- Company info -->
+        <div class="form-section">
+          <div class="form-section-title">Company information</div>
+
+          <div class="pub-field">
+            <label class="pub-label" for="{{ form.company_name.id_for_label }}">Company Name <span>*</span></label>
+            <input class="pub-input {% if form.company_name.errors %}is-invalid{% endif %}"
+                   type="text" id="{{ form.company_name.id_for_label }}"
+                   name="{{ form.company_name.html_name }}"
+                   value="{{ form.company_name.value|default:'' }}"
+                   placeholder="e.g. Acme Micro-Credit Ltd" autocomplete="off">
+            {% if form.company_name.errors %}<div class="pub-field-error">{% for e in form.company_name.errors %}{{ e }}{% endfor %}</div>{% endif %}
+          </div>
+
+          <div class="pub-field" style="margin-top:16px">
+            <label class="pub-label" for="{{ form.subdomain.id_for_label }}">Workspace URL <span>*</span></label>
+            <div class="subdomain-wrap {% if form.subdomain.errors %}is-invalid{% endif %}">
+              <input type="text" id="{{ form.subdomain.id_for_label }}"
+                     name="{{ form.subdomain.html_name }}"
+                     value="{{ form.subdomain.value|default:'' }}"
+                     placeholder="yourcompany" autocomplete="off" id="subdomainInput">
+              <div class="subdomain-suffix">.{{ main_domain }}</div>
+            </div>
+            {% if form.subdomain.errors %}<div class="pub-field-error" style="margin-top:6px">{% for e in form.subdomain.errors %}{{ e }}{% endfor %}</div>{% endif %}
+            <div class="pub-field-hint">Lowercase letters, numbers and hyphens only. This is your company's private login URL.</div>
+          </div>
+        </div>
+
+        <!-- Account info -->
+        <div class="form-section">
+          <div class="form-section-title">Your account</div>
+
+          <div class="form-row-2">
+            <div class="pub-field">
+              <label class="pub-label" for="{{ form.owner_name.id_for_label }}">Your Full Name <span>*</span></label>
+              <input class="pub-input {% if form.owner_name.errors %}is-invalid{% endif %}"
+                     type="text" id="{{ form.owner_name.id_for_label }}"
+                     name="{{ form.owner_name.html_name }}"
+                     value="{{ form.owner_name.value|default:'' }}"
+                     placeholder="Kwame Mensah">
+              {% if form.owner_name.errors %}<div class="pub-field-error">{% for e in form.owner_name.errors %}{{ e }}{% endfor %}</div>{% endif %}
+            </div>
+            <div class="pub-field">
+              <label class="pub-label" for="{{ form.owner_email.id_for_label }}">Work Email <span>*</span></label>
+              <input class="pub-input {% if form.owner_email.errors %}is-invalid{% endif %}"
+                     type="email" id="{{ form.owner_email.id_for_label }}"
+                     name="{{ form.owner_email.html_name }}"
+                     value="{{ form.owner_email.value|default:'' }}"
+                     placeholder="kwame@yourcompany.com">
+              {% if form.owner_email.errors %}<div class="pub-field-error">{% for e in form.owner_email.errors %}{{ e }}{% endfor %}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="form-row-2" style="margin-top:16px">
+            <div class="pub-field">
+              <label class="pub-label" for="{{ form.password.id_for_label }}">Password <span>*</span></label>
+              <div class="password-input-wrap">
+                <input class="pub-input {% if form.password.errors %}is-invalid{% endif %}"
+                       type="password" id="{{ form.password.id_for_label }}"
+                       name="{{ form.password.html_name }}"
+                       placeholder="Min. 8 characters">
+                <button type="button" class="password-toggle" data-target="{{ form.password.id_for_label }}" data-show-label="Show password" data-hide-label="Hide password" aria-label="Show password" aria-pressed="false">Show</button>
+              </div>
+              <div class="password-strength"><div class="password-strength__bar" id="pwStrengthBar"></div></div>
+              {% if form.password.errors %}<div class="pub-field-error">{% for e in form.password.errors %}{{ e }}{% endfor %}</div>{% endif %}
+            </div>
+            <div class="pub-field">
+              <label class="pub-label" for="{{ form.confirm_password.id_for_label }}">Confirm Password <span>*</span></label>
+              <div class="password-input-wrap">
+                <input class="pub-input {% if form.confirm_password.errors %}is-invalid{% endif %}"
+                       type="password" id="{{ form.confirm_password.id_for_label }}"
+                       name="{{ form.confirm_password.html_name }}"
+                       placeholder="Repeat password">
+                <button type="button" class="password-toggle" data-target="{{ form.confirm_password.id_for_label }}" data-show-label="Show password confirmation" data-hide-label="Hide password confirmation" aria-label="Show password confirmation" aria-pressed="false">Show</button>
+              </div>
+              {% if form.confirm_password.errors %}<div class="pub-field-error">{% for e in form.confirm_password.errors %}{{ e }}{% endfor %}</div>{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Referral or Promo</div>
+          <div class="form-row-2">
+            <div class="pub-field">
+              <label class="pub-label" for="{{ form.referral_code.id_for_label }}">Referral Code</label>
+              <input class="pub-input {% if form.referral_code.errors %}is-invalid{% endif %}"
+                     type="text" id="{{ form.referral_code.id_for_label }}"
+                     name="{{ form.referral_code.html_name }}"
+                     value="{{ form.referral_code.value|default:'' }}"
+                     placeholder="Optional referral code">
+              {% if form.referral_code.errors %}<div class="pub-field-error">{% for e in form.referral_code.errors %}{{ e }}{% endfor %}</div>{% endif %}
+              <div class="pub-field-hint">Use a referral code from an existing customer if one was shared with you.</div>
+            </div>
+            <div class="pub-field">
+              <label class="pub-label" for="{{ form.promo_code.id_for_label }}">Promo Code</label>
+              <input class="pub-input {% if form.promo_code.errors %}is-invalid{% endif %}"
+                     type="text" id="{{ form.promo_code.id_for_label }}"
+                     name="{{ form.promo_code.html_name }}"
+                     value="{{ form.promo_code.value|default:'' }}"
+                     placeholder="Optional promo code">
+              {% if form.promo_code.errors %}<div class="pub-field-error">{% for e in form.promo_code.errors %}{{ e }}{% endfor %}</div>{% endif %}
+              <div class="pub-field-hint">Eligible promo codes can extend the trial or discount your first subscription payment.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terms -->
+        <div class="pub-field" style="margin-bottom:28px">
+          <div class="terms-check">
+            <input type="checkbox" id="{{ form.agree_terms.id_for_label }}" name="{{ form.agree_terms.html_name }}" {% if form.agree_terms.value %}checked{% endif %}>
+            <label for="{{ form.agree_terms.id_for_label }}">
+              I agree to the <a href="/terms/" target="_blank">Terms of Service</a> and <a href="/privacy/" target="_blank">Privacy Policy</a>. I confirm I am authorised to create this account on behalf of my organisation.
+            </label>
+          </div>
+          {% if form.agree_terms.errors %}<div class="pub-field-error" style="margin-top:6px">{% for e in form.agree_terms.errors %}{{ e }}{% endfor %}</div>{% endif %}
+        </div>
+
+        <button type="submit" class="signup-submit" id="signupSubmitBtn">
+          Create My Account — Free for <span id="trialDaysLabel">{{ plans.0.trial_days|default:"14" }}</span> Days
+        </button>
+        <div class="form-login-link">
+          Already have an account? <a href="/login/">Sign in here</a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  /* Auto-slug company name → subdomain */
+  var companyInput  = document.querySelector('[name="{{ form.company_name.html_name }}"]');
+  var subInput      = document.querySelector('[name="{{ form.subdomain.html_name }}"]');
+  var userEditedSlug = false;
+
+  if(companyInput && subInput){
+    subInput.addEventListener('input', function(){ userEditedSlug = subInput.value.length > 0; });
+    companyInput.addEventListener('input', function(){
+      if(userEditedSlug) return;
+      var slug = companyInput.value
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g,'')
+        .trim()
+        .replace(/\s+/g,'-')
+        .replace(/-+/g,'-')
+        .slice(0,40);
+      subInput.value = slug;
+    });
+  }
+
+  /* Trial days label — update when plan changes */
+  var planRadios  = document.querySelectorAll('input[name="{{ form.plan.html_name }}"]');
+  var trialLabel  = document.getElementById('trialDaysLabel');
+  function syncTrialDays() {
+    var checked = document.querySelector('input[name="{{ form.plan.html_name }}"]:checked');
+    if (checked && trialLabel) trialLabel.textContent = checked.dataset.trialDays || '14';
+  }
+  planRadios.forEach(function(r){ r.addEventListener('change', syncTrialDays); });
+  syncTrialDays(); // set correct value on page load
+
+  /* Password strength */
+  var pwInput = document.querySelector('[name="{{ form.password.html_name }}"]');
+  var bar     = document.getElementById('pwStrengthBar');
+  if(pwInput && bar){
+    pwInput.addEventListener('input', function(){
+      var v = pwInput.value;
+      var score = 0;
+      if(v.length >= 8)  score++;
+      if(/[A-Z]/.test(v)) score++;
+      if(/[0-9]/.test(v)) score++;
+      if(/[^A-Za-z0-9]/.test(v)) score++;
+      var pct   = ['0%','30%','55%','80%','100%'][score];
+      var color = ['#dc2626','#f59e0b','#f59e0b','#16a34a','#16a34a'][score];
+      bar.style.width = pct;
+      bar.style.background = color;
+    });
+  }
+
+  document.querySelectorAll('.password-toggle').forEach(function(toggle){
+    toggle.addEventListener('click', function(){
+      var input = document.getElementById(toggle.dataset.target);
+      if(!input) return;
+      var showPassword = input.type === 'password';
+      input.type = showPassword ? 'text' : 'password';
+      toggle.textContent = showPassword ? 'Hide' : 'Show';
+      toggle.setAttribute('aria-pressed', showPassword ? 'true' : 'false');
+      toggle.setAttribute('aria-label', showPassword ? toggle.dataset.hideLabel : toggle.dataset.showLabel);
+    });
+  });
+})();
+</script>
+{% endblock %}

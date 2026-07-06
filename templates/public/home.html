@@ -1,0 +1,658 @@
+{% extends "public/base.html" %}
+{% load public_money %}
+{% load humanize %}
+
+{% block title %}{{ saas_name }} — Professional Micro-Credit Management Platform{% endblock %}
+{% block meta_description %}{{ saas_name }} gives micro-credit institutions a professional platform to manage loans, borrowers, agents, payments and reports. Start your 14-day free trial today.{% endblock %}
+
+{% block head_styles %}
+/* ── Hero ── */
+.hero {
+  background: linear-gradient(140deg, #060e20 0%, #0f2043 55%, #172d5c 100%);
+  padding: calc(var(--header-h) + 72px) 0 80px;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content:''; position:absolute; inset:0;
+  background-image: radial-gradient(rgba(255,255,255,.045) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+.hero-glow {
+  position:absolute; top:-20%; right:-5%;
+  width:65%; height:130%;
+  background: radial-gradient(ellipse at 60% 40%, rgba(232,160,32,.10) 0%, transparent 65%);
+  pointer-events:none;
+}
+.hero__inner {
+  display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center;
+  position:relative; z-index:2;
+}
+.hero__text { padding-right: 24px; }
+.pub-h1 em { color:var(--gold); font-style:italic; }
+.hero__subtitle { font-size:clamp(16px,1.8vw,19px); color:rgba(255,255,255,.68); line-height:1.75; max-width:500px; margin:20px 0 32px; }
+.hero__actions { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:28px; }
+.hero__trust { display:flex; flex-wrap:wrap; gap:20px; }
+.trust-item { display:flex; align-items:center; gap:8px; font-size:13.5px; color:rgba(255,255,255,.6); font-weight:500; }
+.trust-item svg { color:var(--gold); flex-shrink:0; }
+
+/* Mockup */
+.mockup-wrap { position:relative; animation:float 7s ease-in-out infinite; }
+.mockup-wrap::before {
+  content:''; position:absolute; bottom:-40px; left:10%; right:10%;
+  height:60px; background: radial-gradient(ellipse,rgba(0,0,0,.35) 0%,transparent 70%);
+  filter:blur(16px);
+}
+.hero-mockup {
+  background:#fff; border-radius:14px; overflow:hidden;
+  box-shadow: 0 48px 120px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.08);
+  transform: perspective(1100px) rotateY(-7deg) rotateX(2deg);
+}
+.mc { display:flex; align-items:center; gap:10px; padding:9px 14px; background:#e8eaed; border-bottom:1px solid #d0d3d8; }
+.mc-dots { display:flex; gap:5px; }
+.mc-dots span { width:10px; height:10px; border-radius:50%; }
+.mc-dots span:nth-child(1){background:#ff5f57;} .mc-dots span:nth-child(2){background:#ffbd2e;} .mc-dots span:nth-child(3){background:#28ca41;}
+.mc-url { flex:1; background:#fff; border-radius:5px; padding:3px 10px; font-size:11px; color:#666; border:1px solid #ddd; font-family:var(--font-body); }
+.mb { display:flex; height:290px; }
+.ms { width:52px; background:#0f2043; display:flex; flex-direction:column; align-items:center; padding:12px 0 0; gap:10px; flex-shrink:0; }
+.ms-logo { width:30px; height:30px; background:var(--gold); border-radius:7px; display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-weight:800; font-size:15px; color:#0f2043; }
+.ms-dot { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.18); }
+.ms-dot.a { background:var(--gold); }
+.mm { flex:1; background:#f8fafc; display:flex; flex-direction:column; overflow:hidden; }
+.mt { background:#fff; border-bottom:1px solid #e2e8f0; padding:9px 12px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.mt-title { font-size:11.5px; font-weight:700; color:#0f172a; }
+.mt-avatar { width:22px; height:22px; border-radius:50%; background:linear-gradient(135deg,#0f2043,#1a3460); }
+.mc-body { padding:10px; flex:1; overflow:hidden; display:flex; flex-direction:column; gap:8px; }
+.stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+.stat-c { background:#fff; border:1px solid #e2e8f0; border-radius:7px; padding:8px 9px; }
+.stat-c .sl { font-size:8.5px; color:#64748b; text-transform:uppercase; letter-spacing:.07em; margin-bottom:2px; }
+.stat-c .sv { font-size:13.5px; font-weight:800; color:#0f172a; line-height:1; }
+.stat-c .sg { font-size:8.5px; color:#16a34a; font-weight:600; margin-top:2px; }
+.tbl { background:#fff; border:1px solid #e2e8f0; border-radius:7px; overflow:hidden; flex:1; }
+.tbl-h { padding:6px 9px; font-size:9.5px; font-weight:700; color:#334155; border-bottom:1px solid #e2e8f0; }
+.tbl-r { display:flex; align-items:center; gap:6px; padding:5.5px 9px; border-bottom:1px solid #f1f5f9; }
+.tbl-r:last-child { border:none; }
+.tbl-av { width:20px; height:20px; border-radius:50%; flex-shrink:0; }
+.tbl-av:nth-child(1) { background:linear-gradient(135deg,#0f2043,#e8a020); }
+.tbl-name { font-size:9.5px; font-weight:600; color:#1e293b; flex:1; }
+.tbl-amt  { font-size:9.5px; font-weight:700; color:#0f172a; width:50px; text-align:right; }
+.tbl-badge { font-size:8.5px; font-weight:700; padding:2px 6px; border-radius:9px; flex-shrink:0; }
+.tbl-badge.a { background:#dcfce7; color:#16a34a; }
+.tbl-badge.p { background:#fef9ec; color:#d97706; }
+.tbl-prog { display:flex; align-items:center; gap:4px; width:52px; }
+.prog-track { flex:1; height:3.5px; background:#e2e8f0; border-radius:2px; overflow:hidden; }
+.prog-bar { height:100%; background:linear-gradient(90deg,#0f2043,#e8a020); border-radius:2px; }
+.tbl-pct { font-size:8.5px; color:#94a3b8; width:22px; text-align:right; }
+
+/* Stats bar */
+.stats-bar { background:#fff; border-bottom:1px solid var(--gray-100); }
+.stats-bar__inner { display:grid; grid-template-columns:repeat(4,1fr); }
+.stat-block { padding:28px 32px; text-align:center; border-right:1px solid var(--gray-100); }
+.stat-block:last-child { border-right:none; }
+.stat-block__value { font-family:var(--font-head); font-size:clamp(28px,3.5vw,40px); font-weight:800; color:var(--navy); line-height:1; margin-bottom:6px; }
+.stat-block__label { font-size:13.5px; color:var(--gray-500); font-weight:500; }
+.stat-block__value span { color:var(--gold); }
+
+/* Features overview */
+.features-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:28px; }
+.feat-tile {
+  background:var(--white); border:1px solid var(--gray-200); border-radius:var(--r-lg);
+  padding:28px; transition:all .3s var(--ease);
+}
+.feat-tile:hover { border-color:var(--navy-200); box-shadow:var(--sh-md); transform:translateY(-4px); }
+.feat-icon {
+  width:48px; height:48px; border-radius:var(--r); background:var(--navy-50); color:var(--navy);
+  display:flex; align-items:center; justify-content:center; margin-bottom:18px;
+  transition:background .2s, color .2s;
+}
+.feat-tile:hover .feat-icon { background:var(--navy); color:var(--white); }
+.feat-title { font-family:var(--font-head); font-size:17px; font-weight:700; color:var(--gray-900); margin-bottom:8px; }
+.feat-desc  { font-size:14px; color:var(--gray-500); line-height:1.65; }
+
+/* Spotlight */
+.spotlight__inner { display:grid; grid-template-columns:1fr 1fr; gap:72px; align-items:center; }
+.spotlight__inner--rev { direction:rtl; }
+.spotlight__inner--rev > * { direction:ltr; }
+.spotlight__list { list-style:none; margin-top:24px; display:flex; flex-direction:column; gap:14px; }
+.spotlight__list li { display:flex; align-items:flex-start; gap:12px; font-size:15px; color:var(--gray-600); line-height:1.6; }
+.spotlight__list li::before { content:''; width:20px; height:20px; background:var(--green-100); color:var(--green); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2316a34a'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E"); background-size:14px; background-position:center; background-repeat:no-repeat; }
+.spotlight__visual { border-radius:var(--r-xl); overflow:hidden; box-shadow:var(--sh-xl); }
+
+/* UI preview cards inside spotlight */
+.ui-preview { background:var(--gray-50); border:1px solid var(--gray-200); border-radius:var(--r-xl); padding:24px; }
+.ui-preview-row { background:#fff; border:1px solid var(--gray-200); border-radius:var(--r); padding:16px; margin-bottom:10px; display:flex; align-items:center; gap:14px; }
+.ui-preview-row:last-child { margin-bottom:0; }
+.ui-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--navy),var(--navy-800)); flex-shrink:0; }
+.ui-row-info { flex:1; min-width:0; }
+.ui-row-name { font-size:14px; font-weight:600; color:var(--gray-900); }
+.ui-row-sub  { font-size:12px; color:var(--gray-500); margin-top:2px; }
+.ui-row-amount { font-family:var(--font-head); font-size:15px; font-weight:700; color:var(--navy); }
+.ui-row-badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:var(--r-pill); }
+.ui-row-badge.active  { background:var(--green-100); color:var(--green); }
+.ui-row-badge.pending { background:var(--gold-50); color:var(--gold-dark); }
+.ui-progress { height:6px; background:var(--gray-200); border-radius:3px; overflow:hidden; margin-top:8px; }
+.ui-progress-bar { height:100%; background:linear-gradient(90deg,var(--navy),var(--gold)); border-radius:3px; }
+
+/* How it works */
+.steps { display:grid; grid-template-columns:repeat(3,1fr); gap:40px; position:relative; }
+.steps::before { content:''; position:absolute; top:32px; left:calc(33.3% + 24px); right:calc(33.3% + 24px); height:2px; background:rgba(255,255,255,.12); }
+.step { text-align:center; }
+.step-num { width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,.08); border:2px solid rgba(255,255,255,.15); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-family:var(--font-head); font-size:24px; font-weight:800; color:var(--gold); transition:all .3s; }
+.step:hover .step-num { background:var(--gold); color:var(--navy); border-color:var(--gold); }
+.step-title { font-family:var(--font-head); font-size:19px; font-weight:700; color:var(--white); margin-bottom:10px; }
+.step-desc  { font-size:14.5px; color:rgba(255,255,255,.6); line-height:1.7; }
+
+/* Pricing preview */
+.pricing-preview-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+.ppcard { background:var(--white); border:1.5px solid var(--gray-200); border-radius:var(--r-lg); padding:32px; position:relative; transition:all .3s; }
+.ppcard:hover { transform:translateY(-4px); box-shadow:var(--sh-lg); }
+.ppcard--featured { border-color:var(--navy); box-shadow:0 0 0 3px rgba(15,32,67,.08); }
+.ppcard-popular { position:absolute; top:-14px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; padding:4px 18px; border-radius:var(--r-pill); white-space:nowrap; }
+.ppcard-tier { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--gold); margin-bottom:8px; }
+.ppcard-name { font-family:var(--font-head); font-size:22px; font-weight:800; color:var(--gray-900); margin-bottom:4px; }
+.ppcard-desc { font-size:13.5px; color:var(--gray-500); margin-bottom:22px; }
+.ppcard-price { margin-bottom:24px; }
+.ppcard-amount { font-family:var(--font-head); font-size:38px; font-weight:800; color:var(--gray-900); line-height:1; }
+.ppcard-currency { font-size:18px; color:var(--gray-500); vertical-align:top; margin-top:6px; display:inline-block; margin-right:2px; }
+.ppcard-period { font-size:13px; color:var(--gray-500); }
+.ppcard-features { list-style:none; margin-bottom:28px; display:flex; flex-direction:column; gap:10px; }
+.ppcard-features li { font-size:14px; color:var(--gray-600); display:flex; align-items:center; gap:10px; }
+.ppcard-features li svg { color:var(--green); flex-shrink:0; }
+
+/* Testimonials */
+.testimonials-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:28px; }
+.tcard { background:var(--white); border:1px solid var(--gray-200); border-radius:var(--r-lg); padding:32px; box-shadow:var(--sh-xs); display:flex; flex-direction:column; gap:20px; }
+.tcard-quote { font-size:15px; color:var(--gray-700); line-height:1.75; font-style:italic; flex:1; }
+.tcard-quote::before { content:'"'; font-family:var(--font-head); font-size:52px; color:var(--gold); line-height:.6; display:block; margin-bottom:12px; }
+.tcard-author { display:flex; align-items:center; gap:14px; }
+.tcard-av { width:44px; height:44px; border-radius:50%; flex-shrink:0; }
+.tcard-name { font-family:var(--font-head); font-size:15px; font-weight:700; color:var(--gray-900); }
+.tcard-role { font-size:13px; color:var(--gray-500); margin-top:2px; }
+.tcard-stars { color:var(--gold); font-size:14px; letter-spacing:2px; margin-bottom:4px; }
+
+/* CTA */
+.cta-banner { background:linear-gradient(135deg,var(--navy-900) 0%,var(--navy) 50%,var(--navy-800) 100%); padding:clamp(56px,7vw,96px) 0; text-align:center; position:relative; overflow:hidden; }
+.cta-banner::before { content:''; position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,.04) 1px,transparent 1px); background-size:28px 28px; }
+.cta-banner__inner { position:relative; z-index:2; }
+.cta-banner h2 { font-family:var(--font-head); font-size:clamp(28px,4vw,48px); font-weight:800; color:var(--white); margin-bottom:16px; }
+.cta-banner p { font-size:clamp(15px,1.8vw,18px); color:rgba(255,255,255,.65); margin-bottom:36px; max-width:520px; margin-left:auto; margin-right:auto; }
+.cta-banner__actions { display:flex; justify-content:center; gap:16px; flex-wrap:wrap; }
+.cta-trial-note { margin-top:20px; font-size:13px; color:rgba(255,255,255,.4); }
+
+/* Responsive */
+@media (max-width:1024px) {
+  .hero__inner { grid-template-columns:1fr; gap:48px; }
+  .hero__text { padding-right:0; text-align:center; }
+  .hero__trust { justify-content:center; }
+  .hero__actions { justify-content:center; }
+  .mockup-wrap { max-width:560px; margin:0 auto; }
+  .stats-bar__inner { grid-template-columns:repeat(2,1fr); }
+  .stat-block:nth-child(2) { border-right:none; }
+  .features-grid { grid-template-columns:repeat(2,1fr); }
+  .spotlight__inner { grid-template-columns:1fr; gap:40px; }
+  .spotlight__inner--rev { direction:ltr; }
+  .pricing-preview-grid { grid-template-columns:1fr; max-width:400px; margin:0 auto; }
+  .testimonials-grid { grid-template-columns:1fr; max-width:540px; margin:0 auto; }
+  .steps { grid-template-columns:1fr; }
+  .steps::before { display:none; }
+}
+@media (max-width:640px) {
+  .stats-bar__inner { grid-template-columns:1fr 1fr; }
+  .features-grid { grid-template-columns:1fr; }
+  .stat-block { padding:20px 16px; }
+  .hero__actions { flex-direction:column; align-items:center; }
+  .hero__actions .btn { width:100%; max-width:320px; }
+}
+@media (max-width:480px) {
+  .hero { padding: calc(var(--header-h) + 48px) 0 56px; }
+  .stats-bar__inner,
+  .stat-row { grid-template-columns:1fr; }
+  .hero__trust { gap:12px; }
+  .mockup-wrap { max-width:100%; }
+  .hero-mockup { transform:none; }
+}
+{% endblock %}
+
+{% block content %}
+
+<!-- ═══════════════════════════════════════════════════════ HERO ═ -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="pub-container">
+    <div class="hero__inner">
+
+      <!-- Text -->
+      <div class="hero__text">
+        <div class="pub-badge pub-badge--white" style="margin-bottom:24px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+          Purpose-built for micro-credit institutions
+        </div>
+        <h1 class="pub-h1">
+          Manage Your<br>
+          Micro-Credit<br>
+          <em>Business Smarter</em>
+        </h1>
+        <p class="hero__subtitle">
+          The all-in-one platform built for micro-credit institutions. Track every loan, manage every borrower, collect every payment — all from one professional dashboard.
+        </p>
+        <div class="hero__actions">
+          <a href="/signup/" class="btn btn-gold btn--lg">
+            Start Free Trial
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="/features/" class="btn btn-outline btn--lg">See Features</a>
+        </div>
+        <div class="hero__trust">
+          <div class="trust-item">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+            14-day free trial
+          </div>
+          <div class="trust-item">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+            No credit card required
+          </div>
+          <div class="trust-item">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+            Set up in minutes
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard mockup -->
+      <div class="mockup-wrap">
+        <div class="hero-mockup">
+          <div class="mc">
+            <div class="mc-dots"><span></span><span></span><span></span></div>
+            <div class="mc-url">app.{{ saas_name|lower|cut:" " }}.com/dashboard</div>
+          </div>
+          <div class="mb">
+            <div class="ms">
+              <div class="ms-logo">{{ saas_name|first|upper }}</div>
+              <div class="ms-dot a"></div>
+              <div class="ms-dot"></div>
+              <div class="ms-dot"></div>
+              <div class="ms-dot"></div>
+            </div>
+            <div class="mm">
+              <div class="mt">
+                <div class="mt-title">Good morning, Admin</div>
+                <div class="mt-avatar"></div>
+              </div>
+              <div class="mc-body">
+                <div class="stat-row">
+                  <div class="stat-c">
+                    <div class="sl">Portfolio</div>
+                    <div class="sv">GHS 847K</div>
+                    <div class="sg">↑ 12.4%</div>
+                  </div>
+                  <div class="stat-c">
+                    <div class="sl">Borrowers</div>
+                    <div class="sv">234</div>
+                    <div class="sg">↑ 18 new</div>
+                  </div>
+                  <div class="stat-c">
+                    <div class="sl">Today</div>
+                    <div class="sv">GHS 12K</div>
+                    <div class="sg">8 payments</div>
+                  </div>
+                </div>
+                <div class="tbl">
+                  <div class="tbl-h">Recent Loans</div>
+                  <div class="tbl-r">
+                    <div class="tbl-av" style="background:linear-gradient(135deg,#0f2043,#e8a020)"></div>
+                    <div class="tbl-name">Ama Owusu</div>
+                    <div class="tbl-amt">GHS 2,500</div>
+                    <div class="tbl-badge a">Active</div>
+                    <div class="tbl-prog"><div class="prog-track"><div class="prog-bar" style="width:78%"></div></div><div class="tbl-pct">78%</div></div>
+                  </div>
+                  <div class="tbl-r">
+                    <div class="tbl-av" style="background:linear-gradient(135deg,#1a3460,#16a34a)"></div>
+                    <div class="tbl-name">Kwame Asante</div>
+                    <div class="tbl-amt">GHS 1,200</div>
+                    <div class="tbl-badge a">Active</div>
+                    <div class="tbl-prog"><div class="prog-track"><div class="prog-bar" style="width:55%"></div></div><div class="tbl-pct">55%</div></div>
+                  </div>
+                  <div class="tbl-r">
+                    <div class="tbl-av" style="background:linear-gradient(135deg,#0f2043,#64748b)"></div>
+                    <div class="tbl-name">Abena Mensah</div>
+                    <div class="tbl-amt">GHS 5,000</div>
+                    <div class="tbl-badge p">Pending</div>
+                    <div class="tbl-prog"><div class="prog-track"><div class="prog-bar" style="width:12%"></div></div><div class="tbl-pct">12%</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /hero__inner -->
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════ STATS BAR ═ -->
+<div class="stats-bar">
+  <div class="pub-container">
+    <div class="stats-bar__inner">
+      <div class="stat-block">
+        <div class="stat-block__value">{{ homepage_stats.companies_onboarded_display }}</div>
+        <div class="stat-block__label">Companies Onboarded</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-block__value">{% public_currency_symbol %}{{ homepage_stats.total_expected_repayment_display }}</div>
+        <div class="stat-block__label">Expected Repayment Managed</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-block__value">{{ homepage_stats.borrowers_served_display }}</div>
+        <div class="stat-block__label">Borrowers Served</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-block__value">99.9<span>%</span></div>
+        <div class="stat-block__label">Platform Uptime</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ FEATURES ═ -->
+<section class="pub-section pub-section--gray">
+  <div class="pub-container">
+    <div class="section-head section-head--center fade-in">
+      <div class="pub-kicker">Everything you need</div>
+      <h2 class="pub-h2">One platform. Every lending operation.</h2>
+      <p class="pub-subtitle">From borrower onboarding to final repayment, {{ saas_name }} handles every step of the micro-credit lifecycle.</p>
+    </div>
+    <div class="features-grid">
+
+      <div class="feat-tile fade-in delay-1">
+        <div class="feat-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <div class="feat-title">Loan Management</div>
+        <div class="feat-desc">Full loan lifecycle from application to closure. Disburse, track instalments, handle early repayments and rollovers.</div>
+      </div>
+
+      <div class="feat-tile fade-in delay-2">
+        <div class="feat-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <div class="feat-title">Borrower Profiles</div>
+        <div class="feat-desc">Complete KYC records with photos, guarantors, employment history, and repayment behaviour score per borrower.</div>
+      </div>
+
+      <div class="feat-tile fade-in delay-3">
+        <div class="feat-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/></svg>
+        </div>
+        <div class="feat-title">Repayment Tracking</div>
+        <div class="feat-desc">Daily collection dashboards, overdue alerts, penalty calculations, and scheduled repayment calendars for every loan.</div>
+      </div>
+
+      <div class="feat-tile fade-in delay-1">
+        <div class="feat-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+        </div>
+        <div class="feat-title">Agent Management</div>
+        <div class="feat-desc">Manage field agents, assign borrower portfolios, track individual performance, and run payroll with commission calculations.</div>
+      </div>
+
+      <div class="feat-tile fade-in delay-2">
+        <div class="feat-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <div class="feat-title">Financial Reports</div>
+        <div class="feat-desc">Real-time dashboards, portfolio aging reports, profit &amp; loss statements, and loan book analytics at your fingertips.</div>
+      </div>
+
+      <div class="feat-tile fade-in delay-3">
+        <div class="feat-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </div>
+        <div class="feat-title">SMS Notifications</div>
+        <div class="feat-desc">Automated repayment reminders, disbursement alerts, and bulk marketing campaigns. Reduce late payments by up to 40%.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ SPOTLIGHT 1 — Loans ═ -->
+<section class="pub-section">
+  <div class="pub-container">
+    <div class="spotlight__inner fade-in">
+      <div>
+        <div class="pub-kicker">Loan Management</div>
+        <h2 class="pub-h2">Your entire loan portfolio, under control</h2>
+        <p class="pub-subtitle">Track every loan from first disbursement to final repayment with complete audit trails and real-time status updates.</p>
+        <ul class="spotlight__list">
+          <li>Flexible loan products — daily, weekly, monthly, and custom repayment cycles</li>
+          <li>Automatic penalty and late fee calculation based on your rules</li>
+          <li>Rollover, restructure and partial settlement workflows built in</li>
+          <li>Printable loan statements and repayment schedules for borrowers</li>
+          <li>Group loans and cooperative lending with shared liability tracking</li>
+        </ul>
+        <div style="margin-top:28px">
+          <a href="/features/" class="btn-navy btn">See all features →</a>
+        </div>
+      </div>
+      <div>
+        <div class="ui-preview">
+          <div class="ui-preview-row">
+            <div class="ui-avatar" style="background:linear-gradient(135deg,#0f2043,#e8a020)"></div>
+            <div class="ui-row-info">
+              <div class="ui-row-name">Ama Owusu — Personal Loan</div>
+              <div class="ui-row-sub">Started Jan 2025 · 12 payments remaining</div>
+              <div class="ui-progress" style="margin-top:8px"><div class="ui-progress-bar" style="width:62%"></div></div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div class="ui-row-amount">GHS 2,500</div>
+              <div class="ui-row-badge active" style="margin-top:4px">Active</div>
+            </div>
+          </div>
+          <div class="ui-preview-row">
+            <div class="ui-avatar" style="background:linear-gradient(135deg,#1a3460,#16a34a)"></div>
+            <div class="ui-row-info">
+              <div class="ui-row-name">Kwame Asante — Business Loan</div>
+              <div class="ui-row-sub">Started Mar 2025 · 8 payments remaining</div>
+              <div class="ui-progress" style="margin-top:8px"><div class="ui-progress-bar" style="width:45%"></div></div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div class="ui-row-amount">GHS 8,000</div>
+              <div class="ui-row-badge active" style="margin-top:4px">Active</div>
+            </div>
+          </div>
+          <div class="ui-preview-row">
+            <div class="ui-avatar" style="background:linear-gradient(135deg,#0f2043,#475569)"></div>
+            <div class="ui-row-info">
+              <div class="ui-row-name">Abena Mensah — Emergency Loan</div>
+              <div class="ui-row-sub">Pending approval · Awaiting disbursement</div>
+              <div class="ui-progress" style="margin-top:8px"><div class="ui-progress-bar" style="width:5%"></div></div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div class="ui-row-amount">GHS 500</div>
+              <div class="ui-row-badge pending" style="margin-top:4px">Pending</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ SPOTLIGHT 2 — Reports ═ -->
+<section class="pub-section pub-section--gray">
+  <div class="pub-container">
+    <div class="spotlight__inner spotlight__inner--rev fade-in">
+      <div>
+        <div class="pub-kicker">Financial Intelligence</div>
+        <h2 class="pub-h2">Real-time visibility into your business</h2>
+        <p class="pub-subtitle">Make confident decisions with live dashboards, aging reports, and double-entry accounting built specifically for micro-credit.</p>
+        <ul class="spotlight__list">
+          <li>Live portfolio dashboard — total book, at-risk loans, collections due today</li>
+          <li>Loan aging report — 30, 60, 90+ day overdue categories at a glance</li>
+          <li>Agent performance reports — disbursements, collections, and commission summaries</li>
+          <li>Double-entry accounting with auto-generated journals for every transaction</li>
+          <li>Export to PDF or Excel for management reporting and audits</li>
+        </ul>
+        <div style="margin-top:28px">
+          <a href="/signup/" class="btn-gold btn">Start free trial →</a>
+        </div>
+      </div>
+      <div>
+        <div class="ui-preview">
+          <div style="background:#fff;border:1px solid var(--gray-200);border-radius:var(--r);padding:18px;margin-bottom:12px">
+            <div style="font-size:12px;color:var(--gray-500);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Portfolio Overview</div>
+            <div style="display:flex;gap:24px;flex-wrap:wrap">
+              <div><div style="font-size:22px;font-weight:800;color:var(--navy);font-family:var(--font-head)">GHS 847,500</div><div style="font-size:12px;color:var(--gray-500)">Total Outstanding</div></div>
+              <div><div style="font-size:22px;font-weight:800;color:var(--green);font-family:var(--font-head)">91.4%</div><div style="font-size:12px;color:var(--gray-500)">Repayment Rate</div></div>
+              <div><div style="font-size:22px;font-weight:800;color:var(--red);font-family:var(--font-head)">8.6%</div><div style="font-size:12px;color:var(--gray-500)">PAR &gt; 30 days</div></div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid var(--gray-200);border-radius:var(--r);padding:18px">
+            <div style="font-size:12px;color:var(--gray-500);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Collections This Week</div>
+            {% for bar in "12345"|make_list %}
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+              <div style="font-size:12px;color:var(--gray-500);width:24px">{{ forloop.counter|add:0 }}</div>
+              <div style="flex:1;height:10px;background:var(--gray-100);border-radius:5px;overflow:hidden">
+                <div style="height:100%;background:linear-gradient(90deg,var(--navy),var(--gold));border-radius:5px;width:{% if forloop.counter == 1 %}82{% elif forloop.counter == 2 %}65{% elif forloop.counter == 3 %}90{% elif forloop.counter == 4 %}48{% else %}74{% endif %}%"></div>
+              </div>
+              <div style="font-size:12px;font-weight:700;color:var(--navy);width:60px;text-align:right">GHS {% if forloop.counter == 1 %}8,420{% elif forloop.counter == 2 %}6,200{% elif forloop.counter == 3 %}9,100{% elif forloop.counter == 4 %}4,800{% else %}7,350{% endif %}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ HOW IT WORKS ═ -->
+<section class="pub-section pub-section--navy">
+  <div class="pub-container">
+    <div class="section-head section-head--center fade-in">
+      <div class="pub-kicker pub-kicker--light">Simple onboarding</div>
+      <h2 class="pub-h2 pub-h2--light">Up and running in three steps</h2>
+      <p class="pub-subtitle pub-subtitle--light pub-subtitle--wide">No lengthy implementations. No IT department needed. Get your first loan disbursed within 24 hours of signing up.</p>
+    </div>
+    <div class="steps">
+      <div class="step fade-in delay-1">
+        <div class="step-num">1</div>
+        <div class="step-title">Create your workspace</div>
+        <div class="step-desc">Sign up with your company name and choose a plan. Your private, isolated database is ready in seconds. No technical setup required.</div>
+      </div>
+      <div class="step fade-in delay-2">
+        <div class="step-num">2</div>
+        <div class="step-title">Configure and add your team</div>
+        <div class="step-desc">Upload your logo, define your loan products, set interest rates and repayment cycles, then add your agents and borrowers.</div>
+      </div>
+      <div class="step fade-in delay-3">
+        <div class="step-num">3</div>
+        <div class="step-title">Start lending with confidence</div>
+        <div class="step-desc">Disburse loans, track collections, send SMS reminders, and generate reports — all from one professional dashboard.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ PRICING PREVIEW ═ -->
+<section class="pub-section">
+  <div class="pub-container">
+    <div class="section-head section-head--center fade-in">
+      <div class="pub-kicker">Transparent pricing</div>
+      <h2 class="pub-h2">Plans for every stage of growth</h2>
+      <p class="pub-subtitle">Start free. Scale as you grow. All plans include a full-featured trial — no credit card required.</p>
+    </div>
+    <div class="pricing-preview-grid fade-in">
+      {% for plan in plans %}
+      <div class="ppcard {% if plan.tier == 'PROFESSIONAL' %}ppcard--featured{% endif %}">
+        {% if plan.tier == 'PROFESSIONAL' %}<div class="ppcard-popular">Most Popular</div>{% endif %}
+        <div class="ppcard-tier">{{ plan.get_tier_display }}</div>
+        <div class="ppcard-name">{{ plan.name }}</div>
+        <div class="ppcard-desc">{% if plan.tier == 'STARTER' %}For small operations just getting started.{% elif plan.tier == 'PROFESSIONAL' %}Everything you need for a growing business.{% else %}Unlimited scale with white-label support.{% endif %}</div>
+        <div class="ppcard-price">
+          <span class="ppcard-currency">{% public_currency_symbol %}</span><span class="ppcard-amount">{{ plan.price_monthly|public_money_number0 }}</span><span class="ppcard-period">/mo</span>
+        </div>
+        <ul class="ppcard-features">
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg> {% if plan.max_borrowers == -1 %}Unlimited borrowers{% else %}Up to {{ plan.max_borrowers }} borrowers{% endif %}</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg> {% if plan.max_agents == -1 %}Unlimited agents{% else %}Up to {{ plan.max_agents }} agents{% endif %}</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg> {{ plan.trial_days }}-day free trial</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg> Public website included</li>
+          {% if plan.features.accounting %}<li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg> Double-entry accounting</li>{% endif %}
+        </ul>
+        <a href="/signup/?plan={{ plan.tier|lower }}" class="btn btn--full {% if plan.tier == 'PROFESSIONAL' %}btn-navy{% else %}btn-ghost{% endif %}">
+          Start {{ plan.trial_days }}-Day Free Trial
+        </a>
+      </div>
+      {% empty %}
+      <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-500)">Plans loading… run <code>python manage.py seed_plans</code></div>
+      {% endfor %}
+    </div>
+    <div style="text-align:center;margin-top:32px">
+      <a href="/pricing/" style="font-size:15px;font-weight:600;color:var(--navy);border-bottom:2px solid var(--gold);padding-bottom:2px">Compare all plans in detail →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ TESTIMONIALS ═ -->
+<section class="pub-section pub-section--gray">
+  <div class="pub-container">
+    <div class="section-head section-head--center fade-in">
+      <div class="pub-kicker">Customer stories</div>
+      <h2 class="pub-h2">Trusted by micro-credit professionals</h2>
+    </div>
+    <div class="testimonials-grid">
+      <div class="tcard fade-in delay-1">
+        <div class="tcard-stars">★★★★★</div>
+        <div class="tcard-quote">Automated SMS reminders cut our late payments by nearly 40%. The platform literally pays for itself in the first month.</div>
+        <div class="tcard-author">
+          <div class="tcard-av" style="background:linear-gradient(135deg,#0f2043,#e8a020)"></div>
+          <div>
+            <div class="tcard-name">Kwame Asante</div>
+            <div class="tcard-role">CEO, Accra Community Finance Ltd</div>
+          </div>
+        </div>
+      </div>
+      <div class="tcard fade-in delay-2">
+        <div class="tcard-stars">★★★★★</div>
+        <div class="tcard-quote">We moved from tracking 300 borrowers in Excel to managing them seamlessly. The reporting alone saves us 8 hours a week.</div>
+        <div class="tcard-author">
+          <div class="tcard-av" style="background:linear-gradient(135deg,#1a3460,#16a34a)"></div>
+          <div>
+            <div class="tcard-name">Abena Mensah</div>
+            <div class="tcard-role">Managing Director, Golden Credit Co.</div>
+          </div>
+        </div>
+      </div>
+      <div class="tcard fade-in delay-3">
+        <div class="tcard-stars">★★★★★</div>
+        <div class="tcard-quote">Setup took one afternoon. Our field agents were fully onboarded on day two. I wish we had switched years ago.</div>
+        <div class="tcard-author">
+          <div class="tcard-av" style="background:linear-gradient(135deg,#0f2043,#475569)"></div>
+          <div>
+            <div class="tcard-name">Ibrahim Dramani</div>
+            <div class="tcard-role">Director, Northern Star Lenders Co.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ CTA BANNER ═ -->
+<section class="cta-banner">
+  <div class="pub-container">
+    <div class="cta-banner__inner fade-in">
+      <h2>Ready to professionalize your lending?</h2>
+      <p>Join hundreds of micro-credit companies already using {{ saas_name }}. Start your 14-day free trial — no credit card required.</p>
+      <div class="cta-banner__actions">
+        <a href="/signup/" class="btn btn-gold btn--lg">
+          Start Your Free Trial
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="/pricing/" class="btn btn-outline btn--lg">View Pricing</a>
+      </div>
+      <div class="cta-trial-note">14-day free trial · No credit card · Cancel anytime · Data isolated per company</div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
