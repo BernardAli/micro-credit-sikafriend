@@ -1,3 +1,7 @@
+import logging
+
+from django.core.cache import cache
+from django.db import DatabaseError
 from django.http import Http404, HttpResponse
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
@@ -14,6 +18,26 @@ from apps.core.db_backups import (
 )
 from .forms import CompanyDocumentFormSet, CompanyProfileForm
 from .models import CompanyDocument, CompanyProfile
+
+
+logger = logging.getLogger(__name__)
+CONTACT_RATE_LIMIT = 5
+CONTACT_RATE_WINDOW = 15 * 60
+
+
+def _contact_client_ip(request):
+    return request.META.get("REMOTE_ADDR", "") or "unknown"
+
+
+def _contact_rate_limited(request):
+    key = f"website-contact:{_contact_client_ip(request)}"
+    if cache.add(key, 1, CONTACT_RATE_WINDOW):
+        return False
+    try:
+        return cache.incr(key) > CONTACT_RATE_LIMIT
+    except ValueError:
+        cache.set(key, 1, CONTACT_RATE_WINDOW)
+        return False
 
 
 def _match_service_blueprint(title):
@@ -722,13 +746,18 @@ def website_contact(request):
     profile = CompanyProfile.get_solo()
     ctx = _base_ctx(profile)
     sent = False
+    contact_error = ""
     if request.method == "POST":
         name    = request.POST.get("name", "").strip()
         email   = request.POST.get("email", "").strip()
         phone   = request.POST.get("phone", "").strip()
         subject = request.POST.get("subject", "").strip()
         msg     = request.POST.get("message", "").strip()
-        if name and email and msg:
+        if request.POST.get("website", "").strip():
+            contact_error = "Unable to submit this message."
+        elif _contact_rate_limited(request):
+            contact_error = "Too many messages have been submitted. Please try again later."
+        elif name and email and msg:
             try:
                 from apps.communication.models import WebsiteLead
                 WebsiteLead.objects.create(
@@ -739,26 +768,30 @@ def website_contact(request):
                     message=msg,
                     source="CONTACT_FORM",
                 )
-            except Exception:
-                pass
-            # Save as notification or send email — basic stub
-            try:
-                from apps.notifications.services import notify_user
-                from django.contrib.auth.models import User
-                admins = User.objects.filter(is_staff=True)[:1]
-                if admins:
-                    notify_user(
-                        admins[0], "CONTACT",
-                        f"Website enquiry from {name}: {subject or 'General'}",
-                        f"From: {name} <{email}> {phone}\n\n{msg}",
-                    )
-            except Exception:
-                pass
-            sent = True
+            except DatabaseError:
+                logger.exception("Unable to persist website contact submission")
+                contact_error = "We could not receive your message right now. Please try again later."
+            else:
+                sent = True
+                try:
+                    from apps.notifications.services import notify_user
+                    from django.contrib.auth.models import User
+                    admins = User.objects.filter(is_staff=True)[:1]
+                    if admins:
+                        notify_user(
+                            admins[0], "CONTACT",
+                            f"Website enquiry from {name}: {subject or 'General'}",
+                            f"From: {name} <{email}> {phone}\n\n{msg}",
+                        )
+                except Exception:
+                    logger.exception("Unable to notify staff about website contact submission")
+        else:
+            contact_error = "Please provide your name, email address, and message."
     ctx.update({
         "title": f"Contact Us — {profile.company_name}",
         "active_page": "contact",
         "sent": sent,
+        "contact_error": contact_error,
     })
     return render(request, "website/contact.html", ctx)
 

@@ -10,17 +10,31 @@ from .models import ActivityLog, ApprovalRequest
 
 @admin_required
 def approval_hub(request):
+    return _approval_queue(request, loan_requests=False)
+
+
+@admin_required
+def loan_request_hub(request):
+    return _approval_queue(request, loan_requests=True)
+
+
+def _approval_queue(request, *, loan_requests):
     status_filter = (request.GET.get("status") or "").strip().upper()
-    workflow_filter = (request.GET.get("workflow") or "").strip().upper()
+    workflow_filter = "" if loan_requests else (request.GET.get("workflow") or "").strip().upper()
 
     approvals = ApprovalRequest.objects.select_related("submitted_by", "reviewed_by").order_by("-submitted_at")
+    if loan_requests:
+        approvals = approvals.filter(workflow_type="LOAN_CREATION")
+    else:
+        approvals = approvals.exclude(workflow_type="LOAN_CREATION")
     if status_filter:
         approvals = approvals.filter(status=status_filter)
     if workflow_filter:
         approvals = approvals.filter(workflow_type=workflow_filter)
 
     if request.method == "POST":
-        approval = get_object_or_404(ApprovalRequest, pk=request.POST.get("approval_id"))
+        approval_scope = ApprovalRequest.objects.filter(workflow_type="LOAN_CREATION") if loan_requests else ApprovalRequest.objects.exclude(workflow_type="LOAN_CREATION")
+        approval = get_object_or_404(approval_scope, pk=request.POST.get("approval_id"))
         action = request.POST.get("action")
         note = (request.POST.get("note") or "").strip()
         try:
@@ -32,22 +46,24 @@ def approval_hub(request):
                 messages.success(request, f"Approval request '{approval.title}' rejected.")
         except Exception as exc:
             messages.error(request, f"Approval action failed: {exc}")
-        return redirect("core:approvals")
+        return redirect("core:loan_requests" if loan_requests else "core:approvals")
 
-    pending_count = ApprovalRequest.objects.filter(status="PENDING").count()
-    failed_count = ApprovalRequest.objects.filter(status="FAILED").count()
+    queue = ApprovalRequest.objects.filter(workflow_type="LOAN_CREATION") if loan_requests else ApprovalRequest.objects.exclude(workflow_type="LOAN_CREATION")
+    pending_count = queue.filter(status="PENDING").count()
+    failed_count = queue.filter(status="FAILED").count()
     recent_logs = ActivityLog.objects.select_related("actor").filter(category="APPROVAL")[:10]
     context = {
-        "title": "Approval Controls",
+        "title": "Loan Requests" if loan_requests else "Approval Controls",
+        "page_mode": "loan_requests" if loan_requests else "approvals",
         "approvals": approvals[:100],
         "pending_count": pending_count,
         "failed_count": failed_count,
-        "executed_count": ApprovalRequest.objects.filter(status="EXECUTED").count(),
-        "rejected_count": ApprovalRequest.objects.filter(status="REJECTED").count(),
+        "executed_count": queue.filter(status="EXECUTED").count(),
+        "rejected_count": queue.filter(status="REJECTED").count(),
         "recent_logs": recent_logs,
         "status_filter": status_filter,
         "workflow_filter": workflow_filter,
-        "workflow_choices": ApprovalRequest._meta.get_field("workflow_type").choices,
+        "workflow_choices": [] if loan_requests else [choice for choice in ApprovalRequest._meta.get_field("workflow_type").choices if choice[0] != "LOAN_CREATION"],
         "status_choices": ApprovalRequest._meta.get_field("status").choices,
     }
     return render(request, "core/approvals.html", context)

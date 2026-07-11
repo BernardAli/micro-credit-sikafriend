@@ -1,363 +1,94 @@
 {% extends "website/base.html" %}
 {% load static %}
 {% block content %}
-<style>
-.contact-layout{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:52px;align-items:start}
-/* Info side */
-.contact-info{max-width:380px}
-.ci-card{border:1px solid var(--border);border-radius:20px;background:var(--panel);padding:20px 22px;box-shadow:var(--sh-sm);margin-bottom:14px}
-.contact-photo{border-radius:var(--r-xl);overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-md);margin-top:22px;position:relative}
-.contact-photo img{width:100%;aspect-ratio:4 / 3;object-fit:cover}
-.contact-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(8,18,4,.48),transparent 62%)}
-.ci-icon{font-size:22px;margin-bottom:8px}
-.ci-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);margin-bottom:5px}
-.ci-value{font-size:14px;font-weight:700;color:var(--text);line-height:1.45}
-.ci-value a{color:var(--text);transition:color .18s}
-.ci-value a:hover{color:var(--primary)}
-.ci-sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
-.socials-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-.s-btn{width:38px;height:38px;border-radius:12px;border:1px solid var(--border);background:var(--panel);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--muted);transition:background .18s,border-color .18s,color .18s,transform .18s;text-decoration:none}
-.s-btn:hover{background:var(--primary);border-color:var(--primary);color:#fff;transform:scale(1.1)}
-/* Form */
-.form-card{border:1px solid var(--border);border-radius:var(--r-xl);background:var(--panel);padding:36px;box-shadow:var(--sh-lg);position:relative;overflow:hidden}
-.form-card::before{content:"";position:absolute;top:-30px;right:-30px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,var(--gold-pale),transparent 70%);pointer-events:none}
-.form-card::after{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),var(--primary))}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-.form-field{margin-bottom:16px}
-.form-field.full{grid-column:span 2}
-.form-lbl{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:7px;display:block}
-.form-input,.form-select,.form-textarea{
-  width:100%;border-radius:var(--r-lg);border:1.5px solid var(--border);
-  background:var(--bg2);padding:13px 16px;font-size:14px;color:var(--text);
-  transition:border-color .2s,box-shadow .2s,background .2s;
-  font-family:var(--font-body);
-}
-[data-theme="dark"] .form-input,[data-theme="dark"] .form-select,[data-theme="dark"] .form-textarea{background:rgba(26,36,16,.7)}
-.form-input:focus,.form-select:focus,.form-textarea:focus{
-  outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--pg);background:var(--panel);
-}
-.form-textarea{min-height:140px;resize:vertical}
-.form-submit{width:100%;min-height:54px;border-radius:var(--r-2xl);background:linear-gradient(135deg,var(--primary) 0%,var(--primary-l) 55%,var(--gold) 100%);color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;box-shadow:0 12px 32px var(--pg);transition:transform .2s,box-shadow .2s}
-.form-submit:hover{transform:translateY(-2px);box-shadow:0 18px 42px var(--pg)}
-/* Success banner */
-.success-banner{border:1px solid rgba(45,107,62,.22);border-radius:var(--r-xl);background:rgba(45,107,62,.08);padding:20px 22px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
-.sb-icon{font-size:24px;flex-shrink:0}
-.sb-title{font-size:15px;font-weight:700;color:var(--text)}
-.sb-sub{font-size:13px;color:var(--muted);margin-top:3px}
-/* Branches */
-.branches-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px}
-.branch-card{border:1px solid var(--border);border-radius:var(--r-xl);background:var(--panel);padding:24px;box-shadow:var(--sh-sm);transition:transform .22s,box-shadow .22s,border-color .22s;position:relative;overflow:hidden}
-.branch-card:hover{transform:translateY(-4px);box-shadow:var(--sh-md);border-color:rgba(184,134,32,.22)}
-.branch-card.head::before{content:"HEAD OFFICE";position:absolute;top:14px;right:14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;background:linear-gradient(135deg,var(--primary),var(--gold));color:#fff;padding:3px 10px;border-radius:var(--r-xl)}
-.branch-name{font-family:var(--font-serif);font-size:20px;color:var(--text);margin-bottom:14px}
-.branch-detail{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;font-size:13.5px;color:var(--muted)}
-.branch-ico{font-size:16px;flex-shrink:0;margin-top:1px}
-.branch-detail a{color:var(--primary);transition:color .18s}
-.branch-detail a:hover{color:var(--primary-d)}
-.branch-map-btn{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:8px 16px;border-radius:var(--r-xl);border:1px solid var(--border);background:var(--bg2);font-size:12.5px;font-weight:700;color:var(--muted);transition:background .18s,color .18s,border-color .18s}
-.branch-map-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
-.branch-map-btn{cursor:pointer;text-decoration:none}
-/* Map embed */
-.map-embed{border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--sh-sm)}
-.map-embed iframe{width:100%;height:420px;border:none;display:block}
-.map-placeholder{width:100%;height:420px;background:linear-gradient(135deg,var(--bg2),var(--bg3));display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--muted)}
-.map-placeholder span{font-size:48px}
-.map-placeholder p{font-size:14px;font-weight:600}
-.map-popup{
-  position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;
-  padding:24px;background:rgba(8,12,18,.62);backdrop-filter:blur(6px);opacity:0;visibility:hidden;
-  transition:opacity .18s ease,visibility .18s ease;
-}
-.map-popup.is-open{opacity:1;visibility:visible}
-.map-popup-dialog{
-  width:min(960px,100%);background:var(--panel);border:1px solid var(--border);border-radius:28px;
-  box-shadow:0 32px 90px rgba(10,20,12,.28);overflow:hidden;transform:translateY(16px);transition:transform .2s ease;
-}
-.map-popup.is-open .map-popup-dialog{transform:translateY(0)}
-.map-popup-head{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;
-  border-bottom:1px solid var(--border-soft);background:linear-gradient(135deg,var(--panel),var(--bg2));
-}
-.map-popup-title{font-size:18px;font-weight:800;color:var(--text);margin:0}
-.map-popup-close{
-  width:42px;height:42px;border-radius:999px;border:1px solid var(--border);background:var(--panel-strong);
-  color:var(--text);font-size:20px;line-height:1;cursor:pointer;transition:background .18s,color .18s,border-color .18s;
-}
-.map-popup-close:hover{background:var(--primary);border-color:var(--primary);color:#fff}
-.map-popup-body{padding:0;background:var(--bg2)}
-.map-popup-frame{width:100%;height:min(68vh,620px);border:none;display:block;background:var(--bg3)}
-
-@media(max-width:960px){.contact-layout{grid-template-columns:1fr}.contact-info{max-width:none}}
-@media(max-width:640px){.form-row{grid-template-columns:1fr}}
-</style>
-
-<div class="page-hero" style="min-height:420px">
-  <div class="page-hero-img" style="background-image:url('{% if profile.contact_hero_image %}{{ profile.contact_hero_image.url }}{% else %}{% static 'website/images/microcredit-team-service.webp' %}{% endif %}')"></div>
-  <div class="page-hero-overlay" style="background:linear-gradient(160deg,rgba(8,18,4,.90),rgba(30,48,12,.80) 58%,rgba(58,38,8,.70) 100%)"></div>
-  <div class="page-hero-deco"></div>
-  <div class="wrap"><div class="page-hero-inner">
-    <div class="page-hero-breadcrumb"><a href="{% url 'company:website' %}">Home</a><span>/</span><span>Contact Us</span></div>
-    <h1 class="h-lg">{{ profile.contact_headline|default:"Get in Touch" }}</h1>
-    <p class="lead" style="color:rgba(255,255,255,.78)">{{ profile.contact_subheadline|default:"We would love to hear from you. Reach out and we will respond promptly." }}</p>
-  </div></div>
-</div>
-
-<!-- CONTACT LAYOUT -->
-<section class="section">
+<section class="photo-hero compact">
+  <div class="hero-bg" style="background-image:url('{% if profile.contact_hero_image %}{{ profile.contact_hero_image.url }}{% else %}{% static 'website/images/microcredit-team-service.webp' %}{% endif %}')"></div>
   <div class="wrap">
-    {% if profile.contact_intro %}
-    <div class="sec-header reveal" style="margin-bottom:48px"><p class="lead">{{ profile.contact_intro }}</p></div>
-    {% endif %}
-
-    <div class="contact-layout">
-      <!-- Info side -->
-      <div>
-        <h2 class="h-md reveal" style="margin-bottom:28px">Contact Information</h2>
-
-        {% if profile.phone %}
-        <div class="ci-card reveal">
-          <div class="ci-icon">📞</div>
-          <div class="ci-label">Phone</div>
-          <div class="ci-value"><a href="tel:{{ profile.phone }}">{{ profile.phone }}</a></div>
-          <div class="ci-sub">Available Monday–Friday, 8am–6pm</div>
-        </div>
-        {% endif %}
-
-        {% if profile.email %}
-        <div class="ci-card reveal">
-          <div class="ci-icon">✉️</div>
-          <div class="ci-label">Email</div>
-          <div class="ci-value"><a href="mailto:{{ profile.email }}">{{ profile.email }}</a></div>
-          <div class="ci-sub">We respond within one business day</div>
-        </div>
-        {% endif %}
-
-        {% if profile.address %}
-        <div class="ci-card reveal">
-          <div class="ci-icon">📍</div>
-          <div class="ci-label">Head Office</div>
-          <div class="ci-value">{{ profile.address }}</div>
-          {% if profile.country %}<div class="ci-sub">{{ profile.country }}</div>{% endif %}
-        </div>
-        {% endif %}
-
-        {% if profile.whatsapp_number %}
-        <div class="ci-card reveal">
-          <div class="ci-icon">💬</div>
-          <div class="ci-label">WhatsApp</div>
-          <div class="ci-value">
-            <a href="https://wa.me/{{ profile.whatsapp_number }}" target="_blank">{{ profile.whatsapp_number }}</a>
-          </div>
-          <div class="ci-sub">Message us anytime for quick support</div>
-        </div>
-        {% endif %}
-
-        {% if profile.facebook_url or profile.instagram_url or profile.twitter_url or profile.youtube_url %}
-        <div class="ci-card reveal">
-          <div class="ci-icon">📱</div>
-          <div class="ci-label">Follow Us</div>
-          <div class="socials-row">
-            {% if profile.facebook_url  %}<a href="{{ profile.facebook_url }}"  target="_blank" class="s-btn" title="Facebook">f</a>{% endif %}
-            {% if profile.instagram_url %}<a href="{{ profile.instagram_url }}" target="_blank" class="s-btn" title="Instagram">📷</a>{% endif %}
-            {% if profile.twitter_url   %}<a href="{{ profile.twitter_url }}"   target="_blank" class="s-btn" title="Twitter">𝕏</a>{% endif %}
-            {% if profile.youtube_url   %}<a href="{{ profile.youtube_url }}"   target="_blank" class="s-btn" title="YouTube">▶</a>{% endif %}
-          </div>
-        </div>
-        {% endif %}
-
-        <div class="contact-photo reveal">
-          <img src="{% static 'website/images/microcredit-team-service.webp' %}" alt="Client service at {{ profile.company_name }}">
-        </div>
-      </div>
-
-      <!-- Form side -->
-      <div>
-        <div class="form-card reveal">
-          {% if sent %}
-          <div class="success-banner">
-            <div class="sb-icon">✅</div>
-            <div>
-              <div class="sb-title">Message sent successfully!</div>
-              <div class="sb-sub">Thank you for reaching out. We will get back to you within one business day.</div>
-            </div>
-          </div>
-          {% endif %}
-
-          <h3 style="font-family:var(--font-serif);font-size:24px;color:var(--text);margin-bottom:6px">Send us a message</h3>
-          <p style="font-size:13.5px;color:var(--muted);margin-bottom:26px;line-height:1.65">Fill in the form below and a member of our team will be in touch shortly.</p>
-
-          <form method="post" novalidate>
-            {% csrf_token %}
-            <div class="form-row">
-              <div>
-                <label class="form-lbl" for="name">Full Name *</label>
-                <input type="text" class="form-input" id="name" name="name" placeholder="Your full name" required>
-              </div>
-              <div>
-                <label class="form-lbl" for="email">Email Address *</label>
-                <input type="email" class="form-input" id="email" name="email" placeholder="your@email.com" required>
-              </div>
-            </div>
-            <div class="form-row">
-              <div>
-                <label class="form-lbl" for="phone">Phone Number</label>
-                <input type="tel" class="form-input" id="phone" name="phone" placeholder="+233...">
-              </div>
-              <div>
-                <label class="form-lbl" for="subject">Subject</label>
-                <select class="form-select" id="subject" name="subject">
-                  <option value="">Select a subject...</option>
-                  <option>Loan Application Enquiry</option>
-                  <option>Existing Loan Support</option>
-                  <option>Account & Portal Help</option>
-                  <option>Agent Partnership</option>
-                  <option>General Enquiry</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-field">
-              <label class="form-lbl" for="message">Your Message *</label>
-              <textarea class="form-textarea" id="message" name="message" placeholder="Tell us how we can help you..." required></textarea>
-            </div>
-            <button type="submit" class="form-submit">Send Message →</button>
-          </form>
-        </div>
-      </div>
+    <div class="hero-content">
+      <div class="breadcrumb"><a href="{% url 'company:website' %}">Home</a><span>/</span><span>Contact</span></div>
+      <h1 class="title-xl">{{ profile.contact_headline|default:"Contact our team" }}</h1>
+      <p class="lead">{{ profile.contact_subheadline|default:"Reach out for loan enquiries, account support, documents, or branch information." }}</p>
     </div>
   </div>
 </section>
 
-<!-- BRANCHES / LOCATIONS -->
-{% if branches %}
-<section class="section section-alt">
-  <div class="wrap">
-    <div class="sec-header reveal"><div class="eyebrow">Find Us</div><h2 class="h-lg">Our Branches &amp; Locations</h2><p class="lead">Visit any of our offices or contact your nearest branch for personalised service.</p></div>
-    <div class="branches-grid">
-      {% for branch in branches %}
-      <div class="branch-card {% if branch.is_head_office %}head{% endif %} reveal">
-        <div class="branch-name">{{ branch.name }}</div>
-        {% if branch.address %}
-        <div class="branch-detail"><div class="branch-ico">📍</div><div>{{ branch.address }}</div></div>
-        {% endif %}
-        {% if branch.phone %}
-        <div class="branch-detail"><div class="branch-ico">📞</div><div><a href="tel:{{ branch.phone }}">{{ branch.phone }}</a></div></div>
-        {% endif %}
-        {% if branch.email %}
-        <div class="branch-detail"><div class="branch-ico">✉️</div><div><a href="mailto:{{ branch.email }}">{{ branch.email }}</a></div></div>
-        {% endif %}
-        {% if branch.lat and branch.lng %}
-        <button
-          type="button"
-          class="branch-map-btn"
-          data-branch-map
-          data-branch-name="{{ branch.name|escape }}"
-          data-map-url="https://www.google.com/maps?q={{ branch.lat }},{{ branch.lng }}&z=15&output=embed"
-        >
-          📍 View on Google Maps
-        </button>
-        {% endif %}
+<section class="section">
+  <div class="wrap split wide-left">
+    <div>
+      <div class="section-head">
+        <div class="kicker">Get in touch</div>
+        <h2 class="title-xl">We are ready to help</h2>
+        <p class="lead">{{ profile.contact_intro|default:"Send a message and our team will respond as soon as possible." }}</p>
       </div>
+      <div class="grid-2">
+        {% if profile.phone %}<article class="step-card"><span class="badge">Phone</span><p class="copy"><a href="tel:{{ profile.phone }}">{{ profile.phone }}</a></p></article>{% endif %}
+        {% if profile.email %}<article class="step-card"><span class="badge">Email</span><p class="copy"><a href="mailto:{{ profile.email }}">{{ profile.email }}</a></p></article>{% endif %}
+        {% if profile.address %}<article class="step-card"><span class="badge">Address</span><p class="copy">{{ profile.address }}{% if profile.country %}, {{ profile.country }}{% endif %}</p></article>{% endif %}
+        {% if profile.whatsapp_number %}<article class="step-card"><span class="badge">WhatsApp</span><p class="copy"><a href="https://wa.me/{{ profile.whatsapp_number }}" target="_blank" rel="noopener">{{ profile.whatsapp_number }}</a></p></article>{% endif %}
+      </div>
+      <div class="photo-stack" style="margin-top:22px">
+        <img class="tall" src="{% static 'website/images/microcredit-team-service.webp' %}" alt="Contact support team">
+        <img src="{% static 'website/images/microcredit-hero-office.webp' %}" alt="Office">
+        <img src="{% static 'website/images/microcredit-market-support.webp' %}" alt="Field support">
+      </div>
+    </div>
+    <div class="card"><div class="card-body">
+      {% if sent %}<div class="notice" style="margin-bottom:16px">Thank you. Your message has been received.</div>{% endif %}
+      {% if contact_error %}<div class="notice error" style="margin-bottom:16px">{{ contact_error }}</div>{% endif %}
+      <form method="post" class="form-grid">
+        {% csrf_token %}
+        <div class="sr-only" aria-hidden="true"><label for="website">Website</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+        <div class="form-row">
+          <div class="field"><label for="name">Name</label><input id="name" name="name" type="text" required></div>
+          <div class="field"><label for="phone">Phone</label><input id="phone" name="phone" type="tel"></div>
+        </div>
+        <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" required></div>
+        <div class="field"><label for="subject">Subject</label><input id="subject" name="subject" type="text"></div>
+        <div class="field"><label for="message">Message</label><textarea id="message" name="message" required></textarea></div>
+        <button class="btn primary" type="submit">Send Message</button>
+      </form>
+    </div></div>
+  </div>
+</section>
+
+{% if branches %}
+<section class="section soft">
+  <div class="wrap">
+    <div class="section-head center">
+      <div class="kicker">Branches</div>
+      <h2 class="title-xl">Visit or contact a branch</h2>
+    </div>
+    <div class="grid-3">
+      {% for branch in branches %}
+      <article class="card">
+        <div class="card-media"><img src="{% static 'website/images/microcredit-hero-office.webp' %}" alt="{{ branch.name }}"></div>
+        <div class="card-body">
+          <h3 class="title-md">{{ branch.name }}</h3>
+          {% if branch.is_head_office %}<span class="badge">Head office</span>{% endif %}
+          {% if branch.address %}<p class="copy">{{ branch.address }}</p>{% endif %}
+          {% if branch.phone %}<p class="copy"><a href="tel:{{ branch.phone }}">{{ branch.phone }}</a></p>{% endif %}
+          {% if branch.email %}<p class="copy"><a href="mailto:{{ branch.email }}">{{ branch.email }}</a></p>{% endif %}
+        </div>
+      </article>
       {% endfor %}
     </div>
   </div>
 </section>
 {% endif %}
 
-<!-- BUSINESS HOURS -->
-{% if business_hours %}
-<section class="section section-alt">
+<section class="section surface">
   <div class="wrap">
-    <div class="sec-header reveal"><div class="eyebrow">When We're Open</div><h2 class="h-lg">Business Hours</h2></div>
-    <div style="max-width:680px;margin:0 auto">
-      <div style="border:1px solid var(--border);border-radius:var(--r-xl);background:var(--panel);overflow:hidden;box-shadow:var(--sh-sm)" class="reveal">
-        {% for row in business_hours %}
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 28px;{% if not forloop.last %}border-bottom:1px solid var(--border2);{% endif %}{% if row.highlight %}background:rgba(58,90,30,.04);{% endif %}">
-          <div style="font-size:14px;font-weight:{% if row.highlight %}700{% else %}600{% endif %};color:{% if row.highlight %}var(--text){% else %}var(--muted){% endif %}">{{ row.day }}</div>
-          <div style="font-size:13.5px;font-weight:700;color:{% if row.closed %}var(--muted2){% else %}var(--primary){% endif %}">
-            {% if row.closed %}
-              Closed
-            {% elif row.hours %}
-              {{ row.hours }}
-            {% else %}
-              {{ row.open|default:"" }}{% if row.open and row.close %} - {% endif %}{{ row.close|default:"" }}
-            {% endif %}
-          </div>
-        </div>
-        {% endfor %}
+    {% if profile.maps_embed_url %}
+    <div class="card"><iframe src="{{ profile.maps_embed_url }}" title="{{ profile.company_name }} location" loading="lazy" style="width:100%;height:420px;border:0"></iframe></div>
+    {% else %}
+    <div class="cta-band">
+      <div class="hero-bg" style="background-image:var(--img-office)"></div>
+      <div class="cta-inner">
+        <h2 class="title-xl">Find us through our office or field team</h2>
+        <p class="lead">{{ profile.address|default:"Contact the team for directions and available appointment times." }}</p>
       </div>
     </div>
+    {% endif %}
   </div>
 </section>
-{% endif %}
-
-<!-- MAP EMBED -->
-<section class="section-sm" style="padding:0 0 80px">
-  <div class="wrap">
-    <div class="sec-header reveal" style="margin-bottom:32px"><div class="eyebrow">Location</div><h2 class="h-md">Find Our Head Office</h2></div>
-    <div class="map-embed reveal">
-      {% if profile.maps_embed_url %}
-        <iframe src="{{ profile.maps_embed_url }}" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="{{ profile.company_name }} Location"></iframe>
-      {% else %}
-        <div class="map-placeholder">
-          <span>🗺️</span>
-          <p>Map embed not configured yet.</p>
-          <p style="font-size:12.5px;color:var(--muted2)">Add a Google Maps embed URL in Company Settings → Contact Page.</p>
-        </div>
-      {% endif %}
-    </div>
-  </div>
-</section>
-
-<div class="map-popup" id="branchMapPopup" aria-hidden="true">
-  <div class="map-popup-dialog" role="dialog" aria-modal="true" aria-labelledby="branchMapPopupTitle">
-    <div class="map-popup-head">
-      <h3 class="map-popup-title" id="branchMapPopupTitle">Branch Location</h3>
-      <button type="button" class="map-popup-close" id="branchMapPopupClose" aria-label="Close map popup">×</button>
-    </div>
-    <div class="map-popup-body">
-      <iframe id="branchMapPopupFrame" class="map-popup-frame" src="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Branch location map"></iframe>
-    </div>
-  </div>
-</div>
-
-<script>
-  (() => {
-    const popup = document.getElementById("branchMapPopup");
-    const popupFrame = document.getElementById("branchMapPopupFrame");
-    const popupTitle = document.getElementById("branchMapPopupTitle");
-    const closeButton = document.getElementById("branchMapPopupClose");
-    const mapTriggers = document.querySelectorAll("[data-branch-map]");
-    if (!popup || !popupFrame || !popupTitle || !closeButton || !mapTriggers.length) return;
-
-    const closePopup = () => {
-      popup.classList.remove("is-open");
-      popup.setAttribute("aria-hidden", "true");
-      popupFrame.setAttribute("src", "");
-      document.body.style.overflow = "";
-    };
-
-    const openPopup = (title, mapUrl) => {
-      popupTitle.textContent = title || "Branch Location";
-      popupFrame.setAttribute("src", mapUrl || "");
-      popup.classList.add("is-open");
-      popup.setAttribute("aria-hidden", "false");
-      document.body.style.overflow = "hidden";
-    };
-
-    mapTriggers.forEach((trigger) => {
-      trigger.addEventListener("click", () => {
-        openPopup(trigger.dataset.branchName, trigger.dataset.mapUrl);
-      });
-    });
-
-    closeButton.addEventListener("click", closePopup);
-    popup.addEventListener("click", (event) => {
-      if (event.target === popup) closePopup();
-    });
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && popup.classList.contains("is-open")) closePopup();
-    });
-  })();
-</script>
-
 {% endblock %}

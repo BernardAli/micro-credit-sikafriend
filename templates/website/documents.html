@@ -1,114 +1,53 @@
 {% extends "website/base.html" %}
 {% load static %}
-
 {% block meta_desc %}Download public documents, forms, policies, and resources from {{ profile.company_name }}.{% endblock %}
-
 {% block content %}
-
-<style>
-.docs-section{padding:96px 0;background:var(--bg)}
-.docs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
-.doc-card{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:var(--r-xl);
-  padding:24px;
-  box-shadow:var(--sh-sm);
-  display:grid;
-  gap:18px;
-  min-height:100%;
-}
-.doc-card:hover{transform:translateY(-2px);box-shadow:var(--sh-md);border-color:rgba(184,134,32,.22)}
-.doc-icon{
-  width:48px;
-  height:48px;
-  border-radius:var(--r);
-  background:linear-gradient(135deg,var(--primary),var(--gold));
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:22px;
-}
-.doc-title{font-size:21px;color:var(--text);margin:0}
-.doc-desc{color:var(--muted);font-size:14px;line-height:1.7}
-.doc-meta{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  align-items:center;
-  color:var(--muted2);
-  font-size:12px;
-}
-.doc-actions{margin-top:auto;display:flex;gap:10px;flex-wrap:wrap}
-.docs-empty{
-  max-width:720px;
-  margin:0 auto;
-  padding:42px;
-  border:1px dashed var(--border);
-  border-radius:var(--r-xl);
-  background:var(--panel);
-  text-align:center;
-}
-.docs-empty h2{margin-bottom:10px;color:var(--text)}
-.docs-empty p{color:var(--muted);line-height:1.75}
-@media(max-width:980px){.docs-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:640px){.docs-grid{grid-template-columns:1fr}.docs-section{padding:72px 0}}
-</style>
-
-<div class="page-hero">
-  <div class="page-hero-img" style="background-image:url('{% static 'website/images/microcredit-loan-products.webp' %}')"></div>
-  <div class="page-hero-overlay" style="background:linear-gradient(160deg,rgba(8,18,4,.90),rgba(30,48,12,.80) 58%,rgba(58,38,8,.70) 100%)"></div>
-  <div class="page-hero-deco"></div>
-  <div class="wrap page-hero-inner">
-    <div class="page-hero-breadcrumb">
-      <a href="{% url 'company:website' %}">Home</a><span>/</span><span>Documents</span>
-    </div>
-    <h1 class="h-lg">Documents</h1>
-    <p class="lead">Download public forms, policies, and helpful resources from {{ profile.company_name }}.</p>
-  </div>
-</div>
-
-<section class="docs-section">
+<section class="photo-hero compact">
+  <div class="hero-bg" style="background-image:url('{% static 'website/images/microcredit-loan-products.webp' %}')"></div>
   <div class="wrap">
-    {% if documents %}
-      <div class="sec-header">
-        <div class="eyebrow">Downloads</div>
-        <h2 class="h-md">Public Resources</h2>
-        <p class="lead">Select any document below to download a copy.</p>
-      </div>
-
-      <div class="docs-grid">
-        {% for document in documents %}
-          <article class="doc-card">
-            <div class="doc-icon">📄</div>
-            <div>
-              <h3 class="doc-title">{{ document.title }}</h3>
-              {% if document.description %}
-                <p class="doc-desc">{{ document.description }}</p>
-              {% endif %}
-            </div>
-            <div class="doc-meta">
-              {% if document.file %}
-                <span>{{ document.file.name|cut:"company/documents/" }}</span>
-                <span>·</span>
-                <span>{{ document.file.size|filesizeformat }}</span>
-              {% endif %}
-            </div>
-            <div class="doc-actions">
-              <a href="{{ document.file.url }}" class="btn btn-primary" download>Download</a>
-              <a href="{{ document.file.url }}" class="btn btn-outline" target="_blank" rel="noopener">Open</a>
-            </div>
-          </article>
-        {% endfor %}
-      </div>
-    {% else %}
-      <div class="docs-empty">
-        <h2 class="h-sm">No public documents yet</h2>
-        <p>Documents uploaded and marked public in Company Settings will appear here for website visitors to download.</p>
-      </div>
-    {% endif %}
+    <div class="hero-content">
+      <div class="breadcrumb"><a href="{% url 'company:website' %}">Home</a><span>/</span><span>Documents</span></div>
+      <h1 class="title-xl">Public documents</h1>
+      <p class="lead">Download forms, policies, and useful resources from {{ profile.company_name }}.</p>
+    </div>
   </div>
 </section>
 
+<section class="section">
+  <div class="wrap split">
+    <div>
+      <div class="kicker">Resources</div>
+      <h2 class="title-xl">Everything important in one place</h2>
+      <p class="lead">Use the available documents to prepare for enquiries, applications, and account conversations.</p>
+      <div class="photo-stack" style="margin-top:24px">
+        <img class="tall" src="{% static 'website/images/microcredit-loan-products.webp' %}" alt="Documents and loan planning">
+        <img src="{% static 'website/images/microcredit-hero-office.webp' %}" alt="Office desk">
+        <img src="{% static 'website/images/microcredit-team-service.webp' %}" alt="Client support">
+      </div>
+    </div>
+    <div>
+      {% if documents %}
+      <div class="grid-1" style="display:grid;gap:16px">
+        {% for document in documents %}
+        <article class="card"><div class="card-body">
+          <span class="badge">Document</span>
+          <h3 class="title-md" style="margin-top:12px">{{ document.title }}</h3>
+          {% if document.description %}<p class="copy">{{ document.description }}</p>{% endif %}
+          {% if document.file %}
+          <p class="copy">{{ document.file.name|cut:"company/documents/" }}{% if document.file.size %} - {{ document.file.size|filesizeformat }}{% endif %}</p>
+          <div class="actions"><a class="btn primary small" href="{{ document.file.url }}" download>Download</a><a class="btn ghost small" href="{{ document.file.url }}" target="_blank" rel="noopener">Open</a></div>
+          {% endif %}
+        </div></article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <article class="card"><div class="card-body">
+        <h3 class="title-md">No public documents yet</h3>
+        <p class="copy">Check back later or contact the team for the resource you need.</p>
+        <a class="btn primary small" href="{% url 'company:contact' %}">Contact Us</a>
+      </div></article>
+      {% endif %}
+    </div>
+  </div>
+</section>
 {% endblock %}

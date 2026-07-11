@@ -712,19 +712,25 @@ class CompanyProfile(models.Model):
             rules.append(f"--pg:color-mix(in srgb,{p} 16%,transparent);")
         if self.site_secondary_color:
             s = self.site_secondary_color
+            rules.append(f"--accent:{s};")
+            rules.append(f"--accent-2:{s};")
             rules.append(f"--gold:{s};")
             rules.append(f"--gold-d:{self._hex_adjust(s, 0.82)};")
             rules.append(f"--gold-pale:color-mix(in srgb,{s} 10%,transparent);")
             rules.append(f"--gold-glow:color-mix(in srgb,{s} 18%,transparent);")
         if self.site_bg_color:
+            rules.append(f"--paper:{self.site_bg_color};")
             rules.append(f"--bg:{self.site_bg_color};")
         if self.site_text_color:
             rules.append(f"--text:{self.site_text_color};")
         if self.site_nav_bg:
+            rules.append(f"--surface:{self.site_nav_bg};")
             rules.append(f"--nav-bg:{self.site_nav_bg};")
         if self.site_footer_bg:
+            rules.append(f"--footer:{self.site_footer_bg};")
             rules.append(f"--footer-bg:{self.site_footer_bg};")
         if self.site_section_alt_bg:
+            rules.append(f"--soft:{self.site_section_alt_bg};")
             rules.append(f"--alt-bg:{self.site_section_alt_bg};")
         return " ".join(rules)
 

@@ -76,6 +76,11 @@
   .help{font-size:12px;color:var(--muted);line-height:1.55}
   .err{font-size:12px;color:var(--danger);font-weight:700}
   .non-field-errors{margin:18px 22px 0;padding:14px 16px;border-radius:16px;background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.14);color:var(--danger);font-weight:800}
+  .error-summary{margin:18px 22px 0;padding:16px;border-radius:16px;background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.2);color:var(--danger)}
+  .error-summary strong{display:block;margin-bottom:7px}
+  .error-summary ul{margin:0;padding-left:20px;display:grid;gap:4px}
+  .error-summary a{color:inherit;text-decoration:underline;font-weight:800}
+  .field.has-error input,.field.has-error select,.field.has-error textarea{border-color:var(--danger);box-shadow:0 0 0 3px color-mix(in srgb,var(--danger) 12%,transparent)}
   .actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;padding:18px 22px;background:var(--bg-soft)}
   .btn-soft{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border-radius:999px;font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text)}
   .btn-soft-primary{background:var(--primary);border-color:var(--primary);color:#fff}
@@ -95,6 +100,19 @@
     {% csrf_token %}
     {% if form.non_field_errors %}
       <div class="non-field-errors">{{ form.non_field_errors }}</div>
+    {% endif %}
+    {% if form.errors %}
+      <div class="error-summary" role="alert" aria-live="polite">
+        <strong>Please correct the following before saving:</strong>
+        <ul>
+          {% for field in form %}
+            {% for error in field.errors %}
+              <li><a href="#{{ field.id_for_label }}" data-error-field="{{ field.id_for_label }}">{{ field.label }}: {{ error }}</a></li>
+            {% endfor %}
+          {% endfor %}
+          {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+      </div>
     {% endif %}
 
     <div class="tabs-shell">
@@ -213,8 +231,24 @@
       button.addEventListener("click", () => openTab(button.dataset.tabTarget));
     });
 
+    const errorLinks = Array.from(document.querySelectorAll("[data-error-field]"));
+    errorLinks.forEach((link) => {
+      const input = document.getElementById(link.dataset.errorField);
+      if (!input) return;
+      input.setAttribute("aria-invalid", "true");
+      input.closest(".field, .check-card")?.classList.add("has-error");
+      link.addEventListener("click", (event) => {
+        const panel = input.closest("[data-tab-panel]");
+        if (panel) openTab(panel.dataset.tabPanel);
+        event.preventDefault();
+        input.focus();
+        input.scrollIntoView({behavior:"smooth", block:"center"});
+      });
+    });
+
     const hashTab = window.location.hash.replace("#", "");
-    const errorPanel = tabPanels.find((panel) => panel.querySelector(".err, .errorlist, ul.errorlist"));
+    const firstErrorInput = errorLinks.length ? document.getElementById(errorLinks[0].dataset.errorField) : null;
+    const errorPanel = firstErrorInput?.closest("[data-tab-panel]") || tabPanels.find((panel) => panel.querySelector(".err, .errorlist, ul.errorlist"));
     const initialTab = errorPanel?.dataset.tabPanel || tabButtons.find((button) => button.dataset.tabTarget === hashTab)?.dataset.tabTarget || "profile";
     openTab(initialTab, Boolean(hashTab));
   })();

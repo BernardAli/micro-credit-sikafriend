@@ -74,17 +74,13 @@ from .reports import (
 from .services import build_loan_statement
 from .services_sms import safe_send_sms
 from apps.accounts.models import Agent
-from apps.accounts.tenant_usernames import (
-    build_tenant_scoped_username,
-    current_schema_name,
-    visible_portal_username,
-)
+from apps.accounts.usernames import build_portal_username, visible_portal_username
 from apps.core.approvals import create_approval_request
 from apps.core.audit import log_activity
 from apps.core.pagination import paginate_items
 from apps.core.roles import admin_required
 from apps.notifications.services import notify_user
-from apps.tenants.enforcement import can_create_borrower
+from apps.core.limits import can_create_borrower
 
 
 
@@ -312,12 +308,7 @@ def _loan_approval_payload(loan, *, borrower=None):
 def _loan_external_debt_check_for_borrower(borrower, request):
     if borrower is None:
         return empty_cross_company_debt_check()
-    tenant = getattr(request, "tenant", None)
-    current_schema_name = getattr(tenant, "schema_name", "")
-    return get_cross_company_debt_check(
-        borrower=borrower,
-        current_schema_name=current_schema_name,
-    )
+    return get_cross_company_debt_check(borrower=borrower)
 
 
 def _external_debt_acknowledged(request) -> bool:
@@ -1752,7 +1743,7 @@ def loan_create(request):
             )
             if _role == "agent" and _agent:
                 return redirect("agent_detail", pk=_agent.pk)
-            return redirect("core:approvals")
+            return redirect("core:loan_requests")
 
     return render(request, "loans/loan_create.html", {
         "form": form,
@@ -1779,7 +1770,6 @@ def borrower_cross_company_check(request):
         summary = get_cross_company_debt_check(
             national_id=request.GET.get("national_id", ""),
             ghana_card_number=request.GET.get("ghana_card_number", ""),
-            current_schema_name=getattr(getattr(request, "tenant", None), "schema_name", ""),
         )
     else:
         summary = _loan_external_debt_check_for_borrower(borrower, request)
@@ -2175,7 +2165,7 @@ def borrower_create(request):
         _m.error(request, "You do not have permission to add borrowers.")
         return redirect("loans:dashboard")
 
-    borrower_limit = can_create_borrower(schema_name=current_schema_name(request))
+    borrower_limit = can_create_borrower()
     if not borrower_limit.allowed:
         messages.error(request, borrower_limit.reason)
         return redirect("loans:borrower_list")
@@ -2193,7 +2183,7 @@ def borrower_create(request):
 
         # ── Create portal login account ───────────────────────
         username = form.cleaned_data["portal_username"]
-        stored_username = build_tenant_scoped_username(username, schema_name=current_schema_name(request))
+        stored_username = build_portal_username(username)
         temp_password = _generate_temp_password()
 
         portal_user = _User.objects.create_user(
@@ -3359,7 +3349,6 @@ def borrower_detail(request, pk):
         "borrower": borrower,
         "borrower_login_username": visible_portal_username(
             getattr(getattr(borrower, "user", None), "username", ""),
-            schema_name=current_schema_name(request),
         ),
         "loans": loans,
         "loan_form": loan_form,

@@ -88,8 +88,15 @@
   .table{width:100%;border-collapse:collapse;min-width:760px;background:var(--panel)}
   .table th,.table td{padding:12px 14px;border-bottom:1px solid var(--border-soft);text-align:left;font-size:13px}
   .table th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:var(--bg-soft)}
+  .detail-tabs{display:flex;gap:6px;padding:6px;border:1px solid var(--border);border-radius:16px;background:var(--panel);box-shadow:var(--shadow-xs);overflow-x:auto}
+  .detail-tab{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:9px 16px;border:0;border-radius:11px;background:transparent;color:var(--muted);font-weight:900;white-space:nowrap;cursor:pointer;transition:background .18s,color .18s,box-shadow .18s}
+  .detail-tab:hover{background:var(--bg-soft);color:var(--text)}
+  .detail-tab.active{background:var(--primary);color:#fff;box-shadow:0 8px 20px var(--primary-glow)}
+  .detail-tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:7px;background:color-mix(in srgb,currentColor 12%,transparent);font-size:10px}
+  .detail-panel{display:none;gap:16px}
+  .detail-panel.active{display:grid}
   @media(max-width:1100px){.grid-4,.grid-3,.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}}
-  @media(max-width:760px){.grid-4,.grid-3,.grid-2{grid-template-columns:1fr}.detail-row{flex-direction:column}.detail-row span{text-align:left}}
+  @media(max-width:760px){.grid-4,.grid-3,.grid-2{grid-template-columns:1fr}.detail-row{flex-direction:column}.detail-row span{text-align:left}.detail-tabs{margin-inline:-2px}.detail-tab{flex:1 0 auto}}
 </style>
 
 <div class="profile-shell">
@@ -136,6 +143,14 @@
     <div class="stat-card"><div class="stat-label">Current Month Net Preview</div><div class="stat-value">{{ payroll_snapshot.net_pay|currency }}</div><div class="stat-sub">Includes salary, allowances, commissions, and current adjustments.</div></div>
     <div class="stat-card"><div class="stat-label">Active Portfolio</div><div class="stat-value">{{ total_outstanding|currency }}</div><div class="stat-sub">{{ total_loans }} total loans and {{ total_borrowers }} distinct borrowers.</div></div>
   </section>
+
+  <nav class="detail-tabs" role="tablist" aria-label="Employee details">
+    <button class="detail-tab" type="button" role="tab" id="employee-tab-overview" aria-controls="employee-panel-overview" aria-selected="true" data-detail-tab="overview">Overview</button>
+    <button class="detail-tab" type="button" role="tab" id="employee-tab-payroll" aria-controls="employee-panel-payroll" aria-selected="false" data-detail-tab="payroll">Payroll <span class="detail-tab-count">{{ recent_payroll_lines|length }}</span></button>
+    <button class="detail-tab" type="button" role="tab" id="employee-tab-portfolio" aria-controls="employee-panel-portfolio" aria-selected="false" data-detail-tab="portfolio">Portfolio <span class="detail-tab-count">{{ total_loans }}</span></button>
+  </nav>
+
+  <div class="detail-panel" id="employee-panel-overview" role="tabpanel" aria-labelledby="employee-tab-overview" data-detail-panel="overview">
 
   <section class="grid-2">
     <div class="section-card">
@@ -210,6 +225,10 @@
     </div>
   </section>
 
+  </div>
+
+  <div class="detail-panel" id="employee-panel-payroll" role="tabpanel" aria-labelledby="employee-tab-payroll" data-detail-panel="payroll">
+
   <section class="grid-2">
     <div class="section-card">
       <div class="section-head"><h2 class="section-title">Recent Payroll Runs</h2><div class="section-sub">Latest line items involving this employee.</div></div>
@@ -245,6 +264,10 @@
     </div>
   </section>
 
+  </div>
+
+  <div class="detail-panel" id="employee-panel-portfolio" role="tabpanel" aria-labelledby="employee-tab-portfolio" data-detail-panel="portfolio">
+
   <section class="section-card">
     <div class="section-head"><h2 class="section-title">Portfolio Snapshot</h2><div class="section-sub">Field performance remains visible for agents while office staff naturally show zero portfolio activity.</div></div>
     <div class="section-body">
@@ -275,5 +298,43 @@
       </div>
     </div>
   </section>
+  </div>
 </div>
+<script>
+  (() => {
+    const tabs = Array.from(document.querySelectorAll("[data-detail-tab]"));
+    const panels = Array.from(document.querySelectorAll("[data-detail-panel]"));
+    if (!tabs.length || !panels.length) return;
+
+    const activate = (name, updateHash = true) => {
+      if (!panels.some((panel) => panel.dataset.detailPanel === name)) name = "overview";
+      tabs.forEach((tab) => {
+        const selected = tab.dataset.detailTab === name;
+        tab.classList.toggle("active", selected);
+        tab.setAttribute("aria-selected", selected ? "true" : "false");
+        tab.tabIndex = selected ? 0 : -1;
+      });
+      panels.forEach((panel) => panel.classList.toggle("active", panel.dataset.detailPanel === name));
+      if (updateHash) history.replaceState(null, "", `#${name}`);
+    };
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => activate(tab.dataset.detailTab));
+      tab.addEventListener("keydown", (event) => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        event.preventDefault();
+        let target = index;
+        if (event.key === "ArrowLeft") target = (index - 1 + tabs.length) % tabs.length;
+        if (event.key === "ArrowRight") target = (index + 1) % tabs.length;
+        if (event.key === "Home") target = 0;
+        if (event.key === "End") target = tabs.length - 1;
+        activate(tabs[target].dataset.detailTab);
+        tabs[target].focus();
+      });
+    });
+
+    activate(window.location.hash.slice(1) || "overview", false);
+    window.addEventListener("hashchange", () => activate(window.location.hash.slice(1), false));
+  })();
+</script>
 {% endblock %}

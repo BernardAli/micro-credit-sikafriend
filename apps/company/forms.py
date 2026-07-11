@@ -186,7 +186,7 @@ class CompanyProfileForm(forms.ModelForm):
             "company_name", "tagline", "description", "logo", "favicon",
             # Contact
             "phone", "email", "address", "website",
-            # Tenant messaging integrations
+            # Company messaging integrations
             "tenant_email_from_address", "tenant_email_host", "tenant_email_port",
             "tenant_email_host_user", "tenant_email_host_password",
             "tenant_email_use_tls", "tenant_email_use_ssl",
@@ -258,8 +258,8 @@ class CompanyProfileForm(forms.ModelForm):
             "description":          forms.Textarea(attrs={"rows": 3}),
             "address":              forms.Textarea(attrs={"rows": 2}),
             "tenant_email_host_password": forms.PasswordInput(render_value=True, attrs={"placeholder": "SMTP password or API secret"}),
-            "tenant_sms_api_key":   forms.PasswordInput(render_value=True, attrs={"placeholder": "Tenant SMS API key"}),
-            "tenant_ussd_api_key":  forms.PasswordInput(render_value=True, attrs={"placeholder": "Tenant USSD API key"}),
+            "tenant_sms_api_key":   forms.PasswordInput(render_value=True, attrs={"placeholder": "Company SMS API key"}),
+            "tenant_ussd_api_key":  forms.PasswordInput(render_value=True, attrs={"placeholder": "Company USSD API key"}),
             "tenant_ussd_callback_token": forms.PasswordInput(render_value=True, attrs={"placeholder": "Optional callback token"}),
             "mission_statement":    forms.Textarea(attrs={"rows": 3}),
             "vision_statement":     forms.Textarea(attrs={"rows": 2}),

@@ -3,7 +3,7 @@ from decimal import Decimal
 from django import forms
 from django.contrib.auth import get_user_model
 
-from apps.accounts.tenant_usernames import current_schema_name, tenant_username_exists, validate_tenant_scoped_username
+from apps.accounts.usernames import portal_username_exists, validate_portal_username
 
 from .models import Borrower, Loan, Payment
 
@@ -85,12 +85,11 @@ class BorrowerForm(forms.ModelForm):
 
     def clean_portal_username(self):
         username = self.cleaned_data.get("portal_username", "").strip()
-        schema_name = current_schema_name()
         try:
-            username = validate_tenant_scoped_username(username, schema_name=schema_name)
+            username = validate_portal_username(username)
         except ValueError as exc:
             raise forms.ValidationError(str(exc))
-        if tenant_username_exists(username, schema_name=schema_name):
+        if portal_username_exists(username):
             raise forms.ValidationError("That username is already taken in this company. Choose a different one.")
         return username
 

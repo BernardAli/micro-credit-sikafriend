@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils import timezone
 
@@ -58,11 +59,29 @@ def create_approval_request(
     return approval
 
 
+def can_self_review_approval(user) -> bool:
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if user.is_superuser:
+        return True
+    try:
+        return user.agent_profile.workforce_role == "MANAGEMENT"
+    except (AttributeError, ObjectDoesNotExist):
+        return False
+
+
+def _validate_self_review(approval, reviewer):
+    if approval.submitted_by_id and reviewer and approval.submitted_by_id == reviewer.pk:
+        if not can_self_review_approval(reviewer):
+            raise ValueError(
+                "Only management or a superuser can approve or reject their own request."
+            )
+
+
 def reject_approval_request(approval, reviewer, *, note="", request=None):
     if approval.status != "PENDING":
         raise ValueError("Only pending requests can be rejected.")
-    if approval.submitted_by_id and reviewer and approval.submitted_by_id == reviewer.pk:
-        raise ValueError("The submitting user cannot reject or approve their own request.")
+    _validate_self_review(approval, reviewer)
 
     approval.status = "REJECTED"
     approval.reviewed_by = reviewer
@@ -88,8 +107,7 @@ def reject_approval_request(approval, reviewer, *, note="", request=None):
 def approve_and_execute_request(approval, reviewer, *, note="", request=None):
     if approval.status != "PENDING":
         raise ValueError("Only pending requests can be approved.")
-    if approval.submitted_by_id and reviewer and approval.submitted_by_id == reviewer.pk:
-        raise ValueError("The submitting user cannot approve their own request.")
+    _validate_self_review(approval, reviewer)
 
     if approval.workflow_type == "LOAN_CREATION":
         from apps.loans.cross_company import get_cross_company_debt_check

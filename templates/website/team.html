@@ -1,150 +1,90 @@
 {% extends "website/base.html" %}
 {% load static %}
 {% block content %}
-<style>
-/* Management cards */
-.mgmt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:28px;margin-bottom:28px}
-.mgmt-card{border:1px solid var(--border);border-radius:var(--r-xl);background:var(--panel);overflow:hidden;box-shadow:var(--sh-sm);transition:transform .22s,box-shadow .22s}
-.mgmt-card:hover{transform:translateY(-6px);box-shadow:var(--sh-lg)}
-.mc-photo{height:220px;background:linear-gradient(145deg,var(--primary) 0%,var(--primary-l) 55%,var(--gold) 100%);display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:54px;color:#fff;position:relative;overflow:hidden}
-.mc-photo img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
-.mc-photo-initials{position:relative;z-index:1}
-.mc-body{padding:22px}
-.mc-name{font-family:var(--font-serif);font-size:20px;color:var(--text);margin-bottom:5px}
-.mc-title{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gold);margin-bottom:10px}
-.mc-bio{font-size:13px;color:var(--muted);line-height:1.7}
+<section class="photo-hero compact">
+  <div class="hero-bg" style="background-image:url('{% if profile.team_hero_image %}{{ profile.team_hero_image.url }}{% else %}{% static 'website/images/microcredit-team-service.webp' %}{% endif %}')"></div>
+  <div class="wrap">
+    <div class="hero-content">
+      <div class="breadcrumb"><a href="{% url 'company:website' %}">Home</a><span>/</span><span>Team</span></div>
+      <h1 class="title-xl">The people behind {{ profile.company_name }}</h1>
+      <p class="lead">{{ profile.team_subheadline|default:"A professional team focused on responsible credit, respectful service, and strong borrower relationships." }}</p>
+    </div>
+  </div>
+</section>
 
-/* Agent cards */
-.agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:22px}
-.agent-card{border:1px solid var(--border);border-radius:var(--r-xl);background:var(--panel);overflow:hidden;box-shadow:var(--sh-xs);transition:transform .22s,box-shadow .22s,border-color .22s}
-.agent-card:hover{transform:translateY(-4px);box-shadow:var(--sh-md);border-color:rgba(184,134,32,.22)}
-.ac-photo{height:160px;background:linear-gradient(145deg,var(--bg2),var(--bg3));display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
-.ac-photo img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
-.agent-card:hover .ac-photo img{transform:scale(1.05)}
-.ac-fallback{font-family:var(--font-serif);font-size:40px;color:var(--muted2)}
-.ac-body{padding:16px 18px}
-.ac-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
-.ac-id{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gold);margin-bottom:6px}
-.ac-meta{font-size:12.5px;color:var(--muted)}
-
-/* Values */
-.values-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
-.val-card{border:1px solid var(--border);border-radius:var(--r-xl);padding:28px;background:var(--panel);text-align:center;box-shadow:var(--sh-xs);transition:transform .22s}
-.val-card:hover{transform:translateY(-4px)}
-.val-icon{font-size:34px;margin-bottom:14px}
-.val-title{font-family:var(--font-serif);font-size:19px;color:var(--text);margin-bottom:10px}
-.val-desc{font-size:13px;color:var(--muted);line-height:1.7}
-
-@media(max-width:900px){.values-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:640px){.values-grid{grid-template-columns:1fr}.agents-grid{grid-template-columns:repeat(2,1fr)}}
-</style>
-
-<div class="page-hero" style="min-height:440px">
-  <div class="page-hero-img" style="background-image:url('{% if profile.team_hero_image %}{{ profile.team_hero_image.url }}{% else %}{% static 'website/images/microcredit-team-service.webp' %}{% endif %}')"></div>
-  <div class="page-hero-overlay" style="background:linear-gradient(160deg,rgba(8,18,4,.90),rgba(30,48,12,.80) 58%,rgba(58,38,8,.70) 100%)"></div>
-  <div class="page-hero-deco"></div>
-  <div class="wrap"><div class="page-hero-inner">
-    <div class="page-hero-breadcrumb"><a href="{% url 'company:website' %}">Home</a><span>/</span><span>Our Team</span></div>
-    <h1 class="h-lg">{{ profile.team_headline|default:"Our Team" }}</h1>
-    <p class="lead" style="color:rgba(255,255,255,.78)">{{ profile.team_subheadline|default:"The people behind "|add:profile.company_name|add:"'s mission." }}</p>
-  </div></div>
-</div>
-
-<!-- MANAGEMENT -->
 {% if profile.management_team %}
 <section class="section">
   <div class="wrap">
-    <div class="sec-header reveal"><div class="eyebrow">Leadership</div><h2 class="h-lg">Management Team</h2><p class="lead">Our leadership brings years of micro-finance experience, community insight, and a passion for economic empowerment.</p></div>
-    <div class="mgmt-grid">
-      {% for m in profile.management_team %}
-      <div class="mgmt-card reveal">
-        <div class="mc-photo">
-          <img src="{% static 'website/images/microcredit-team-service.webp' %}" alt="{{ m.name }}">
-          <div class="mc-photo-initials">{{ m.initials|default:m.name|slice:":2"|upper }}</div>
+    <div class="section-head center">
+      <div class="kicker">Leadership</div>
+      <h2 class="title-xl">Experienced guidance for careful lending</h2>
+    </div>
+    <div class="grid-3">
+      {% for member in profile.management_team %}
+      <article class="card">
+        <div class="card-media"><img src="{% static 'website/images/microcredit-team-service.webp' %}" alt="{{ member.name }}"></div>
+        <div class="card-body">
+          <h3 class="title-md">{{ member.name }}</h3>
+          <span class="badge">{{ member.title }}</span>
+          {% if member.bio %}<p class="copy">{{ member.bio }}</p>{% endif %}
         </div>
-        <div class="mc-body">
-          <div class="mc-name">{{ m.name }}</div>
-          <div class="mc-title">{{ m.title }}</div>
-          {% if m.bio %}<p class="mc-bio">{{ m.bio }}</p>{% endif %}
-        </div>
-      </div>
+      </article>
       {% endfor %}
     </div>
   </div>
 </section>
 {% endif %}
 
-<!-- VALUES -->
-<section class="section section-alt">
-  <div class="wrap">
-    <div class="sec-header reveal"><div class="eyebrow">Our Culture</div><h2 class="h-lg">What we stand for</h2></div>
-    {% if core_values %}
-    <div class="values-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
-      {% for v in core_values %}
-      <div class="val-card reveal">
-        <div class="val-icon">{{ v.icon|default:"✦" }}</div>
-        <h3 class="val-title">{{ v.title }}</h3>
-        <p class="val-desc">{{ v.description }}</p>
-      </div>
-      {% endfor %}
+<section class="section soft">
+  <div class="wrap split">
+    <div>
+      <div class="kicker">Service culture</div>
+      <h2 class="title-xl">Respectful follow-up, practical advice, and clear communication</h2>
+      <p class="lead">Our team works close to the communities we serve while keeping borrower accounts organized through the standalone system.</p>
     </div>
-    {% else %}
-    <div class="values-grid">
-      <div class="val-card reveal"><div class="val-icon">🤝</div><h3 class="val-title">Integrity</h3><p class="val-desc">We operate with honesty and transparency in every interaction, from the first loan to the last repayment.</p></div>
-      <div class="val-card reveal"><div class="val-icon">🌍</div><h3 class="val-title">Community</h3><p class="val-desc">Our success is measured by the growth we enable in the communities we serve.</p></div>
-      <div class="val-card reveal"><div class="val-icon">💡</div><h3 class="val-title">Innovation</h3><p class="val-desc">We constantly improve our products, processes, and technology to serve borrowers better.</p></div>
-      <div class="val-card reveal"><div class="val-icon">⭐</div><h3 class="val-title">Excellence</h3><p class="val-desc">We hold ourselves to the highest standards of service, compliance, and borrower outcomes.</p></div>
+    <div class="photo-stack">
+      <img class="tall" src="{% static 'website/images/microcredit-team-service.webp' %}" alt="Client service team">
+      <img src="{% static 'website/images/microcredit-market-support.webp' %}" alt="Field agent support">
+      <img src="{% static 'website/images/microcredit-hero-office.webp' %}" alt="Office team">
     </div>
-    {% endif %}
   </div>
 </section>
 
-<!-- FIELD AGENTS -->
 {% if profile.show_agents_on_team and agents %}
 <section class="section">
   <div class="wrap">
-    <div class="sec-header reveal"><div class="eyebrow">Field Team</div><h2 class="h-lg">Our Agents</h2><p class="lead">Our agents are the heartbeat of {{ profile.company_name }}. They live in the communities they serve, building trust one relationship at a time.</p></div>
-    <div class="agents-grid">
+    <div class="section-head center">
+      <div class="kicker">Field agents</div>
+      <h2 class="title-xl">Local support close to borrowers</h2>
+    </div>
+    <div class="grid-4">
       {% for agent in agents %}
-      <div class="agent-card reveal">
-        <div class="ac-photo">
-          {% if agent.photo %}
-            <img src="{{ agent.photo.url }}" alt="{{ agent.name }}">
-          {% else %}
-            <div class="ac-fallback">{{ agent.name|slice:":1"|upper }}</div>
-          {% endif %}
+      <article class="card">
+        <div class="card-media">
+          {% if agent.photo %}<img src="{{ agent.photo.url }}" alt="{{ agent.name }}">{% else %}<img src="{% static 'website/images/microcredit-market-support.webp' %}" alt="{{ agent.name }}">{% endif %}
         </div>
-        <div class="ac-body">
-          <div class="ac-name">{{ agent.name }}</div>
-          <div class="ac-id">{{ agent.agent_id }}</div>
-          <div class="ac-meta">📍 {{ agent.location }}</div>
-          {% if agent.group_name %}<div class="ac-meta">👥 {{ agent.group_name }}</div>{% endif %}
+        <div class="card-body">
+          <h3 class="title-md">{{ agent.name }}</h3>
+          {% if agent.job_title %}<p class="copy">{{ agent.job_title }}</p>{% endif %}
+          {% if agent.location %}<span class="badge">{{ agent.location }}</span>{% endif %}
         </div>
-      </div>
-      {% empty %}
-      <div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--muted)">
-        <div style="font-size:40px;margin-bottom:12px">👥</div>
-        <p>Our team details will be published here soon.</p>
-      </div>
+      </article>
       {% endfor %}
     </div>
   </div>
 </section>
 {% endif %}
 
-<!-- JOIN US -->
-<section class="section section-alt">
+<section class="section">
   <div class="wrap">
-    <div style="text-align:center;max-width:700px;margin:0 auto">
-      <div class="eyebrow reveal">Join Our Team</div>
-      <h2 class="h-lg reveal">Want to make a difference?</h2>
-      <p class="lead reveal" style="margin-top:18px;margin-bottom:36px">We are always looking for passionate people who believe in financial inclusion and community-driven lending. If that sounds like you, get in touch.</p>
-      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap" class="reveal">
-        <a href="{% url 'company:contact' %}" class="btn btn-primary btn-lg">Contact Us</a>
-        <a href="{% url 'login' %}" target="_blank" class="btn btn-outline btn-lg">Staff Portal →</a>
+    <div class="cta-band">
+      <div class="hero-bg" style="background-image:var(--img-team)"></div>
+      <div class="cta-inner">
+        <h2 class="title-xl">Talk to the team about your next step</h2>
+        <p class="lead">We can help you understand the right product, documents, and repayment expectations.</p>
+        <div class="actions" style="margin-top:24px"><a class="btn accent" href="{% url 'company:contact' %}">Contact Us</a></div>
       </div>
     </div>
   </div>
 </section>
-
 {% endblock %}

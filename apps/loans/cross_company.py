@@ -1,4 +1,4 @@
-"""Cross-company debt check — disabled in standalone (single-company) mode."""
+"""Cross-company debt checks are disabled in standalone mode."""
 from __future__ import annotations
 
 from decimal import Decimal
@@ -13,7 +13,7 @@ def empty_cross_company_debt_check() -> dict:
         "total_outstanding": Decimal("0.00"),
         "total_expected": Decimal("0.00"),
         "companies": [],
-        "headline": "Cross-company check not available in standalone mode.",
+        "headline": "Cross-company debt checks are disabled in standalone mode.",
     }
 
 
@@ -29,10 +29,10 @@ def serialize_cross_company_debt_check(summary: dict) -> dict:
         "open_loan_count": 0,
         "total_outstanding": "0.00",
         "total_expected": "0.00",
-        "headline": "",
+        "headline": "Cross-company debt checks are disabled in standalone mode.",
         "companies": [],
     }
 
 
 def format_cross_company_debt_summary(summary: dict) -> str:
-    return ""
+    return "Cross-company debt checks are disabled in standalone mode."

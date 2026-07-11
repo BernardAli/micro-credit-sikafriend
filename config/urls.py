@@ -31,10 +31,10 @@ urlpatterns = [
     path("agents/", include("apps.accounts.urls")),
     path("accounting/", include("apps.accounting.urls")),
     path("assets/", include("apps.assets.urls")),
+    path("", include("apps.core.urls")),
     path("notifications/", include("apps.notifications.urls")),
     path("communication/", include("apps.communication.urls")),
     path("", include("apps.borrower_portal.urls")),
-    path("", include("apps.tenants.urls")),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

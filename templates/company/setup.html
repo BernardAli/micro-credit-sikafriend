@@ -594,8 +594,8 @@
         <div class="section-header">
           <div class="section-icon">📡</div>
           <div class="section-header-copy">
-            <h2 class="section-title">Tenant Channel Integrations</h2>
-            <div class="section-desc">Tenant-specific email, SMS, and USSD credentials for this isolated workspace. Leave fields blank to fall back to the platform-wide configuration used for subscriptions and shared SaaS flows.</div>
+            <h2 class="section-title">Channel Integrations</h2>
+            <div class="section-desc">Company email, SMS, and USSD credentials for this standalone installation. Leave fields blank to use the default environment configuration.</div>
           </div>
         </div>
         <div class="section-body">
@@ -626,7 +626,7 @@
             <div class="field">
               <label for="{{ form.tenant_email_use_tls.id_for_label }}">Use TLS</label>
               {{ form.tenant_email_use_tls }}
-              <div class="help">Check this when your tenant email provider requires STARTTLS. Leave unchanged to inherit platform behavior.</div>
+              <div class="help">Check this when your email provider requires STARTTLS. Leave unchanged to inherit the default environment behavior.</div>
             </div>
             <div class="field">
               <label for="{{ form.tenant_email_use_ssl.id_for_label }}">Use SSL</label>
@@ -640,7 +640,7 @@
             <div class="field">
               <label for="{{ form.tenant_sms_provider.id_for_label }}">SMS Provider</label>
               {{ form.tenant_sms_provider }}
-              <div class="help">Current app flow actively supports <code>ARKESEL</code>. Other values are stored for tenant isolation and future provider expansion.</div>
+              <div class="help">Current app flow actively supports <code>ARKESEL</code>. Other values are stored for future provider expansion.</div>
             </div>
             <div class="field">
               <label for="{{ form.tenant_sms_sender_id.id_for_label }}">Sender ID</label>
@@ -677,7 +677,7 @@
             <div class="field field-span-2">
               <label for="{{ form.tenant_ussd_callback_token.id_for_label }}">USSD Callback Token</label>
               {{ form.tenant_ussd_callback_token }}
-              <div class="help">If set, inbound USSD routes for this tenant will require the same token in the request headers or payload.</div>
+              <div class="help">If set, inbound USSD routes will require the same token in the request headers or payload.</div>
             </div>
           </div>
         </div>

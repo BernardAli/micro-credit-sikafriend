@@ -34,6 +34,17 @@ if not SECRET_KEY:
 
 ALLOWED_HOSTS = _env_list("DJANGO_ALLOWED_HOSTS", ["localhost", "127.0.0.1", "0.0.0.0"])
 
+# Production transport security. These remain disabled for local HTTP development
+# and default to enabled whenever DJANGO_DEBUG is false.
+SECURE_SSL_REDIRECT = _env_bool("DJANGO_SECURE_SSL_REDIRECT", not DEBUG)
+SESSION_COOKIE_SECURE = _env_bool("DJANGO_SESSION_COOKIE_SECURE", not DEBUG)
+CSRF_COOKIE_SECURE = _env_bool("DJANGO_CSRF_COOKIE_SECURE", not DEBUG)
+SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_SECURE_HSTS_SECONDS", "31536000" if not DEBUG else "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool("DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", not DEBUG)
+SECURE_HSTS_PRELOAD = _env_bool("DJANGO_SECURE_HSTS_PRELOAD", not DEBUG)
+if _env_bool("DJANGO_TRUST_PROXY_HTTPS", False):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",
@@ -52,7 +63,6 @@ INSTALLED_APPS = [
     "apps.borrower_portal",
     "apps.accounting",
     "apps.assets",
-    "apps.tenants",
 ]
 
 MIDDLEWARE = [
@@ -79,7 +89,6 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "apps.company.context_processors.company_profile",
                 "apps.core.roles.user_role_context",
-                "apps.tenants.context_processors.tenant_context",
             ],
         },
     },

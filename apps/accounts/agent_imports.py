@@ -11,7 +11,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from openpyxl import Workbook, load_workbook
 
-from apps.tenants.enforcement import can_create_agent
+from apps.core.limits import can_create_agent
 
 from .models import Agent
 

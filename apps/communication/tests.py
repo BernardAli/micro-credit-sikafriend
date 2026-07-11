@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.urls import reverse
-from django.test import TestCase as TenantTestCase
+from django.test import TestCase
 
 from apps.accounts.models import Agent
 from apps.company.models import CompanyProfile
@@ -15,7 +15,7 @@ from apps.communication.views import build_recipients
 from apps.loans.models import Borrower, Loan, Payment
 
 
-class TenantDataTestCase(TenantTestCase):
+class StandaloneDataTestCase(TestCase):
     @classmethod
     def setup_tenant(cls, tenant):
         tenant.name = "Test Credit"
@@ -24,7 +24,7 @@ class TenantDataTestCase(TenantTestCase):
 
 
 @override_settings(MEDIA_ROOT=tempfile.gettempdir())
-class ManagementMessageCenterTests(TenantDataTestCase):
+class ManagementMessageCenterTests(StandaloneDataTestCase):
     def _uploaded_file(self, name):
         return SimpleUploadedFile(name, b"file", content_type="image/jpeg")
 
@@ -87,8 +87,8 @@ class ManagementMessageCenterTests(TenantDataTestCase):
         )
 
         self.assertEqual(len(recipients), 1)
-        self.assertEqual(recipients[0].label, "agent-user")
-        self.assertEqual(recipients[0].phone, "0201234567")
+        self.assertEqual(recipients[0].label, "Kwame Agent")
+        self.assertEqual(recipients[0].phone, "233201234567")
 
     def test_build_recipients_borrower_filters_match_normalized_phone(self):
         recipients = build_recipients(
@@ -107,7 +107,7 @@ class ManagementMessageCenterTests(TenantDataTestCase):
 
         self.assertEqual(len(recipients), 1)
         self.assertEqual(recipients[0].label, "Ama Borrower")
-        self.assertEqual(recipients[0].phone, "0241112222")
+        self.assertEqual(recipients[0].phone, "233241112222")
 
     def test_communication_sms_uses_gateway_phone_normalization(self):
         self.assertEqual(communication_normalize_phone("020 123 4567"), "233201234567")
@@ -133,8 +133,8 @@ class ManagementMessageCenterTests(TenantDataTestCase):
         self.assertEqual(response.context["sent_count"], 2)
 
 
-@override_settings(MEDIA_ROOT=tempfile.gettempdir())
-class HubtelUSSDTests(TenantDataTestCase):
+@override_settings(MEDIA_ROOT=tempfile.gettempdir(), DEBUG=True, ALLOW_INSECURE_USSD_CALLBACKS=True)
+class HubtelUSSDTests(StandaloneDataTestCase):
     def _uploaded_file(self, name):
         return SimpleUploadedFile(name, b"file", content_type="image/jpeg")
 

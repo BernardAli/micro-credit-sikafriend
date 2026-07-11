@@ -1,1167 +1,158 @@
 {% extends "website/base.html" %}
-{% load static humanize %}
+{% load static %}
 {% block content %}
-<style>
-/* ── HERO ────────────────────────────────────── */
-.hero{
-  min-height:100vh;
-  display:flex;align-items:center;
-  padding-top:var(--header-h);
-  position:relative;overflow:hidden;
-  background:linear-gradient(135deg,var(--primary-d) 0%,var(--primary) 40%,var(--primary-l) 70%,var(--gold-d) 100%);
-}
-[data-theme="dark"] .hero{background:linear-gradient(135deg,#040a02 0%,#0a1606 40%,#101f08 70%,#1a1104 100%)}
-.hero-bg{position:absolute;inset:0;background-size:cover;background-position:center;z-index:0;filter:saturate(.95) contrast(1.02)}
-.hero-overlay{position:absolute;inset:0;z-index:1}
-.hero-deco-tl{position:absolute;top:-120px;left:-120px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.06),transparent 65%);z-index:1;pointer-events:none}
-.hero-deco-br{position:absolute;bottom:-80px;right:5%;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,rgba(184,134,32,.18),transparent 65%);z-index:1;pointer-events:none}
-.hero-inner{
-  position:relative;z-index:2;
-  display:grid;grid-template-columns:1fr 480px;gap:80px;
-  align-items:center;padding:80px 0;
-}
-/* Left */
-.hero-kicker{
-  display:inline-flex;align-items:center;gap:10px;
-  padding:7px 18px;border-radius:var(--r-2xl);
-  border:1px solid rgba(255,255,255,.22);
-  background:rgba(255,255,255,.08);
-  font-size:11.5px;font-weight:700;letter-spacing:.08em;
-  text-transform:uppercase;color:rgba(255,255,255,.90);
-  margin-bottom:30px;backdrop-filter:blur(8px);
-}
-.hero-kicker .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 2s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
-.hero-title{color:#fff;margin-bottom:26px;letter-spacing:-.02em}
-.hero-title em{color:var(--gold);font-style:italic}
-.hero-sub{font-size:clamp(15px,1.3vw,18px);line-height:1.80;color:rgba(255,255,255,.75);max-width:520px;margin-bottom:40px}
-.hero-ctas{display:flex;flex-wrap:wrap;gap:13px;margin-bottom:52px}
-.hero-trust{display:flex;align-items:center;gap:28px;flex-wrap:wrap}
-.trust-group{display:flex;align-items:center;gap:10px}
-.trust-ava{display:flex}
-.ava{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.75);margin-left:-8px;background:linear-gradient(135deg,var(--primary),var(--gold));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0}
-.ava:first-child{margin-left:0}
-.trust-txt{font-size:13px;color:rgba(255,255,255,.70);font-weight:600;line-height:1.4}
-.trust-txt strong{color:#fff;display:block}
-.trust-divider{width:1px;height:32px;background:rgba(255,255,255,.18);flex-shrink:0}
-/* Right card */
-.hero-card{
-  background:rgba(255,255,255,.10);
-  backdrop-filter:blur(20px) saturate(1.3);
-  border:1px solid rgba(255,255,255,.18);
-  border-radius:var(--r-xl);
-  overflow:hidden;
-}
-.hero-card-visual{
-  height:168px;
-  position:relative;
-  overflow:hidden;
-  border-bottom:1px solid rgba(255,255,255,.12);
-}
-.hero-card-visual img{width:100%;height:100%;object-fit:cover}
-.hero-card-visual::after{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(to top,rgba(8,18,4,.72),rgba(8,18,4,.08));
-}
-.hero-card-caption{
-  position:absolute;left:18px;right:18px;bottom:16px;z-index:2;
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
-  color:#fff;font-size:12px;font-weight:800;
-}
-.hero-card-caption span{
-  display:inline-flex;padding:5px 10px;border-radius:999px;
-  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.20);
-  backdrop-filter:blur(10px);
-}
-.hc-header{
-  padding:24px 26px 20px;
-  border-bottom:1px solid rgba(255,255,255,.12);
-  display:flex;align-items:center;justify-content:space-between;
-}
-.hc-badge{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:5px 12px;border-radius:var(--r);
-  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);
-  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.80);
-}
-.hc-status{display:flex;align-items:center;gap:5px;font-size:12px;color:rgba(255,255,255,.60);font-weight:600}
-.hc-status-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,.6)}
-.hc-body{padding:24px 26px}
-.hc-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.50);margin-bottom:10px}
-.hc-amount{font-family:var(--font-serif);font-size:42px;color:#fff;line-height:1;margin-bottom:5px}
-.hc-cycle{font-size:13px;color:rgba(255,255,255,.55);margin-bottom:22px}
-.hc-progress-lbl{display:flex;justify-content:space-between;font-size:11.5px;color:rgba(255,255,255,.55);margin-bottom:6px;font-weight:600}
-.hc-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.15);overflow:hidden;margin-bottom:22px}
-.hc-bar-fill{height:100%;width:68%;border-radius:99px;background:linear-gradient(90deg,var(--primary-l),var(--gold))}
-.hc-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
-.hc-stat{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);border-radius:var(--r-sm);padding:12px 14px}
-.hc-stat-l{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.42);font-weight:700}
-.hc-stat-v{font-size:16px;font-weight:700;color:#fff;margin-top:3px}
-.hc-footer{
-  padding:16px 26px 20px;
-  border-top:1px solid rgba(255,255,255,.10);
-  display:flex;align-items:center;gap:10px;
-}
-.hc-pill{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:6px 13px;border-radius:var(--r);
-  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
-  font-size:12px;font-weight:700;color:rgba(255,255,255,.70);
-}
-
-/* ── TRUST STRIP ──────────────────────────────── */
-.trust-strip{
-  background:var(--panel);
-  border-bottom:1px solid var(--border);
-  padding:0;
-}
-.trust-strip-inner{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:0;
-}
-.ts-item{
-  display:flex;align-items:center;gap:14px;
-  padding:22px 28px;
-  border-right:1px solid var(--border);
-  transition:background .18s;
-}
-.ts-item:last-child{border-right:none}
-.ts-item:hover{background:var(--bg)}
-.ts-ico{
-  width:40px;height:40px;border-radius:var(--r-sm);flex-shrink:0;
-  background:linear-gradient(135deg,rgba(58,90,30,.10),rgba(184,134,32,.06));
-  border:1px solid rgba(184,134,32,.18);
-  display:flex;align-items:center;justify-content:center;font-size:18px;
-}
-.ts-label{font-size:13px;font-weight:700;color:var(--text);line-height:1.3}
-.ts-sub{font-size:11.5px;color:var(--muted);margin-top:1px}
-
-/* ── FEATURES ─────────────────────────────────── */
-.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
-.feat-card{
-  border:1px solid var(--border);
-  border-radius:var(--r-xl);
-  background:var(--panel);
-  box-shadow:var(--sh-sm);
-  position:relative;overflow:hidden;
-  transition:transform .22s,box-shadow .22s,border-color .22s;
-}
-.feat-card-body{padding:28px 30px 34px}
-.feat-media{
-  height:164px;overflow:hidden;position:relative;
-  background:linear-gradient(135deg,var(--bg2),var(--bg3));
-}
-.feat-media img{width:100%;height:100%;object-fit:cover;transition:transform .45s ease}
-.feat-card:hover .feat-media img{transform:scale(1.05)}
-.feat-media::after{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(to top,rgba(8,18,4,.58),rgba(8,18,4,.02) 56%);
-}
-.feat-card::after{
-  content:"";position:absolute;top:0;left:0;right:0;height:3px;
-  background:linear-gradient(90deg,var(--primary),var(--primary-l),var(--gold));
-  transform:scaleX(0);transform-origin:left;
-  transition:transform .3s ease;
-}
-.feat-card:hover{transform:translateY(-4px);box-shadow:var(--sh-md);border-color:rgba(58,90,30,.18)}
-.feat-card:hover::after{transform:scaleX(1)}
-.feat-card.featured{
-  background:linear-gradient(145deg,var(--primary-d) 0%,var(--primary) 55%,var(--primary-l) 85%,var(--gold-d) 100%);
-  border-color:transparent;color:#fff;
-}
-.feat-card.featured::after{display:none}
-.feat-num{
-  font-family:var(--font-serif);font-size:11px;font-weight:400;
-  color:var(--muted);letter-spacing:.08em;text-transform:uppercase;
-  margin-bottom:18px;display:flex;align-items:center;gap:10px;
-}
-.feat-num::before{content:"";flex:1;max-width:24px;height:1px;background:var(--border);display:block}
-.feat-card.featured .feat-num{color:rgba(255,255,255,.50)}
-.feat-card.featured .feat-num::before{background:rgba(255,255,255,.20)}
-.feat-icon{
-  width:52px;height:52px;border-radius:var(--r-sm);
-  background:rgba(58,90,30,.08);border:1px solid rgba(58,90,30,.12);
-  display:flex;align-items:center;justify-content:center;
-  font-size:22px;margin-bottom:20px;
-}
-.feat-card.featured .feat-icon{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.18)}
-.feat-title{font-family:var(--font-serif);font-size:22px;margin-bottom:12px;color:var(--text)}
-.feat-desc{font-size:13.5px;color:var(--muted);line-height:1.75}
-.feat-card.featured .feat-title{color:#fff}
-.feat-card.featured .feat-desc{color:rgba(255,255,255,.72)}
-.feat-link{
-  display:inline-flex;align-items:center;gap:6px;
-  margin-top:22px;font-size:13px;font-weight:700;color:var(--primary);
-  transition:gap .18s;
-}
-.feat-link:hover{gap:10px}
-.feat-card.featured .feat-link{color:var(--gold)}
-
-.impact-strip{
-  padding:0;
-  background:var(--panel);
-  border-top:1px solid var(--border);
-  border-bottom:1px solid var(--border);
-}
-.impact-layout{
-  display:grid;grid-template-columns:1fr 1fr;gap:0;min-height:430px;
-}
-.impact-photo{position:relative;min-height:430px;overflow:hidden}
-.impact-photo img{width:100%;height:100%;object-fit:cover}
-.impact-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,18,4,.30),transparent 52%)}
-.impact-copy{display:flex;align-items:center;padding:68px min(7vw,86px)}
-.impact-copy-inner{max-width:520px}
-.impact-points{display:grid;gap:12px;margin-top:28px}
-.impact-point{display:flex;gap:12px;align-items:flex-start;font-size:14px;color:var(--text2);font-weight:650;line-height:1.65}
-.impact-point::before{
-  content:"";width:9px;height:9px;border-radius:50%;background:var(--gold);margin-top:8px;flex-shrink:0;
-  box-shadow:0 0 0 5px var(--gold-pale);
-}
-
-/* ── STATS BAND ───────────────────────────────── */
-.stats-band{
-  background:linear-gradient(135deg,var(--primary-d) 0%,var(--primary) 40%,var(--primary-l) 75%,var(--gold-d) 100%);
-  padding:72px 0;position:relative;overflow:hidden;
-}
-[data-theme="dark"] .stats-band{background:linear-gradient(135deg,#040a02 0%,#0a1604 40%,#101f08 75%,#1a1104 100%)}
-.stats-band::before{content:"";position:absolute;top:-100px;right:-100px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.05),transparent 70%);pointer-events:none}
-.stats-band::after{content:"";position:absolute;bottom:-80px;left:5%;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(184,134,32,.14),transparent 70%);pointer-events:none}
-.stats-grid{
-  display:grid;grid-template-columns:repeat(4,1fr);
-  gap:0;position:relative;z-index:1;
-}
-.stat-item{
-  padding:0 40px;text-align:center;position:relative;
-}
-.stat-item+.stat-item::before{
-  content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);
-  width:1px;height:56px;background:rgba(255,255,255,.15);
-}
-.stat-num{
-  font-family:var(--font-serif);
-  font-size:clamp(40px,5vw,64px);
-  color:#fff;line-height:1;margin-bottom:10px;
-}
-.stat-lbl{
-  font-size:12px;font-weight:700;text-transform:uppercase;
-  letter-spacing:.10em;color:rgba(255,255,255,.50);
-}
-
-/* ── HOW IT WORKS ─────────────────────────────── */
-.how-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;position:relative}
-.how-connector{
-  position:absolute;top:52px;left:calc(12.5% + 26px);right:calc(12.5% + 26px);
-  height:1px;background:linear-gradient(90deg,var(--border),var(--gold),var(--primary),var(--gold),var(--border));
-  z-index:0;
-}
-.how-card{
-  text-align:center;padding:32px 22px 28px;
-  border:1px solid var(--border);border-radius:var(--r-xl);
-  background:var(--panel);position:relative;z-index:1;
-  transition:transform .22s,box-shadow .22s;box-shadow:var(--sh-xs);
-}
-.how-card:hover{transform:translateY(-4px);box-shadow:var(--sh-md)}
-.how-num{
-  width:56px;height:56px;border-radius:50%;margin:0 auto 22px;
-  background:var(--primary);color:#fff;
-  font-family:var(--font-serif);font-size:22px;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 6px 20px var(--pg);
-}
-.how-title{font-family:var(--font-serif);font-size:20px;color:var(--text);margin-bottom:10px}
-.how-desc{font-size:13px;color:var(--muted);line-height:1.72}
-
-/* ── TESTIMONIALS ─────────────────────────────── */
-.testi-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:22px;align-items:start}
-.tc{
-  border:1px solid var(--border);border-radius:var(--r-xl);
-  padding:30px;background:var(--panel);box-shadow:var(--sh-sm);
-  transition:transform .22s,box-shadow .22s;
-}
-.tc:hover{transform:translateY(-3px);box-shadow:var(--sh-md)}
-.tc.featured{
-  background:linear-gradient(145deg,var(--primary-d) 0%,var(--primary) 55%,var(--primary-l) 85%,var(--gold-d) 100%);
-  border-color:transparent;color:#fff;
-}
-.tc-quote-mark{
-  font-family:var(--font-serif);font-size:56px;line-height:.8;
-  color:var(--gold);margin-bottom:14px;display:block;
-}
-.tc.featured .tc-quote-mark{color:rgba(255,255,255,.35)}
-.tc-stars{display:flex;gap:3px;margin-bottom:14px;color:var(--gold);font-size:14px}
-.tc.featured .tc-stars{color:rgba(255,255,255,.80)}
-.tc-quote{font-size:14.5px;line-height:1.80;color:var(--muted);margin-bottom:24px}
-.tc.featured .tc-quote{color:rgba(255,255,255,.80);font-size:15px}
-.tc-author{display:flex;align-items:center;gap:12px}
-.tc-ava{
-  width:44px;height:44px;border-radius:50%;
-  background:linear-gradient(135deg,var(--primary),var(--gold));
-  display:flex;align-items:center;justify-content:center;
-  font-weight:800;font-size:13px;color:#fff;flex-shrink:0;
-}
-.tc.featured .tc-ava{background:rgba(255,255,255,.20);border:1px solid rgba(255,255,255,.30)}
-.tc-name{font-size:14px;font-weight:700;color:var(--text)}
-.tc.featured .tc-name{color:#fff}
-.tc-role{font-size:12px;color:var(--muted);margin-top:2px}
-.tc.featured .tc-role{color:rgba(255,255,255,.60)}
-
-/* ── CTA BAND ────────────────────────────────── */
-.cta-band{
-  padding:100px 0;position:relative;overflow:hidden;
-  background:var(--alt-bg);
-  border-top:1px solid var(--border);
-}
-.cta-inner{
-  display:grid;grid-template-columns:1fr 1fr;gap:80px;
-  align-items:center;
-}
-.cta-left{}
-.cta-title{font-family:var(--font-serif);font-size:clamp(30px,4vw,52px);color:var(--text);margin-bottom:18px;line-height:1.1}
-.cta-sub{font-size:17px;color:var(--muted);line-height:1.78;margin-bottom:36px}
-.cta-btns{display:flex;flex-wrap:wrap;gap:13px}
-.cta-right{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:var(--r-xl);
-  padding:36px;
-  box-shadow:var(--sh-md);
-  position:relative;overflow:hidden;
-}
-.cta-right::before{
-  content:"";position:absolute;top:-40px;right:-40px;
-  width:200px;height:200px;border-radius:50%;
-  background:radial-gradient(circle,rgba(184,134,32,.10),transparent 70%);
-  pointer-events:none;
-}
-.cta-card-title{font-family:var(--font-serif);font-size:22px;color:var(--text);margin-bottom:6px}
-.cta-card-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
-.cta-items{display:flex;flex-direction:column;gap:12px;margin-bottom:28px}
-.cta-item{
-  display:flex;align-items:center;gap:12px;
-  padding:14px 16px;border-radius:var(--r-sm);
-  border:1px solid var(--border);background:var(--bg);
-  font-size:13.5px;font-weight:600;color:var(--text2);
-  transition:border-color .18s,background .18s;
-}
-.cta-item:hover{border-color:var(--primary);background:rgba(58,90,30,.04)}
-.cta-item-ico{font-size:18px;flex-shrink:0}
-
-@media(max-width:1100px){
-  .hero-inner{grid-template-columns:1fr}
-  .hero-card{display:none}
-  .trust-strip-inner{grid-template-columns:1fr 1fr}
-  .ts-item:nth-child(2){border-right:none}
-  .ts-item:nth-child(3){border-top:1px solid var(--border)}
-  .testi-grid{grid-template-columns:1fr}
-  .cta-inner{grid-template-columns:1fr}
-  .cta-right{display:none}
-}
-@media(max-width:900px){
-  .feat-grid{grid-template-columns:1fr 1fr}
-  .stats-grid{grid-template-columns:1fr 1fr}
-  .stat-item+.stat-item::before{display:none}
-  .how-grid{grid-template-columns:1fr 1fr}
-  .how-connector{display:none}
-}
-@media(max-width:640px){
-  .feat-grid{grid-template-columns:1fr}
-  .how-grid{grid-template-columns:1fr}
-  .trust-strip-inner{grid-template-columns:1fr}
-  .ts-item{border-right:none;border-bottom:1px solid var(--border)}
-  .ts-item:last-child{border-bottom:none}
-}
-
-/* ── PARTNERS ────────────────────────────────── */
-.partner-logos{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:18px}
-.partner-card{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:28px 20px;min-height:130px;text-align:center;
-  background:var(--panel);border:1px solid var(--border);
-  border-radius:var(--r-lg);box-shadow:var(--sh-xs);
-  transition:transform .22s,box-shadow .22s,border-color .22s;
-}
-.partner-card:hover{transform:translateY(-4px);box-shadow:var(--sh-sm);border-color:rgba(58,90,30,.22)}
-.partner-logo-img{max-height:46px;max-width:120px;object-fit:contain;margin-bottom:10px;filter:grayscale(25%);transition:filter .22s}
-.partner-card:hover .partner-logo-img{filter:none}
-.partner-monogram{
-  width:52px;height:52px;border-radius:var(--r-sm);margin-bottom:10px;
-  background:linear-gradient(135deg,var(--primary),var(--gold-d));
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;font-weight:800;color:#fff;letter-spacing:-.01em;
-}
-.partner-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.3}
-.partner-desc{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.55}
-.partner-link{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--primary);margin-top:8px;transition:gap .16s}
-.partner-link:hover{gap:7px}
-.trust-empty{text-align:center;padding:52px 0;color:var(--muted)}
-.trust-empty-ico{font-size:38px;margin-bottom:12px}
-.trust-empty-title{font-size:15px;font-weight:700;color:var(--text2);margin-bottom:6px}
-.trust-empty-hint{font-size:13px;color:var(--muted)}
-
-/* ── CERTIFICATIONS ──────────────────────────── */
-.cert-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:22px}
-.cert-card{
-  background:var(--panel);border:1px solid var(--border);
-  border-radius:var(--r-lg);padding:26px 22px;
-  display:flex;gap:18px;align-items:flex-start;
-  box-shadow:var(--sh-xs);position:relative;overflow:hidden;
-  transition:transform .22s,box-shadow .22s;
-}
-.cert-card::before{
-  content:"";position:absolute;top:0;left:0;right:0;height:3px;
-  background:linear-gradient(90deg,var(--primary),var(--primary-l),var(--gold));
-}
-.cert-card:hover{transform:translateY(-3px);box-shadow:var(--sh-sm)}
-.cert-icon-wrap{
-  width:54px;height:54px;border-radius:var(--r);flex-shrink:0;
-  background:linear-gradient(135deg,rgba(58,90,30,.10),rgba(184,134,32,.08));
-  border:1px solid rgba(184,134,32,.22);
-  display:flex;align-items:center;justify-content:center;font-size:24px;
-}
-.cert-body{flex:1;min-width:0}
-.cert-name{font-size:14.5px;font-weight:700;color:var(--text);margin-bottom:5px;line-height:1.35}
-.cert-issuer{font-size:12px;font-weight:700;color:var(--gold);margin-bottom:5px}
-.cert-year{
-  display:inline-block;font-size:10px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.07em;
-  background:var(--pg);color:var(--primary-d);
-  padding:2px 9px;border-radius:var(--r-xs);margin-bottom:7px;
-}
-.cert-desc{font-size:12.5px;color:var(--muted);line-height:1.68}
-.cert-badge{
-  display:inline-flex;align-items:center;gap:5px;
-  font-size:10.5px;font-weight:700;color:var(--primary);margin-top:9px;
-}
-
-/* ── AWARDS ──────────────────────────────────── */
-.awards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:22px}
-.award-card{
-  background:var(--panel);border:1px solid var(--border);
-  border-radius:var(--r-lg);padding:26px 22px;
-  display:flex;gap:18px;align-items:flex-start;
-  box-shadow:var(--sh-xs);position:relative;overflow:hidden;
-  transition:transform .22s,box-shadow .22s;
-}
-.award-card::after{
-  content:"";position:absolute;bottom:-30px;right:-30px;
-  width:110px;height:110px;border-radius:50%;
-  background:radial-gradient(circle,var(--gold-pale),transparent 65%);
-  pointer-events:none;
-}
-.award-card:hover{transform:translateY(-3px);box-shadow:var(--sh-sm)}
-.award-icon-wrap{
-  width:56px;height:56px;border-radius:var(--r);flex-shrink:0;
-  background:linear-gradient(135deg,rgba(184,134,32,.14),rgba(184,134,32,.06));
-  border:1px solid rgba(184,134,32,.28);
-  display:flex;align-items:center;justify-content:center;font-size:26px;
-}
-.award-body{flex:1;min-width:0}
-.award-title{font-size:14.5px;font-weight:700;color:var(--text);margin-bottom:5px;line-height:1.35}
-.award-issuer{font-size:12px;color:var(--muted);margin-bottom:7px}
-.award-year{
-  display:inline-block;font-size:11px;font-weight:800;
-  color:var(--gold-d);background:var(--gold-pale);
-  padding:2px 10px;border-radius:var(--r-xs);
-  border:1px solid var(--gold-glow);
-}
-.award-desc{font-size:12.5px;color:var(--muted);line-height:1.68;margin-top:7px}
-
-@media(max-width:760px){
-  .partner-logos{grid-template-columns:repeat(2,1fr)}
-  .cert-grid,.awards-grid{grid-template-columns:1fr}
-}
-</style>
-
-{% if profile.show_hero_carousel and profile.hero_slides %}
-{% with slides=profile.hero_slides %}
-<!-- ─── HERO CAROUSEL ─────────────────────── -->
-<style>
-.hcarousel{position:relative;width:100%;min-height:100vh;overflow:hidden;padding-top:var(--header-h)}
-.hc-track{
-  display:flex;width:100%;height:100%;position:absolute;inset:0;padding-top:var(--header-h);
-  transition:transform .75s cubic-bezier(.22,.61,.36,1);
-  will-change:transform;
-}
-.hc-slide{
-  min-width:100%;height:100%;position:relative;
-  display:flex;align-items:center;
-  background:linear-gradient(135deg,var(--primary-d) 0%,var(--primary) 40%,var(--primary-l) 70%,var(--gold-d) 100%);
-  flex-shrink:0;
-}
-[data-theme="dark"] .hc-slide{background:linear-gradient(135deg,#040a02 0%,#0a1606 40%,#101f08 70%,#1a1104 100%)}
-.hc-slide-bg{
-  position:absolute;inset:0;background-size:cover;background-position:center;z-index:0;
-  filter:brightness(.42) saturate(.88);
-  transform:scale(1.02);
-}
-.hc-slide-overlay{position:absolute;inset:0;z-index:1}
-.hc-slide-deco-tl{position:absolute;top:-120px;left:-120px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.05),transparent 65%);z-index:1;pointer-events:none}
-.hc-slide-deco-br{position:absolute;bottom:-80px;right:5%;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(184,134,32,.16),transparent 65%);z-index:1;pointer-events:none}
-.hc-slide-inner{position:relative;z-index:2;width:100%;padding:80px 0;max-width:var(--max);margin:0 auto;padding-left:36px;padding-right:36px}
-.hc-slide-layout{
-  display:grid;
-  grid-template-columns:minmax(0, 1fr);
-  gap:40px;
-  align-items:center;
-}
-.hc-slide-layout.has-media{grid-template-columns:minmax(0, 1fr) minmax(280px, 430px)}
-.hc-slide-copy{min-width:0}
-.hc-kicker{
-  display:inline-flex;align-items:center;gap:10px;
-  padding:7px 18px;border-radius:var(--r-2xl);
-  border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);
-  font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-  color:rgba(255,255,255,.90);margin-bottom:28px;backdrop-filter:blur(8px);
-}
-.hc-kicker .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 2s ease-in-out infinite}
-.hc-headline{color:#fff;margin-bottom:24px;letter-spacing:-.02em;max-width:780px;text-shadow:0 10px 30px rgba(0,0,0,.35)}
-.hc-headline em{color:var(--gold);font-style:italic}
-.hc-sub{font-size:clamp(15px,1.3vw,18px);line-height:1.80;color:rgba(255,255,255,.86);max-width:560px;margin-bottom:40px;text-shadow:0 8px 24px rgba(0,0,0,.32)}
-.hc-btns{display:flex;flex-wrap:wrap;gap:13px}
-.hc-media{
-  position:relative;
-  min-width:0;
-  justify-self:end;
-}
-.hc-media-card{
-  position:relative;
-  overflow:hidden;
-  border-radius:30px;
-  border:1px solid rgba(255,255,255,.18);
-  background:rgba(255,255,255,.10);
-  box-shadow:0 28px 80px rgba(0,0,0,.34);
-  backdrop-filter:blur(14px) saturate(1.1);
-}
-.hc-media-card::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:linear-gradient(180deg,rgba(255,255,255,.08),transparent 28%,rgba(8,18,4,.08) 100%);
-  pointer-events:none;
-}
-.hc-media-card img{
-  display:block;
-  width:min(100%, 430px);
-  aspect-ratio:4 / 4.8;
-  object-fit:cover;
-}
-.hc-media-glow{
-  position:absolute;
-  inset:auto -26px -26px auto;
-  width:180px;
-  height:180px;
-  border-radius:50%;
-  background:radial-gradient(circle,rgba(184,134,32,.30),transparent 68%);
-  pointer-events:none;
-}
-/* Progress bar */
-.hc-progress{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.15);z-index:10}
-.hc-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--primary-l));transform-origin:left;transition:none}
-/* Controls */
-.hc-nav-arrow{
-  position:absolute;top:50%;transform:translateY(-50%);z-index:10;
-  width:48px;height:48px;border-radius:50%;
-  border:1.5px solid rgba(255,255,255,.28);background:rgba(255,255,255,.12);
-  backdrop-filter:blur(10px);color:#fff;font-size:18px;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:background .18s,border-color .18s,transform .18s;
-  user-select:none;
-}
-.hc-nav-arrow:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.50);transform:translateY(-50%) scale(1.06)}
-.hc-prev{left:20px}
-.hc-next{right:20px}
-/* Dots */
-.hc-dots{
-  position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
-  display:flex;gap:9px;z-index:10;
-}
-.hc-dot{
-  width:8px;height:8px;border-radius:50%;
-  background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.20);
-  cursor:pointer;transition:background .22s,transform .22s,width .22s;
-}
-.hc-dot.active{background:#fff;width:26px;border-radius:4px}
-/* Content fade-in per slide */
-.hc-slide-inner > *{transition:opacity .5s ease,transform .5s ease}
-.hc-slide:not(.hcs-active) .hc-slide-inner > *{opacity:0;transform:translateY(14px)}
-.hc-slide.hcs-active .hc-slide-inner > *{opacity:1;transform:translateY(0)}
-@media(max-width:980px){
-  .hc-slide-layout.has-media{grid-template-columns:1fr}
-  .hc-media{justify-self:start;max-width:min(100%, 420px)}
-}
-@media(max-width:680px){.hc-nav-arrow{display:none}.hc-slide-inner{padding-left:20px;padding-right:20px}.hc-media-card img{width:100%;aspect-ratio:4 / 3.8}}
-@media(max-width:900px){.impact-layout{grid-template-columns:1fr}.impact-copy{padding:56px 24px}.impact-photo{min-height:320px}}
-</style>
-
-{% with slide_images=profile %}
-<div class="hcarousel" id="heroCarousel" aria-label="Homepage carousel">
-  <div class="hc-track" id="hcTrack">
-
-    <!-- ── Slide 1 ── -->
-    {% with s=slides.0 %}
-    <div class="hc-slide hcs-active" role="group" aria-label="Slide 1 of {{ slides|length }}">
-      <div class="hc-slide-bg" style="background-image:url('{% if profile.hero_image %}{{ profile.hero_image.url }}{% else %}{% static 'website/images/microcredit-hero-office.webp' %}{% endif %}')"></div>
-      <div class="hc-slide-overlay" style="background:linear-gradient(135deg,rgba(14,32,6,{{ s.overlay|default:'0.88' }}) 0%,rgba(45,71,24,{{ s.overlay|default:'0.82' }}) 50%,rgba(90,60,8,{{ s.overlay|default:'0.74' }}) 100%)"></div>
-      <div class="hc-slide-deco-tl"></div><div class="hc-slide-deco-br"></div>
-      <div class="hc-slide-inner">
-        <div class="hc-slide-layout {% if profile.hero_slide_1_feature_image %}has-media{% endif %}">
-          <div class="hc-slide-copy">
-            <div class="hc-kicker"><span class="dot"></span>{{ profile.tagline|default:"Trusted Micro-Credit Solutions" }}</div>
-            <h1 class="h-xl hc-headline">{{ s.headline|default:profile.hero_headline|default:"Financial Freedom Starts Here" }}</h1>
-            <p class="hc-sub">{{ s.subheadline|default:profile.hero_subheadline|default:"Fast, fair micro-credit for your community." }}</p>
-            <div class="hc-btns">
-              <a href="{% if s.cta_url %}{{ s.cta_url }}{% elif profile.hero_cta_url %}{{ profile.hero_cta_url }}{% else %}{% url 'company:contact' %}{% endif %}" class="btn btn-gold btn-lg">{{ s.cta_text|default:profile.hero_cta_text|default:"Apply for a Loan" }}</a>
-              <a href="{% url 'company:services' %}" class="btn btn-ghost-white btn-lg">View Loan Products</a>
-            </div>
-          </div>
-          {% if profile.hero_slide_1_feature_image %}
-          <div class="hc-media">
-            <div class="hc-media-card">
-              <img src="{{ profile.hero_slide_1_feature_image.url }}" alt="{{ s.headline|default:profile.hero_headline|default:profile.company_name }}">
-            </div>
-            <div class="hc-media-glow"></div>
-          </div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-    {% endwith %}
-
-    {% if slides|length >= 2 %}
-    <!-- ── Slide 2 ── -->
-    {% with s=slides.1 %}
-    <div class="hc-slide" role="group" aria-label="Slide 2 of {{ slides|length }}">
-      <div class="hc-slide-bg" style="background-image:url('{% if profile.hero_slide_2_image %}{{ profile.hero_slide_2_image.url }}{% else %}{% static 'website/images/microcredit-market-support.webp' %}{% endif %}')"></div>
-      <div class="hc-slide-overlay" style="background:linear-gradient(135deg,rgba(14,32,6,{{ s.overlay|default:'0.88' }}) 0%,rgba(45,71,24,{{ s.overlay|default:'0.82' }}) 50%,rgba(90,60,8,{{ s.overlay|default:'0.74' }}) 100%)"></div>
-      <div class="hc-slide-deco-tl"></div><div class="hc-slide-deco-br"></div>
-      <div class="hc-slide-inner">
-        <div class="hc-slide-layout {% if profile.hero_slide_2_feature_image %}has-media{% endif %}">
-          <div class="hc-slide-copy">
-            <div class="hc-kicker"><span class="dot"></span>{{ profile.tagline|default:"Trusted Micro-Credit Solutions" }}</div>
-            <h1 class="h-xl hc-headline">{{ s.headline|default:"Grow Your Business Today" }}</h1>
-            <p class="hc-sub">{{ s.subheadline|default:"Working capital and expansion loans tailored for small and medium enterprises." }}</p>
-            <div class="hc-btns">
-              <a href="{% if s.cta_url %}{{ s.cta_url }}{% else %}{% url 'company:contact' %}{% endif %}" class="btn btn-gold btn-lg">{{ s.cta_text|default:"Learn More" }}</a>
-              <a href="{% url 'company:about' %}" class="btn btn-ghost-white btn-lg">Our Story →</a>
-            </div>
-          </div>
-          {% if profile.hero_slide_2_feature_image %}
-          <div class="hc-media">
-            <div class="hc-media-card">
-              <img src="{{ profile.hero_slide_2_feature_image.url }}" alt="{{ s.headline|default:'Grow Your Business Today' }}">
-            </div>
-            <div class="hc-media-glow"></div>
-          </div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-    {% endwith %}
-    {% endif %}
-
-    {% if slides|length >= 3 %}
-    <!-- ── Slide 3 ── -->
-    {% with s=slides.2 %}
-    <div class="hc-slide" role="group" aria-label="Slide 3 of {{ slides|length }}">
-      <div class="hc-slide-bg" style="background-image:url('{% if profile.hero_slide_3_image %}{{ profile.hero_slide_3_image.url }}{% else %}{% static 'website/images/microcredit-team-service.webp' %}{% endif %}')"></div>
-      <div class="hc-slide-overlay" style="background:linear-gradient(135deg,rgba(14,32,6,{{ s.overlay|default:'0.88' }}) 0%,rgba(45,71,24,{{ s.overlay|default:'0.82' }}) 50%,rgba(90,60,8,{{ s.overlay|default:'0.74' }}) 100%)"></div>
-      <div class="hc-slide-deco-tl"></div><div class="hc-slide-deco-br"></div>
-      <div class="hc-slide-inner">
-        <div class="hc-slide-layout {% if profile.hero_slide_3_feature_image %}has-media{% endif %}">
-          <div class="hc-slide-copy">
-            <div class="hc-kicker"><span class="dot"></span>{{ profile.tagline|default:"Trusted Micro-Credit Solutions" }}</div>
-            <h1 class="h-xl hc-headline">{{ s.headline|default:"Join Thousands of Borrowers" }}</h1>
-            <p class="hc-sub">{{ s.subheadline|default:"Trusted by communities across the region. Fast approvals, transparent fees, and a portal you control." }}</p>
-            <div class="hc-btns">
-              <a href="{% if s.cta_url %}{{ s.cta_url }}{% else %}{% url 'login' %}{% endif %}" class="btn btn-gold btn-lg">{{ s.cta_text|default:"Get Started" }}</a>
-              <a href="{% url 'company:services' %}" class="btn btn-ghost-white btn-lg">View Products →</a>
-            </div>
-          </div>
-          {% if profile.hero_slide_3_feature_image %}
-          <div class="hc-media">
-            <div class="hc-media-card">
-              <img src="{{ profile.hero_slide_3_feature_image.url }}" alt="{{ s.headline|default:'Join Thousands of Borrowers' }}">
-            </div>
-            <div class="hc-media-glow"></div>
-          </div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-    {% endwith %}
-    {% endif %}
-
-  </div><!-- /hc-track -->
-
-  <!-- Prev / Next -->
-  <button class="hc-nav-arrow hc-prev" id="hcPrev" aria-label="Previous slide">&#8592;</button>
-  <button class="hc-nav-arrow hc-next" id="hcNext" aria-label="Next slide">&#8594;</button>
-
-  <!-- Dots -->
-  <div class="hc-dots" id="hcDots">
-    {% for s in slides %}<button class="hc-dot {% if forloop.first %}active{% endif %}" aria-label="Go to slide {{ forloop.counter }}"></button>{% endfor %}
-  </div>
-
-  <!-- Progress bar -->
-  <div class="hc-progress"><div class="hc-progress-fill" id="hcProgressFill"></div></div>
-</div>
-{% endwith %}
-
-<script>
-(function(){
-  const track  = document.getElementById('hcTrack');
-  const slides = track ? track.querySelectorAll('.hc-slide') : [];
-  const dots   = document.querySelectorAll('.hc-dot');
-  const fill   = document.getElementById('hcProgressFill');
-  const total  = slides.length;
-  if(!total) return;
-
-  let current = 0, timer, animFrame, startTime, paused = false;
-  const DURATION = 6000;
-
-  function goTo(n, userAction) {
-    slides[current].classList.remove('hcs-active');
-    slides[current].setAttribute('aria-hidden', 'true');
-    dots[current]?.classList.remove('active');
-    current = (n + total) % total;
-    if(track) track.style.transform = `translateX(-${current * 100}%)`;
-    slides[current].classList.add('hcs-active');
-    slides[current].setAttribute('aria-hidden', 'false');
-    dots[current]?.classList.add('active');
-    if(userAction) resetProgress();
-  }
-
-  function resetProgress() {
-    clearTimeout(timer);
-    cancelAnimationFrame(animFrame);
-    startTime = performance.now();
-    animateProgress();
-  }
-
-  function animateProgress() {
-    if(paused){ animFrame = requestAnimationFrame(animateProgress); return; }
-    const elapsed = performance.now() - startTime;
-    const pct = Math.min(elapsed / DURATION * 100, 100);
-    if(fill) fill.style.width = pct + '%';
-    if(elapsed >= DURATION){
-      goTo(current + 1);
-      startTime = performance.now();
-    }
-    animFrame = requestAnimationFrame(animateProgress);
-  }
-
-  document.getElementById('hcPrev')?.addEventListener('click',() => goTo(current - 1, true));
-  document.getElementById('hcNext')?.addEventListener('click',() => goTo(current + 1, true));
-  dots.forEach((d, i) => d.addEventListener('click', () => goTo(i, true)));
-
-  /* Keyboard */
-  document.addEventListener('keydown', e => {
-    if(e.key === 'ArrowLeft') goTo(current - 1, true);
-    if(e.key === 'ArrowRight') goTo(current + 1, true);
-  });
-
-  /* Touch / swipe */
-  let tx = 0;
-  track?.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, {passive:true});
-  track?.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - tx;
-    if(Math.abs(dx) > 48) goTo(current + (dx < 0 ? 1 : -1), true);
-  }, {passive:true});
-
-  /* Pause on hover */
-  const carousel = document.getElementById('heroCarousel');
-  carousel?.addEventListener('mouseenter', () => { paused = true; });
-  carousel?.addEventListener('mouseleave', () => { paused = false; startTime = performance.now() - (parseFloat(fill?.style.width||'0') / 100 * DURATION); });
-
-  /* Start */
-  slides.forEach((slide, index) => {
-    slide.setAttribute('aria-hidden', index === current ? 'false' : 'true');
-  });
-  if(track) track.style.transform = 'translateX(0)';
-  resetProgress();
-})();
-</script>
-
-{% endwith %}
-{% else %}
-<!-- ─── HERO (static) ──────────────────────── -->
-<section class="hero" id="home">
+<section class="photo-hero">
   <div class="hero-bg" style="background-image:url('{% if profile.hero_image %}{{ profile.hero_image.url }}{% else %}{% static 'website/images/microcredit-hero-office.webp' %}{% endif %}')"></div>
-  <div class="hero-overlay" style="background:linear-gradient(135deg,rgba(14,32,6,{{ profile.hero_overlay_opacity|default:'0.82' }}) 0%,rgba(45,71,24,{{ profile.hero_overlay_opacity|default:'0.75' }}) 50%,rgba(90,60,8,{{ profile.hero_overlay_opacity|default:'0.65' }}) 100%)"></div>
-  <div class="hero-deco-tl"></div>
-  <div class="hero-deco-br"></div>
   <div class="wrap">
-    <div class="hero-inner">
-      <div>
-        <div class="hero-kicker">
-          <span class="dot"></span>
-          {{ profile.tagline|default:"Trusted Micro-Credit Solutions" }}
-        </div>
-        <h1 class="h-xl hero-title">{{ profile.hero_headline|default:"Financial Freedom <em>Starts Here</em>" }}</h1>
-        <p class="hero-sub">{{ profile.hero_subheadline|default:"Fast, fair, and transparent micro-credit for individuals and businesses in your community." }}</p>
-        <div class="hero-ctas">
-          <a href="{% if profile.hero_cta_url %}{{ profile.hero_cta_url }}{% else %}{% url 'company:contact' %}{% endif %}" class="btn btn-gold btn-lg">{{ profile.hero_cta_text|default:"Apply for a Loan" }}</a>
-          <a href="{% url 'company:services' %}" class="btn btn-ghost-white btn-lg">View Loan Products</a>
-        </div>
-        <div class="hero-trust">
-          <div class="trust-group">
-            <div class="trust-ava">
-              <div class="ava">AA</div><div class="ava">KB</div><div class="ava">EM</div><div class="ava">+</div>
-            </div>
-            <div class="trust-txt">
-              <strong>{% if profile.clients_served %}{{ profile.clients_served|intcomma }}+{% else %}Hundreds of{% endif %} Clients</strong>
-              already funded
-            </div>
-          </div>
-          <div class="trust-divider"></div>
-          <div class="trust-group">
-            <div class="trust-txt">
-              <strong>⚡ Within 24 Hours</strong>
-              disbursement turnaround
-            </div>
-          </div>
-          <div class="trust-divider"></div>
-          <div class="trust-group">
-            <div class="trust-txt">
-              <strong>🔒 Secure Portal</strong>
-              borrower access 24/7
-            </div>
-          </div>
-        </div>
+    <div class="hero-content">
+      <div class="kicker">{{ profile.tagline|default:"Responsible micro-credit" }}</div>
+      <h1 class="display">{{ profile.company_name }}</h1>
+      <p class="lead">{{ profile.hero_subheadline|default:"Fast, fair, and transparent micro-credit for individuals, groups, and growing businesses." }}</p>
+      <div class="actions" style="margin-top:28px">
+        <a class="btn accent" href="{% if profile.hero_cta_url %}{{ profile.hero_cta_url }}{% else %}{% url 'company:contact' %}{% endif %}">{{ profile.hero_cta_text|default:"Apply for a Loan" }}</a>
+        <a class="btn white-ghost" href="{% url 'company:services' %}">Explore Services</a>
       </div>
-
-      <!-- Right card -->
-      <div class="hero-card">
-        <div class="hero-card-visual">
-          <img src="{% static 'website/images/microcredit-loan-products.webp' %}" alt="Transparent loan planning">
-          <div class="hero-card-caption"><span>Loan Planning</span><span>{{ profile.formatted_currency }}</span></div>
-        </div>
-        <div class="hc-header">
-          <div class="hc-badge">📊 Sample Account</div>
-          <div class="hc-status"><div class="hc-status-dot"></div> Active</div>
-        </div>
-        <div class="hc-body">
-          <div class="hc-label">Loan Principal</div>
-          <div class="hc-amount">{{ profile.formatted_currency }} 5,000</div>
-          <div class="hc-cycle">{{ profile.get_repayment_cycle_display }} repayments · 12 periods</div>
-          <div class="hc-progress-lbl"><span>Repayment Progress</span><span>68%</span></div>
-          <div class="hc-bar"><div class="hc-bar-fill"></div></div>
-          <div class="hc-stats">
-            <div class="hc-stat"><div class="hc-stat-l">Paid to Date</div><div class="hc-stat-v">{{ profile.formatted_currency }} 3,400</div></div>
-            <div class="hc-stat"><div class="hc-stat-l">Balance</div><div class="hc-stat-v">{{ profile.formatted_currency }} 1,600</div></div>
-            <div class="hc-stat"><div class="hc-stat-l">Next Payment</div><div class="hc-stat-v">{{ profile.formatted_currency }} 417</div></div>
-            <div class="hc-stat"><div class="hc-stat-l">Periods Left</div><div class="hc-stat-v">4 of 12</div></div>
-          </div>
-        </div>
-        <div class="hc-footer">
-          <div class="hc-pill">⚡ 24hr Disbursement</div>
-          <div class="hc-pill">🔒 Secured</div>
-        </div>
+      <div class="hero-meta">
+        <span>{{ profile.get_repayment_cycle_display }} repayments</span>
+        <span>{{ profile.formatted_currency }} lending</span>
+        <span>Client portal access</span>
       </div>
     </div>
   </div>
 </section>
-{% endif %}{# /show_hero_carousel #}
 
-<!-- ─── TRUST STRIP ──────────────────────── -->
-{% if profile.show_trust_strip %}
-<div class="trust-strip">
-  <div class="wrap" style="padding:0">
-    <div class="trust-strip-inner" style="max-width:var(--max);margin:0 auto;padding:0 36px">
-      <div class="ts-item">
-        <div class="ts-ico">🏦</div>
-        <div><div class="ts-label">Licensed &amp; Regulated</div><div class="ts-sub">Compliant operations</div></div>
-      </div>
-      <div class="ts-item">
-        <div class="ts-ico">⚡</div>
-        <div><div class="ts-label">Fast Disbursement</div><div class="ts-sub">Funds within 24 hours</div></div>
-      </div>
-      <div class="ts-item">
-        <div class="ts-ico">🔒</div>
-        <div><div class="ts-label">Secure Client Portal</div><div class="ts-sub">24/7 account access</div></div>
-      </div>
-      <div class="ts-item">
-        <div class="ts-ico">🤝</div>
-        <div><div class="ts-label">No Hidden Fees</div><div class="ts-sub">Full transparency always</div></div>
-      </div>
+<div class="metric-strip">
+  <div class="wrap">
+    <div class="metric-grid">
+      {% if stats %}
+        {% for stat in stats|slice:":4" %}
+        <div class="metric"><strong>{{ stat.value }}</strong><span>{{ stat.label }}</span></div>
+        {% endfor %}
+      {% else %}
+        <div class="metric"><strong>24h</strong><span>Fast reviews</span></div>
+        <div class="metric"><strong>6</strong><span>Loan products</span></div>
+        <div class="metric"><strong>100%</strong><span>Transparent terms</span></div>
+        <div class="metric"><strong>1</strong><span>Secure portal</span></div>
+      {% endif %}
     </div>
   </div>
 </div>
-{% endif %}{# /show_trust_strip #}
 
-<!-- ─── SERVICES FEATURES ─────────────────── -->
-<section class="section" id="services">
-  <div class="wrap">
-    <div class="sec-header reveal">
-      <div class="eyebrow">What We Offer</div>
-      <h2 class="h-lg">Financial solutions for <em>every</em> goal</h2>
-      <p class="lead">From personal emergencies to business expansion — we have a product designed for your needs.</p>
+<section class="section">
+  <div class="wrap split wide-left">
+    <div>
+      <div class="kicker">Community finance</div>
+      <h2 class="title-xl">{{ profile.hero_headline|default:"Financial freedom starts with the right partner." }}</h2>
+      <p class="lead">{{ profile.mission_statement|default:"We provide accessible, responsible micro-credit solutions that help people grow, build assets, and stabilize their financial lives." }}</p>
+      <ul class="list">
+        <li>Clear terms before every commitment</li>
+        <li>Loan options for personal, business, group, and asset needs</li>
+        <li>Field support backed by secure digital account access</li>
+      </ul>
     </div>
-    <div class="feat-grid">
-      {% for s in services %}
-      <div class="feat-card {% if s.highlight %}featured{% endif %} reveal">
-        <div class="feat-media">
+    <div class="photo-stack">
+      <img class="tall" src="{% static 'website/images/microcredit-market-support.webp' %}" alt="Field officer supporting a market trader">
+      <img src="{% static 'website/images/microcredit-loan-products.webp' %}" alt="Loan product planning">
+      <img src="{% static 'website/images/microcredit-team-service.webp' %}" alt="Client service conversation">
+    </div>
+  </div>
+</section>
+
+<section class="section soft">
+  <div class="wrap">
+    <div class="section-head center">
+      <div class="kicker">Loan services</div>
+      <h2 class="title-xl">Practical finance for real-world needs</h2>
+      <p class="lead">Choose a lending path that fits the purpose, timing, and repayment rhythm of the borrower.</p>
+    </div>
+    <div class="grid-3">
+      {% for service in services|slice:":6" %}
+      <article class="card">
+        <div class="card-media">
           {% if forloop.counter|divisibleby:"3" %}
-            <img src="{% static 'website/images/microcredit-team-service.webp' %}" alt="{{ s.title }}">
+          <img src="{% static 'website/images/microcredit-team-service.webp' %}" alt="{{ service.title }}">
           {% elif forloop.counter|divisibleby:"2" %}
-            <img src="{% static 'website/images/microcredit-market-support.webp' %}" alt="{{ s.title }}">
+          <img src="{% static 'website/images/microcredit-market-support.webp' %}" alt="{{ service.title }}">
           {% else %}
-            <img src="{% static 'website/images/microcredit-loan-products.webp' %}" alt="{{ s.title }}">
+          <img src="{% static 'website/images/microcredit-loan-products.webp' %}" alt="{{ service.title }}">
           {% endif %}
         </div>
-        <div class="feat-card-body">
-          <div class="feat-num">0{{ forloop.counter }}</div>
-          <div class="feat-icon">{{ s.icon|default:"💡" }}</div>
-          <h3 class="feat-title">{{ s.title }}</h3>
-          <p class="feat-desc">{{ s.description }}</p>
-          <a href="{% url 'company:service_detail' s.slug %}" class="feat-link">Learn more →</a>
+        <div class="card-body">
+          <span class="badge">{{ service.badge }}</span>
+          <h3 class="title-md" style="margin-top:14px">{{ service.title }}</h3>
+          <p class="copy">{{ service.description }}</p>
+          <a class="btn ghost small" href="{% url 'company:service_detail' service.slug %}">View Details</a>
         </div>
-      </div>
-      {% endfor %}
-    </div>
-    <div style="text-align:center;margin-top:52px">
-      <a href="{% url 'company:services' %}" class="btn btn-outline btn-lg reveal">View All Loan Products →</a>
-    </div>
-  </div>
-</section>
-
-<section class="impact-strip">
-  <div class="impact-layout">
-    <div class="impact-photo reveal">
-      <img src="{% static 'website/images/microcredit-market-support.webp' %}" alt="Field support for small business borrowers">
-    </div>
-    <div class="impact-copy">
-      <div class="impact-copy-inner reveal">
-        <div class="eyebrow">Community Impact</div>
-        <h2 class="h-lg">Credit that meets people where business happens</h2>
-        <p class="lead" style="margin-top:18px">From market stalls to growing shops, our lending process combines human support, clear repayment planning, and digital record visibility.</p>
-        <div class="impact-points">
-          <div class="impact-point">Field agents help borrowers choose realistic facilities before approval.</div>
-          <div class="impact-point">Transparent schedules keep principal, returns, and balances easy to understand.</div>
-          <div class="impact-point">The borrower portal gives clients a professional self-service experience.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── STATS BAND ─────────────────────────── -->
-{% if profile.show_stats_band and stats %}
-<section class="stats-band">
-  <div class="wrap">
-    <div class="stats-grid">
-      {% for s in stats %}
-      <div class="stat-item reveal">
-        <div class="stat-num">{{ s.value }}</div>
-        <div class="stat-lbl">{{ s.label }}</div>
-      </div>
+      </article>
       {% endfor %}
     </div>
   </div>
 </section>
-{% endif %}
 
-<!-- ─── HOW IT WORKS ──────────────────────── -->
 {% if profile.show_how_section %}
-<section class="section section-alt" id="how">
+<section class="section surface">
   <div class="wrap">
-    <div class="sec-header reveal">
-      <div class="eyebrow">The Process</div>
-      <h2 class="h-lg">Funded in simple steps</h2>
-      <p class="lead">Streamlined to get you the capital you need with minimal friction and maximum transparency.</p>
+    <div class="section-head">
+      <div class="kicker">How it works</div>
+      <h2 class="title-xl">A clear path from application to disbursement</h2>
+      <p class="lead">The lending journey is designed to be simple, transparent, and easy to follow.</p>
     </div>
-    <div class="how-grid" style="grid-template-columns:repeat({{ how_steps|length }},1fr)">
-      {% if how_steps|length == 4 %}<div class="how-connector"></div>{% endif %}
+    <div class="grid-4">
       {% for step in how_steps %}
-      <div class="how-card reveal">
-        <div class="how-num">{{ forloop.counter }}</div>
-        <h3 class="how-title">{{ step.title }}</h3>
-        <p class="how-desc">{{ step.description }}</p>
-      </div>
+      <article class="step-card">
+        <div class="step-num">{{ forloop.counter }}</div>
+        <h3 class="title-md">{{ step.title }}</h3>
+        <p class="copy">{{ step.description }}</p>
+      </article>
       {% endfor %}
     </div>
   </div>
 </section>
 {% endif %}
 
-<!-- ─── TESTIMONIALS ──────────────────────── -->
-{% if profile.show_testimonials %}
-<section class="section" id="testimonials">
+<section class="section">
   <div class="wrap">
-    <div class="sec-header reveal">
-      <div class="eyebrow">Client Stories</div>
-      <h2 class="h-lg">Real people, real results</h2>
+    <div class="image-band">
+      <img src="{% static 'website/images/microcredit-hero-office.webp' %}" alt="Professional micro-credit office">
+      <img src="{% static 'website/images/microcredit-market-support.webp' %}" alt="Community business support">
+      <img src="{% static 'website/images/microcredit-team-service.webp' %}" alt="Customer service support">
     </div>
-    <div class="testi-grid">
-      {% for t in testimonials|slice:":3" %}
-      <div class="tc {% if forloop.first %}featured{% endif %} reveal">
-        <span class="tc-quote-mark">"</span>
-        <div class="tc-stars">{% for i in "12345" %}★{% endfor %}</div>
-        <p class="tc-quote">{{ t.quote }}</p>
-        <div class="tc-author">
-          <div class="tc-ava">{% if t.avatar_initials %}{{ t.avatar_initials }}{% else %}{{ t.name|slice:":2"|upper }}{% endif %}</div>
-          <div><div class="tc-name">{{ t.name }}</div><div class="tc-role">{{ t.role }}</div></div>
-        </div>
-      </div>
+  </div>
+</section>
+
+{% if profile.show_testimonials and testimonials %}
+<section class="section soft">
+  <div class="wrap">
+    <div class="section-head center">
+      <div class="kicker">Client stories</div>
+      <h2 class="title-xl">Trusted by borrowers building steady progress</h2>
+    </div>
+    <div class="grid-3">
+      {% for item in testimonials|slice:":3" %}
+      <article class="quote-card">
+        <p class="quote-text">"{{ item.quote }}"</p>
+        <div class="quote-by">{{ item.name }}</div>
+        <div class="quote-role">{{ item.role }}</div>
+      </article>
       {% endfor %}
     </div>
   </div>
 </section>
 {% endif %}
 
-<!-- ─── CORE VALUES ────────────────────────── -->
-{% if core_values %}
-<section class="section section-alt" id="values">
+<section class="section">
   <div class="wrap">
-    <div class="sec-header reveal">
-      <div class="eyebrow">Our Principles</div>
-      <h2 class="h-lg">Values that guide us</h2>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:22px">
-      {% for v in core_values %}
-      <div class="card reveal" style="text-align:center;padding:34px 26px">
-        <div style="font-size:34px;margin-bottom:14px">{{ v.icon|default:"✦" }}</div>
-        <h3 style="font-family:var(--font-serif);font-size:20px;color:var(--text);margin-bottom:10px">{{ v.title }}</h3>
-        <p style="font-size:13.5px;color:var(--muted);line-height:1.70">{{ v.description }}</p>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</section>
-{% endif %}
-
-<!-- ─── PARTNERS ───────────────────────────── -->
-{% if profile.show_partners_section %}
-<section class="section" id="partners">
-  <div class="wrap">
-    <div class="sec-header reveal">
-      <div class="eyebrow">Trusted By</div>
-      <h2 class="h-lg">Our partners &amp; sponsors</h2>
-      <p class="lead">We work alongside reputable institutions to deliver financial services you can rely on.</p>
-    </div>
-    {% if partners %}
-    <div class="partner-logos">
-      {% for p in partners %}
-      <div class="partner-card reveal">
-        {% if p.logo %}
-        <img src="{{ p.logo }}" alt="{{ p.name }}" class="partner-logo-img">
-        {% else %}
-        <div class="partner-monogram">{{ p.name|slice:":2"|upper }}</div>
-        {% endif %}
-        <div class="partner-name">{{ p.name }}</div>
-        {% if p.description %}<div class="partner-desc">{{ p.description }}</div>{% endif %}
-        {% if p.website %}<a href="{{ p.website }}" target="_blank" rel="noopener" class="partner-link">Visit →</a>{% endif %}
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="trust-empty reveal">
-      <div class="trust-empty-ico">🤝</div>
-      <div class="trust-empty-title">Partners coming soon</div>
-      <div class="trust-empty-hint">Add partner details in Website Settings → Trust &amp; Credibility.</div>
-    </div>
-    {% endif %}
-  </div>
-</section>
-{% endif %}{# /show_partners_section #}
-
-<!-- ─── CERTIFICATIONS ─────────────────────── -->
-{% if profile.show_certifications_section %}
-<section class="section section-alt" id="certifications">
-  <div class="wrap">
-    <div class="sec-header reveal">
-      <div class="eyebrow">Verified &amp; Accredited</div>
-      <h2 class="h-lg">Trust backed by credentials</h2>
-      <p class="lead">Our licences and memberships reflect the standards we hold ourselves to every day.</p>
-    </div>
-    {% if certifications %}
-    <div class="cert-grid">
-      {% for c in certifications %}
-      <div class="cert-card reveal">
-        <div class="cert-icon-wrap">{{ c.icon|default:"🏅" }}</div>
-        <div class="cert-body">
-          <div class="cert-name">{{ c.name }}</div>
-          {% if c.issuer %}<div class="cert-issuer">{{ c.issuer }}</div>{% endif %}
-          {% if c.year %}<span class="cert-year">Since {{ c.year }}</span>{% endif %}
-          {% if c.description %}<div class="cert-desc">{{ c.description }}</div>{% endif %}
-          <div class="cert-badge">✔ Verified</div>
+    <div class="cta-band">
+      <div class="hero-bg" style="background-image:var(--img-market)"></div>
+      <div class="cta-inner">
+        <h2 class="title-xl">{{ profile.cta_headline|default:"Ready to move forward with a responsible loan?" }}</h2>
+        <p class="lead">{{ profile.cta_body|default:"Talk to our team about the amount, purpose, and repayment plan that makes sense for your situation." }}</p>
+        <div class="actions" style="margin-top:24px">
+          <a class="btn accent" href="{% url 'company:contact' %}">{{ profile.cta_button_text|default:"Contact Us Today" }}</a>
+          <a class="btn white-ghost" href="{% url 'login' %}" target="_blank" rel="noopener">Open Client Portal</a>
         </div>
       </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="trust-empty reveal">
-      <div class="trust-empty-ico">🏅</div>
-      <div class="trust-empty-title">Certifications coming soon</div>
-      <div class="trust-empty-hint">Add certification data in Website Settings → Trust &amp; Credibility.</div>
-    </div>
-    {% endif %}
-  </div>
-</section>
-{% endif %}{# /show_certifications_section #}
-
-<!-- ─── AWARDS ────────────────────────────── -->
-{% if profile.show_awards_section %}
-<section class="section" id="awards">
-  <div class="wrap">
-    <div class="sec-header reveal">
-      <div class="eyebrow">Recognition</div>
-      <h2 class="h-lg">Awards &amp; achievements</h2>
-      <p class="lead">Recognition from industry bodies that validates the quality of our service and impact.</p>
-    </div>
-    {% if awards %}
-    <div class="awards-grid">
-      {% for a in awards %}
-      <div class="award-card reveal">
-        <div class="award-icon-wrap">{{ a.icon|default:"🏆" }}</div>
-        <div class="award-body">
-          <div class="award-title">{% firstof a.title a.name "Award Recognition" %}</div>
-          {% if a.issuer %}<div class="award-issuer">{{ a.issuer }}</div>{% endif %}
-          {% if a.year %}<span class="award-year">{{ a.year }}</span>{% endif %}
-          {% if a.description %}<div class="award-desc">{{ a.description }}</div>{% endif %}
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="trust-empty reveal">
-      <div class="trust-empty-ico">🏆</div>
-      <div class="trust-empty-title">Awards coming soon</div>
-      <div class="trust-empty-hint">Add award data in Website Settings → Trust &amp; Credibility.</div>
-    </div>
-    {% endif %}
-  </div>
-</section>
-{% endif %}{# /show_awards_section #}
-
-<!-- ─── CTA ───────────────────────────────── -->
-<section class="cta-band">
-  <div class="wrap">
-    <div class="cta-inner">
-      <div class="cta-left reveal">
-        <div class="eyebrow">Get Started Today</div>
-        <h2 class="cta-title">{{ profile.cta_headline|default:"Ready to grow with "|add:profile.company_name|add:"?" }}</h2>
-        <p class="cta-sub">{{ profile.cta_body|default:"Join our growing community of borrowers and take the first step toward financial freedom today. Fast approvals. No hidden fees." }}</p>
-        <div class="cta-btns">
-          <a href="{% url 'company:contact' %}" class="btn btn-primary btn-lg">{{ profile.cta_button_text|default:"Contact Us Today" }}</a>
-          <a href="{% url 'login' %}" target="_blank" class="btn btn-outline btn-lg">Sign In to Portal →</a>
-        </div>
-      </div>
-      <div class="cta-right reveal">
-        <div class="cta-card-title">Why borrowers choose us</div>
-        <div class="cta-card-sub">Everything you need, nothing you don't.</div>
-        <div class="cta-items">
-          <div class="cta-item"><span class="cta-item-ico">⚡</span> Fast approval — often same day</div>
-          <div class="cta-item"><span class="cta-item-ico">🔒</span> Secure, private borrower portal</div>
-          <div class="cta-item"><span class="cta-item-ico">📊</span> Transparent repayment schedule</div>
-          <div class="cta-item"><span class="cta-item-ico">🤝</span> Dedicated field agents</div>
-          <div class="cta-item"><span class="cta-item-ico">💱</span> Flexible repayment options</div>
-        </div>
-        <a href="{% url 'company:contact' %}" class="btn btn-primary" style="width:100%;justify-content:center">Apply Now →</a>
-      </div>
     </div>
   </div>
 </section>
-
 {% endblock %}

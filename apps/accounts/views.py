@@ -35,8 +35,8 @@ from apps.core.pagination import paginate_items
 from apps.core.roles import admin_required, agent_or_admin_required, get_user_role, get_agent_for_user
 from apps.company.models import CompanyProfile
 from apps.company.statutory import calculate_progressive_tax
-from apps.accounts.tenant_usernames import build_tenant_scoped_username, current_schema_name, visible_portal_username
-from apps.tenants.enforcement import can_create_agent
+from apps.accounts.usernames import build_portal_username, visible_portal_username
+from apps.core.limits import can_create_agent
 
 from decimal import Decimal
 from django.contrib.auth.decorators import login_required
@@ -1389,7 +1389,7 @@ def agent_detail(request, pk):
 
 @admin_required
 def agent_create(request):
-    agent_limit = can_create_agent(schema_name=current_schema_name(request))
+    agent_limit = can_create_agent()
     if not agent_limit.allowed:
         messages.error(request, agent_limit.reason)
         return redirect("agent_list")
@@ -1397,6 +1397,7 @@ def agent_create(request):
     form = AgentForm(request.POST or None, request.FILES or None)
     if request.method == "POST" and form.is_valid():
         agent = form.save()
+        messages.success(request, f"Workforce member '{agent.name}' was created successfully.")
         return redirect("agent_detail", pk=agent.pk)
     return render(request, "agents/agent_form.html", {"form": form, "title": "Add Workforce Member"})
 
@@ -1757,7 +1758,7 @@ def agent_delete(request, pk):
 @admin_required
 def agent_register(request):
     """Admin creates a new agent WITH a login account."""
-    agent_limit = can_create_agent(schema_name=current_schema_name(request))
+    agent_limit = can_create_agent()
     if not agent_limit.allowed:
         messages.error(request, agent_limit.reason)
         return redirect("agent_list")
@@ -2051,13 +2052,11 @@ def borrower_create_login(request, pk):
     from apps.loans.models import Borrower
     from apps.accounts.forms import BorrowerCreateLoginForm
     borrower = get_object_or_404(Borrower, pk=pk)
-    schema_name = current_schema_name(request)
-
     if borrower.user:
         from django.contrib import messages as _msg
         _msg.warning(
             request,
-            f"{borrower.full_name} already has a login account ({visible_portal_username(borrower.user.username, schema_name=schema_name)})."
+            f"{borrower.full_name} already has a login account ({visible_portal_username(borrower.user.username)})."
         )
         return redirect("loans:borrower_detail", pk=pk)
 
@@ -2067,7 +2066,7 @@ def borrower_create_login(request, pk):
             from django.contrib.auth.models import User
             alias_username = form.cleaned_data["username"]
             user = User.objects.create_user(
-                username=build_tenant_scoped_username(alias_username, schema_name=schema_name),
+                username=build_portal_username(alias_username),
                 email=(borrower.email or "").strip().lower(),
                 password=form.cleaned_data["password"],
             )
@@ -2084,7 +2083,6 @@ def borrower_create_login(request, pk):
         "borrower": borrower,
         "borrower_login_username": visible_portal_username(
             getattr(getattr(borrower, "user", None), "username", ""),
-            schema_name=schema_name,
         ),
         "title": f"Create Login — {borrower.full_name}",
     })
@@ -2096,8 +2094,6 @@ def borrower_reset_login(request, pk):
     from apps.loans.models import Borrower
     from apps.accounts.forms import AgentResetPasswordForm
     borrower = get_object_or_404(Borrower, pk=pk)
-    schema_name = current_schema_name(request)
-
     if not borrower.user:
         from django.contrib import messages as _msg
         _msg.error(request, "This borrower has no login account yet.")
@@ -2119,7 +2115,6 @@ def borrower_reset_login(request, pk):
         "borrower": borrower,
         "borrower_login_username": visible_portal_username(
             getattr(getattr(borrower, "user", None), "username", ""),
-            schema_name=schema_name,
         ),
         "title": f"Reset Login — {borrower.full_name}",
     })

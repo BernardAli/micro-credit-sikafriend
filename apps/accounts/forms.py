@@ -6,11 +6,10 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
 from .models import Agent, PayrollAdjustment, PayrollRun
-from .tenant_usernames import (
-    current_schema_name,
+from .usernames import (
     login_username_candidates,
-    tenant_username_exists,
-    validate_tenant_scoped_username,
+    portal_username_exists,
+    validate_portal_username,
 )
 
 UserModel = get_user_model()
@@ -35,7 +34,7 @@ def _validate_unique_user_email(email, *, exclude_user_id=None):
     return email
 
 
-class TenantAwareAuthenticationForm(AuthenticationForm):
+class StandaloneAuthenticationForm(AuthenticationForm):
     def clean(self):
         username = self.cleaned_data.get("username")
         password = self.cleaned_data.get("password")
@@ -44,9 +43,8 @@ class TenantAwareAuthenticationForm(AuthenticationForm):
             username = ""
 
         if username and password:
-            schema_name = current_schema_name(self.request)
             self.user_cache = None
-            for candidate in login_username_candidates(username, schema_name=schema_name):
+            for candidate in login_username_candidates(username):
                 self.user_cache = authenticate(self.request, username=candidate, password=password)
                 if self.user_cache is not None:
                     break
@@ -118,6 +116,7 @@ class AgentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["supervisor"].queryset = Agent.objects.order_by("name")
         self.fields["supervisor"].required = False
+        self.fields["location"].label = "Operational Location"
 
     def clean_email(self):
         email = _normalize_email(self.cleaned_data.get("email"))
@@ -377,12 +376,11 @@ class BorrowerCreateLoginForm(forms.Form):
 
     def clean_username(self):
         username = self.cleaned_data["username"].strip()
-        schema_name = current_schema_name()
         try:
-            username = validate_tenant_scoped_username(username, schema_name=schema_name)
+            username = validate_portal_username(username)
         except ValueError as exc:
             raise ValidationError(str(exc))
-        if tenant_username_exists(username, schema_name=schema_name):
+        if portal_username_exists(username):
             raise ValidationError("That username is already taken in this company.")
         return username
 
@@ -428,8 +426,7 @@ class UsernameOrEmailPasswordResetForm(PasswordResetForm):
                 is_active=True,
             ))
 
-        schema_name = current_schema_name(self.request)
-        for candidate in login_username_candidates(identifier, schema_name=schema_name):
+        for candidate in login_username_candidates(identifier):
             matches = list(UserModel._default_manager.filter(username__iexact=candidate, is_active=True).order_by("id"))
             if matches:
                 return matches

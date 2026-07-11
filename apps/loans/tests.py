@@ -7,18 +7,18 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, override_settings
 from django.urls import reverse
-from django.test import TestCase as TenantTestCase
+from django.test import TestCase
 
 from apps.accounts.models import Agent
 from apps.company.models import CompanyProfile
-from apps.loans.cross_company import _summarize_company_matches, format_cross_company_debt_summary, serialize_cross_company_debt_check
+from apps.loans.cross_company import empty_cross_company_debt_check, format_cross_company_debt_summary, serialize_cross_company_debt_check
 from apps.loans.models import Borrower, Loan, Payment, RepaymentCollection
 from apps.loans.payment_gateway import initiate_repayment_collection, process_collection_callback
 import requests
 from apps.loans.services_sms import _response_detail, normalize_phone, safe_send_sms, send_sms
 
 
-class TenantDataTestCase(TenantTestCase):
+class StandaloneDataTestCase(TestCase):
     @classmethod
     def setup_tenant(cls, tenant):
         tenant.name = "Test Credit"
@@ -103,71 +103,27 @@ class LoanSMSServiceTests(SimpleTestCase):
 
 
 class CrossCompanyDebtCheckSummaryTests(SimpleTestCase):
-    def test_summarize_company_matches_aggregates_outstanding_and_defaults(self):
-        summary = _summarize_company_matches(
-            [
-                {
-                    "tenant_name": "Alpha Credit",
-                    "schema_name": "alpha",
-                    "borrower_name": "Ama Owusu",
-                    "borrower_status": "ACTIVE",
-                    "matched_on": ["National ID"],
-                    "active_loan_count": 2,
-                    "default_loan_count": 0,
-                    "open_loan_count": 2,
-                    "total_outstanding": Decimal("1400.00"),
-                    "total_expected": Decimal("1800.00"),
-                },
-                {
-                    "tenant_name": "Beta Finance",
-                    "schema_name": "beta",
-                    "borrower_name": "Ama Owusu",
-                    "borrower_status": "BAD",
-                    "matched_on": ["Ghana Card"],
-                    "active_loan_count": 0,
-                    "default_loan_count": 1,
-                    "open_loan_count": 1,
-                    "total_outstanding": Decimal("950.00"),
-                    "total_expected": Decimal("1200.00"),
-                },
-            ]
-        )
+    def test_empty_cross_company_debt_check_is_disabled_in_standalone_mode(self):
+        summary = empty_cross_company_debt_check()
 
-        self.assertTrue(summary["requires_review"])
-        self.assertTrue(summary["has_default"])
-        self.assertEqual(summary["company_count"], 2)
-        self.assertEqual(summary["open_loan_count"], 3)
-        self.assertEqual(summary["total_outstanding"], Decimal("2350.00"))
-        self.assertEqual(summary["total_expected"], Decimal("3000.00"))
-        self.assertIn("defaulted facilities detected", summary["headline"])
+        self.assertFalse(summary["requires_review"])
+        self.assertFalse(summary["has_default"])
+        self.assertEqual(summary["company_count"], 0)
+        self.assertEqual(summary["open_loan_count"], 0)
+        self.assertEqual(summary["total_outstanding"], Decimal("0.00"))
+        self.assertIn("disabled in standalone mode", summary["headline"])
 
-    def test_serialize_cross_company_debt_check_returns_json_safe_payload(self):
-        summary = _summarize_company_matches(
-            [
-                {
-                    "tenant_name": "Gamma Loans",
-                    "schema_name": "gamma",
-                    "borrower_name": "Kojo Mensah",
-                    "borrower_status": "ACTIVE",
-                    "matched_on": ["National ID", "Ghana Card"],
-                    "active_loan_count": 1,
-                    "default_loan_count": 0,
-                    "open_loan_count": 1,
-                    "total_outstanding": Decimal("500.00"),
-                    "total_expected": Decimal("750.00"),
-                }
-            ]
-        )
+    def test_serialize_cross_company_debt_check_returns_standalone_payload(self):
+        payload = serialize_cross_company_debt_check(empty_cross_company_debt_check())
 
-        payload = serialize_cross_company_debt_check(summary)
+        self.assertFalse(payload["requires_review"])
+        self.assertEqual(payload["total_outstanding"], "0.00")
+        self.assertEqual(payload["companies"], [])
+        self.assertIn("disabled in standalone mode", payload["headline"])
 
-        self.assertEqual(payload["total_outstanding"], "500.00")
-        self.assertEqual(payload["companies"][0]["tenant_name"], "Gamma Loans")
-        self.assertEqual(payload["companies"][0]["matched_on"], ["National ID", "Ghana Card"])
-
-    def test_format_cross_company_debt_summary_returns_clear_empty_message(self):
-        message = format_cross_company_debt_summary({"requires_review": False})
-        self.assertEqual(message, "No confirmed external debt found across other onboarded companies.")
+    def test_format_cross_company_debt_summary_returns_standalone_message(self):
+        message = format_cross_company_debt_summary(empty_cross_company_debt_check())
+        self.assertEqual(message, "Cross-company debt checks are disabled in standalone mode.")
 
 
 @override_settings(
@@ -175,13 +131,13 @@ class CrossCompanyDebtCheckSummaryTests(SimpleTestCase):
     ARKESEL_SENDER_ID="GlobalSender",
     ARKESEL_BASE_URL="https://sms.arkesel.com/api/v2",
 )
-class CompanySMSOverrideTests(TenantDataTestCase):
+class CompanySMSOverrideTests(StandaloneDataTestCase):
     @patch("apps.loans.services_sms.requests.post")
     def test_send_sms_prefers_company_sms_settings(self, mock_post):
         profile = CompanyProfile.get_solo()
         profile.tenant_sms_provider = "ARKESEL"
         profile.tenant_sms_api_key = "tenant-api-key"
-        profile.tenant_sms_sender_id = "TenantSender"
+        profile.tenant_sms_sender_id = "CompanySender"
         profile.tenant_sms_base_url = "https://tenant-sms.example/api"
         profile.save()
 
@@ -189,7 +145,7 @@ class CompanySMSOverrideTests(TenantDataTestCase):
         mock_response.raise_for_status = Mock()
         mock_post.return_value = mock_response
 
-        send_sms("020 123 4567", "Tenant flow")
+        send_sms("020 123 4567", "Company flow")
 
         mock_post.assert_called_once_with(
             "https://tenant-sms.example/api/sms/send",
@@ -198,8 +154,8 @@ class CompanySMSOverrideTests(TenantDataTestCase):
                 "Content-Type": "application/json",
             },
             json={
-                "sender": "TenantSender",
-                "message": "Tenant flow",
+                "sender": "CompanySender",
+                "message": "Company flow",
                 "recipients": ["233201234567"],
             },
             timeout=20,
@@ -207,7 +163,7 @@ class CompanySMSOverrideTests(TenantDataTestCase):
 
 
 @override_settings(MEDIA_ROOT=tempfile.gettempdir())
-class DashboardHeroMetricsTests(TenantDataTestCase):
+class DashboardHeroMetricsTests(StandaloneDataTestCase):
     def _uploaded_file(self, name):
         return SimpleUploadedFile(name, b"file", content_type="image/jpeg")
 
@@ -266,10 +222,9 @@ class DashboardHeroMetricsTests(TenantDataTestCase):
         self.assertEqual(response.context["hero_roic_collected"], Decimal("100.00"))
         self.assertEqual(response.context["hero_principal_outstanding"], Decimal("500.00"))
         self.assertContains(response, "Total Disbursed")
-        self.assertContains(response, "Total Amount Collected")
+        self.assertContains(response, "Total Collected")
         self.assertContains(response, "ROIC Collected")
         self.assertContains(response, "Principal Outstanding")
-        self.assertNotContains(response, "Collection Rate")
 
     def test_loans_list_metrics_grid_shows_dashboard_style_financial_metrics(self):
         self.client.force_login(self.admin)
@@ -293,7 +248,7 @@ class DashboardHeroMetricsTests(TenantDataTestCase):
     PAYMENT_WEBHOOK_SECRET="test-webhook-secret",
     ALLOW_INSECURE_PAYMENT_WEBHOOKS=False,
 )
-class RepaymentCollectionTests(TenantDataTestCase):
+class RepaymentCollectionTests(StandaloneDataTestCase):
     def _uploaded_file(self, name):
         return SimpleUploadedFile(name, b"file", content_type="image/jpeg")
 

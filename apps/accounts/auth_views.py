@@ -11,7 +11,7 @@ from apps.company.models import CompanyProfile
 
 from .forms import (
     StyledSetPasswordForm,
-    TenantAwareAuthenticationForm,
+    StandaloneAuthenticationForm,
     UsernameOrEmailPasswordResetForm,
 )
 
@@ -59,7 +59,7 @@ class PasswordResetRequestView(PasswordResetView):
 
 
 class TenantLoginPageView(LoginView):
-    form_class = TenantAwareAuthenticationForm
+    form_class = StandaloneAuthenticationForm
 
 
 class PasswordResetDonePageView(PasswordResetDoneView):
