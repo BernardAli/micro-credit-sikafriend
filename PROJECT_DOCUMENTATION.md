@@ -1,5 +1,7 @@
 # SikaFriend Micro-Credit ERP
 
+Role-specific user manuals and the combined PDF handbook are available in [`docs/manuals/`](docs/manuals/README.md).
+
 Comprehensive operating, development, and deployment documentation for the standalone SikaFriend Micro-Credit Enterprise platform.
 
 ## 1. System Purpose
@@ -581,4 +583,3 @@ Reduce concurrent writes, stop duplicate development servers, and consider a pro
 | Communications | `apps/communication/views.py`, `apps/company/messaging.py` |
 | Dashboard shell | `templates/base.html` |
 | Public website | `templates/website/` |
-

@@ -1,0 +1,20 @@
+"""PythonAnywhere WSGI template.
+
+Copy the relevant lines into the WSGI configuration file linked from the
+PythonAnywhere Web tab, then replace YOUR_USERNAME and PROJECT_DIRECTORY.
+The project .env file is loaded by config.settings.
+"""
+
+import os
+import sys
+
+
+project_home = "/home/YOUR_USERNAME/PROJECT_DIRECTORY"
+if project_home not in sys.path:
+    sys.path.insert(0, project_home)
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+
+from django.core.wsgi import get_wsgi_application
+
+application = get_wsgi_application()

@@ -14,8 +14,19 @@ env/
 !.env.example
 db.sqlite3
 *.sqlite3
+*.sqlite3-*
+*.db
 media/
 staticfiles/
+*.log
+logs/
+
+# Local backups and database exports
+backups/
+*.sql
+*.sql.gz
+*.dump
+*.bak
 
 # Test/tool caches
 .coverage
@@ -23,8 +34,22 @@ htmlcov/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.test-tmp/
+.tox/
+.nox/
+
+# Packaging and generated files
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# Local deployment overrides
+pythonanywhere_wsgi.py
+*.local.py
 
 # Editors and OS files
 .idea/
 .vscode/
 .DS_Store
+Thumbs.db

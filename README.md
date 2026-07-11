@@ -2,6 +2,8 @@
 
 For the complete operating, development, deployment, security, workflow, and troubleshooting handbook, see [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md).
 
+For PythonAnywhere deployment with MySQL, see [deployment/PYTHONANYWHERE.md](deployment/PYTHONANYWHERE.md).
+
 Standalone Django ERP for running a single micro-credit company. It includes borrower and loan operations, repayment tracking, workforce and payroll, accounting, fixed assets, communications, a borrower self-service portal, and a configurable public company website.
 
 ## Current Architecture

@@ -33,6 +33,7 @@ if not SECRET_KEY:
         raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is false.")
 
 ALLOWED_HOSTS = _env_list("DJANGO_ALLOWED_HOSTS", ["localhost", "127.0.0.1", "0.0.0.0"])
+CSRF_TRUSTED_ORIGINS = _env_list("DJANGO_CSRF_TRUSTED_ORIGINS", [])
 
 # Production transport security. These remain disabled for local HTTP development
 # and default to enabled whenever DJANGO_DEBUG is false.
@@ -96,13 +97,41 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# SQLite — zero-config, just run: python manage.py migrate
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").strip().lower()
+if DB_ENGINE == "mysql":
+    required_mysql_settings = {
+        "DB_NAME": os.getenv("DB_NAME", "").strip(),
+        "DB_USER": os.getenv("DB_USER", "").strip(),
+        "DB_PASSWORD": os.getenv("DB_PASSWORD", ""),
+        "DB_HOST": os.getenv("DB_HOST", "").strip(),
     }
-}
+    missing = [name for name, value in required_mysql_settings.items() if not value]
+    if missing:
+        raise ImproperlyConfigured(f"MySQL configuration is incomplete: {', '.join(missing)}")
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": required_mysql_settings["DB_NAME"],
+            "USER": required_mysql_settings["DB_USER"],
+            "PASSWORD": required_mysql_settings["DB_PASSWORD"],
+            "HOST": required_mysql_settings["DB_HOST"],
+            "PORT": os.getenv("DB_PORT", "3306"),
+            "CONN_MAX_AGE": int(os.getenv("DB_CONN_MAX_AGE", "60")),
+            "OPTIONS": {"charset": "utf8mb4"},
+        }
+    }
+    mysql_test_name = os.getenv("DB_TEST_NAME", "").strip()
+    if mysql_test_name:
+        DATABASES["default"]["TEST"] = {"NAME": mysql_test_name}
+elif DB_ENGINE == "sqlite":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / os.getenv("SQLITE_NAME", "db.sqlite3"),
+        }
+    }
+else:
+    raise ImproperlyConfigured("DB_ENGINE must be either 'sqlite' or 'mysql'.")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

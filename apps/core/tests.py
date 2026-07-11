@@ -2,6 +2,7 @@ from django.core.checks import run_checks
 from django.contrib.auth.models import User
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import resolve, reverse
+from django.template.loader import get_template
 from unittest.mock import patch
 
 from apps.accounts.models import Agent
@@ -74,6 +75,17 @@ class CorePageRenderTests(TestCase):
         approval_response = self.client.get(reverse("core:approvals"))
         self.assertContains(approval_response, "July payroll")
         self.assertNotContains(approval_response, "Loan for Ama")
+
+    @override_settings(DEBUG=False)
+    def test_custom_404_page_renders(self):
+        response = self.client.get("/this-page-does-not-exist/", HTTP_HOST="localhost")
+        self.assertEqual(response.status_code, 404)
+        self.assertContains(response, "This page could not be found", status_code=404)
+
+    def test_custom_500_template_is_available(self):
+        template = get_template("500.html")
+        rendered = template.render({})
+        self.assertIn("We could not complete that request", rendered)
 
 
 class ApprovalSelfReviewTests(TestCase):
