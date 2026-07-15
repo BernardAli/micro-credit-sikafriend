@@ -24,8 +24,10 @@ def _build_new_loan_alert(loan: Loan) -> str:
     )
 
 @receiver(post_save, sender=Loan)
-def on_loan_created(sender, instance: Loan, created, **kwargs):
-    if not created:
+def on_loan_created(sender, instance: Loan, created, raw=False, **kwargs):
+    # Django passes raw=True while loading fixtures. Related records may not be
+    # available yet, and historical imports must not resend notifications.
+    if raw or not created:
         return
     if getattr(instance, "_skip_new_loan_notifications", False):
         return
@@ -37,8 +39,8 @@ def on_loan_created(sender, instance: Loan, created, **kwargs):
         notify_user(u, "NEW_LOAN", "New Loan Alert!", msg, send_email=True)
 
 @receiver(post_save, sender=Payment)
-def on_payment_received(sender, instance: Payment, created, **kwargs):
-    if not created or instance.is_void or instance.is_pending:
+def on_payment_received(sender, instance: Payment, created, raw=False, **kwargs):
+    if raw or not created or instance.is_void or instance.is_pending:
         return
 
     loan = instance.loan

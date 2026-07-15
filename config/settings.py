@@ -133,6 +133,19 @@ elif DB_ENGINE == "sqlite":
 else:
     raise ImproperlyConfigured("DB_ENGINE must be either 'sqlite' or 'mysql'.")
 
+LEGACY_DB_NAME = os.getenv("LEGACY_DB_NAME", "").strip()
+if LEGACY_DB_NAME:
+    DATABASES["legacy"] = {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": LEGACY_DB_NAME,
+        "USER": os.getenv("LEGACY_DB_USER", os.getenv("DB_USER", "")),
+        "PASSWORD": os.getenv("LEGACY_DB_PASSWORD", os.getenv("DB_PASSWORD", "")),
+        "HOST": os.getenv("LEGACY_DB_HOST", os.getenv("DB_HOST", "")),
+        "PORT": os.getenv("LEGACY_DB_PORT", os.getenv("DB_PORT", "3306")),
+        "CONN_MAX_AGE": 0,
+        "OPTIONS": {"charset": "utf8mb4"},
+    }
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_PASSWORD_VALIDATORS = [

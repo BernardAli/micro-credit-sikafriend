@@ -1,21 +1,20 @@
 {% extends "website/base.html" %}
 {% load static %}
+{% block extra_css %}
+  .company-display{white-space:nowrap;font-size:clamp(28px,4.8vw,58px)}
+{% endblock %}
 {% block content %}
 <section class="photo-hero">
   <div class="hero-bg" style="background-image:url('{% if profile.hero_image %}{{ profile.hero_image.url }}{% else %}{% static 'website/images/microcredit-hero-office.webp' %}{% endif %}')"></div>
   <div class="wrap">
     <div class="hero-content">
       <div class="kicker">{{ profile.tagline|default:"Responsible micro-credit" }}</div>
-      <h1 class="display">{{ profile.company_name }}</h1>
+      <h1 class="display company-display">{{ profile.company_name }}</h1>
       <p class="lead">{{ profile.hero_subheadline|default:"Fast, fair, and transparent micro-credit for individuals, groups, and growing businesses." }}</p>
       <div class="actions" style="margin-top:28px">
         <a class="btn accent" href="{% if profile.hero_cta_url %}{{ profile.hero_cta_url }}{% else %}{% url 'company:contact' %}{% endif %}">{{ profile.hero_cta_text|default:"Apply for a Loan" }}</a>
         <a class="btn white-ghost" href="{% url 'company:services' %}">Explore Services</a>
-      </div>
-      <div class="hero-meta">
-        <span>{{ profile.get_repayment_cycle_display }} repayments</span>
-        <span>{{ profile.formatted_currency }} lending</span>
-        <span>Client portal access</span>
+        <a class="btn white-ghost" href="{% url 'login' %}">Client Portal</a>
       </div>
     </div>
   </div>
