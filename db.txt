@@ -1,0 +1,18 @@
+CREATE DATABASE sikafriend_local
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
+CREATE USER 'sikafriend_local'@'localhost'
+IDENTIFIED BY 'Matt6:33';
+
+GRANT ALL PRIVILEGES ON sikafriend_local.*
+TO 'sikafriend_local'@'localhost';
+
+FLUSH PRIVILEGES;
+EXIT;
+
+mysql \
+  -u sikafriend_local -p \
+  --default-character-set=utf8mb4 \
+  sikafriend_local \
+  < /home/allgift/Downloads//sikafriend-current.sql

@@ -926,7 +926,7 @@ def dashboard(request):
 
     today = timezone.localdate()
 
-    loans_qs = Loan.objects.select_related("borrower", "agent_name").all()
+    loans_qs = Loan.objects.select_related("borrower", "agent_name").prefetch_related("payments")
     borrowers_qs = Borrower.objects.all()
     payments_qs = (
         Payment.objects

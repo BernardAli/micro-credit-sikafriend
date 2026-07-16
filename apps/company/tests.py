@@ -6,6 +6,29 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.communication.models import WebsiteLead
+from apps.company.models import CompanyProfile
+from apps.company.request_cache import CompanyRequestCacheMiddleware
+
+
+class CompanyProfileRequestCacheTests(TestCase):
+    def test_singleton_is_queried_once_per_request(self):
+        CompanyProfile.get_solo()
+
+        def render_many_values(_request):
+            profiles = [CompanyProfile.get_solo() for _ in range(25)]
+            self.assertTrue(all(profile.pk == 1 for profile in profiles))
+
+        middleware = CompanyRequestCacheMiddleware(render_many_values)
+        with self.assertNumQueries(1):
+            middleware(object())
+
+    def test_cache_does_not_leak_between_requests(self):
+        CompanyProfile.get_solo()
+        middleware = CompanyRequestCacheMiddleware(lambda _request: CompanyProfile.get_solo())
+
+        with self.assertNumQueries(2):
+            middleware(object())
+            middleware(object())
 
 
 class WebsiteContactTests(TestCase):

@@ -847,8 +847,16 @@ class CompanyProfile(models.Model):
     def get_solo(cls):
         """
         Return the single CompanyProfile instance, creating it with
-        sensible defaults if it doesn't exist yet.
+        sensible defaults if it doesn't exist yet. During an HTTP request,
+        reuse the instance so formatting a list does not query it per value.
         """
+        from .request_cache import get_cached_value, set_cached_value
+
+        cache_key = f"{cls._meta.label_lower}:solo"
+        cached = get_cached_value(cache_key)
+        if cached is not None:
+            return cached
+
         obj, _ = cls.objects.get_or_create(
             pk=1,
             defaults={
@@ -857,6 +865,7 @@ class CompanyProfile(models.Model):
                 "payroll_tax_brackets": default_payroll_tax_brackets(),
             },
         )
+        set_cached_value(cache_key, obj)
         return obj
 
     # ── Convenience properties ────────────────────────────────

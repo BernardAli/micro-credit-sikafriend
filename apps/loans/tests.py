@@ -26,6 +26,49 @@ class StandaloneDataTestCase(TestCase):
         tenant.status = "ACTIVE"
 
 
+class PrefetchedLoanPaymentTotalsTests(TestCase):
+    def setUp(self):
+        self.agent = Agent.objects.create(
+            agent_id="CACHE-AGENT",
+            name="Cache Agent",
+            phone="0200000000",
+            location="Accra",
+        )
+        self.borrower = Borrower.objects.create(
+            borrower_id="CACHE-BORROWER",
+            full_name="Cache Borrower",
+            national_id="CACHE-NATIONAL-ID",
+            phone="0200000001",
+            location="Accra",
+            photo="borrowers/photos/cache.jpg",
+            ghana_card_front="borrowers/ghana_cards/front/cache.jpg",
+            ghana_card_back="borrowers/ghana_cards/back/cache.jpg",
+            ghana_card_number="CACHE-GHANA-CARD",
+            group_name="Cache Group",
+            preferred_language="Twi",
+        )
+        loan = Loan.objects.create(
+            borrower=self.borrower,
+            agent_name=self.agent,
+            amount=Decimal("1000.00"),
+            duration_weeks=10,
+            weekly_payment=Decimal("120.00"),
+        )
+        Payment.objects.create(loan=loan, amount=Decimal("120.00"))
+        Payment.objects.create(loan=loan, amount=Decimal("50.00"), is_pending=True)
+        Payment.objects.create(loan=loan, amount=Decimal("20.00"), is_void=True)
+
+    def test_financial_properties_reuse_prefetched_payments(self):
+        loan = Loan.objects.prefetch_related("payments").get()
+
+        with self.assertNumQueries(0):
+            self.assertEqual(loan.actual_payments_count, 1)
+            self.assertEqual(loan.total_paid_amount, Decimal("120.00"))
+            self.assertEqual(loan.total_principal_paid + loan.total_roic_paid, Decimal("120.00"))
+            self.assertEqual(loan.balance_amount, Decimal("1080.00"))
+            self.assertEqual(loan.principal_outstanding + loan.roic_outstanding, Decimal("1080.00"))
+
+
 class LoanSMSServiceTests(SimpleTestCase):
     def test_normalize_phone_handles_common_ghana_formats(self):
         self.assertEqual(normalize_phone("020 123 4567"), "233201234567")

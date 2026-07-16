@@ -260,7 +260,31 @@ class Loan(models.Model):
 
     @property
     def actual_payments_count(self) -> int:
+        cached = self._cached_settled_payments()
+        if cached is not None:
+            return len(cached)
         return self.payments.filter(is_void=False, is_pending=False).count()
+
+    def _cached_settled_payments(self):
+        """Return settled payments when this loan was prefetched, else None."""
+        cache = getattr(self, "_prefetched_objects_cache", None)
+        if cache is None or "payments" not in cache:
+            return None
+        return [
+            payment
+            for payment in cache["payments"]
+            if not payment.is_void and not payment.is_pending
+        ]
+
+    def _settled_payment_total(self, field: str) -> Decimal:
+        cached = self._cached_settled_payments()
+        if cached is not None:
+            return sum(
+                (Decimal(getattr(payment, field) or Decimal("0.00")) for payment in cached),
+                Decimal("0.00"),
+            ).quantize(Decimal("0.01"))
+        agg = self.payments.filter(is_void=False, is_pending=False).aggregate(s=Sum(field))["s"] or Decimal("0.00")
+        return Decimal(agg).quantize(Decimal("0.01"))
 
     @property
     def outstanding_payments_count(self) -> int:
@@ -303,18 +327,15 @@ class Loan(models.Model):
 
     @property
     def total_paid_amount(self) -> Decimal:
-        agg = self.payments.filter(is_void=False, is_pending=False).aggregate(s=Sum("amount"))["s"] or Decimal("0.00")
-        return Decimal(agg).quantize(Decimal("0.01"))
+        return self._settled_payment_total("amount")
 
     @property
     def total_principal_paid(self) -> Decimal:
-        agg = self.payments.filter(is_void=False, is_pending=False).aggregate(s=Sum("principal_paid"))["s"] or Decimal("0.00")
-        return Decimal(agg).quantize(Decimal("0.01"))
+        return self._settled_payment_total("principal_paid")
 
     @property
     def total_roic_paid(self) -> Decimal:
-        agg = self.payments.filter(is_void=False, is_pending=False).aggregate(s=Sum("roic_paid"))["s"] or Decimal("0.00")
-        return Decimal(agg).quantize(Decimal("0.01"))
+        return self._settled_payment_total("roic_paid")
 
     @property
     def principal_outstanding(self) -> Decimal:
