@@ -406,6 +406,8 @@ Public routes:
 
 Content and visibility are managed through Company Settings. Public team listings intentionally avoid exposing internal workforce IDs.
 
+The `/our-impact/` page presents the company's Corporate Social Responsibility work as **Our Impact**. Company Settings provides editable impact narrative, headline metrics, continuing commitments, initiative outcomes, locations, reporting periods, and initiative photography.
+
 ## 19. Imports
 
 Borrowers, loans, workforce, and assets support bulk import. Supported formats vary by module and include CSV, XLSX, JSON, and XML.

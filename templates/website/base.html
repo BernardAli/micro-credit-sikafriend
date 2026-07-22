@@ -162,6 +162,22 @@
     .card:hover .card-media img{transform:scale(1.04)}
     .badge{display:inline-flex;padding:6px 10px;border-radius:8px;background:var(--soft);color:var(--primary);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:0}
     .copy{color:var(--muted);font-size:15px;line-height:1.75}
+    .management-card{transition:transform .2s,box-shadow .2s}
+    .management-card:hover,.management-card:focus-within,.management-card:focus{transform:translateY(-2px);box-shadow:var(--shadow)}
+    .management-card:focus{outline:2px solid var(--primary);outline-offset:3px}
+    .management-bio{
+      display:-webkit-box;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:3;
+      overflow:hidden;
+      margin-bottom:0;
+    }
+    .management-card:hover .management-bio,
+    .management-card:focus-within .management-bio,
+    .management-card:focus .management-bio{
+      display:block;
+      overflow:visible;
+    }
     .list{display:grid;gap:12px;margin-top:18px}
     .list li{display:flex;gap:10px;color:var(--text);font-weight:700;line-height:1.55}
     .list li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);flex:0 0 auto;margin-top:9px}
@@ -282,6 +298,7 @@
           <a href="{% url 'company:about' %}" class="{% if active_page == 'about' %}active{% endif %}">About</a>
           <a href="{% url 'company:services' %}" class="{% if active_page == 'services' %}active{% endif %}">Services</a>
           <a href="{% url 'company:team' %}" class="{% if active_page == 'team' %}active{% endif %}">Team</a>
+          <a href="{% url 'company:impact' %}" class="{% if active_page == 'impact' %}active{% endif %}">Our Impact</a>
           <a href="{% url 'company:documents' %}" class="{% if active_page == 'documents' %}active{% endif %}">Documents</a>
           <a href="{% url 'company:contact' %}" class="{% if active_page == 'contact' %}active{% endif %}">Contact</a>
         </div>
@@ -320,6 +337,7 @@
         <a href="{% url 'company:about' %}" class="{% if active_page == 'about' %}active{% endif %}" data-mobile-close>About</a>
         <a href="{% url 'company:services' %}" class="{% if active_page == 'services' %}active{% endif %}" data-mobile-close>Services</a>
         <a href="{% url 'company:team' %}" class="{% if active_page == 'team' %}active{% endif %}" data-mobile-close>Team</a>
+        <a href="{% url 'company:impact' %}" class="{% if active_page == 'impact' %}active{% endif %}" data-mobile-close>Our Impact</a>
         <a href="{% url 'company:documents' %}" class="{% if active_page == 'documents' %}active{% endif %}" data-mobile-close>Documents</a>
         <a href="{% url 'company:contact' %}" class="{% if active_page == 'contact' %}active{% endif %}" data-mobile-close>Contact</a>
       </nav>
@@ -375,6 +393,7 @@
           <div class="footer-links">
             <a href="{% url 'company:about' %}">About</a>
             <a href="{% url 'company:team' %}">Team</a>
+            <a href="{% url 'company:impact' %}">Our Impact</a>
             <a href="{% url 'company:documents' %}">Documents</a>
             <a href="{% url 'company:privacy' %}">Privacy Policy</a>
           </div>

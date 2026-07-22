@@ -1,0 +1,31 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block extra_css %}
+<style>
+  .impact-hero{min-height:560px}
+  .impact-hero .hero-content{max-width:820px;padding-top:90px}
+  .impact-metrics{position:relative;z-index:3;margin-top:-54px}
+  .impact-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#fff;border-radius:12px;box-shadow:0 22px 55px rgba(20,8,17,.14);overflow:hidden}
+  .impact-metric{padding:30px;border-right:1px solid var(--line)}
+  .impact-metric:last-child{border-right:0}.impact-metric strong{display:block;font:700 34px/1 var(--font-serif);color:var(--primary)}
+  .impact-metric b{display:block;margin-top:10px;color:var(--ink)}.impact-metric span{display:block;margin-top:6px;color:var(--muted);font-size:13px;line-height:1.5}
+  .impact-intro{max-width:850px;margin:auto;text-align:center}.impact-intro .copy{font-size:17px}
+  .impact-card{display:grid;grid-template-columns:1.05fr .95fr;min-height:390px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-soft)}
+  .impact-card:nth-child(even){grid-template-columns:.95fr 1.05fr}.impact-card:nth-child(even) .impact-photo{order:2}
+  .impact-photo{min-height:340px;background:var(--soft)}.impact-photo img{width:100%;height:100%;object-fit:cover;transition:transform .5s}.impact-card:hover .impact-photo img{transform:scale(1.035)}
+  .impact-copy{padding:42px;display:flex;flex-direction:column;justify-content:center}.impact-meta{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 18px}.impact-outcome{margin-top:20px;padding:16px 18px;border-left:4px solid var(--accent);background:var(--soft);font-weight:800;color:var(--ink)}
+  .impact-commitment{background:linear-gradient(135deg,var(--primary),var(--ink));color:#fff;border-radius:12px;padding:54px}.impact-commitment .title-xl{color:#fff}.impact-commitment .lead{color:rgba(255,255,255,.82)}
+  @media(max-width:900px){.impact-metric-grid{grid-template-columns:repeat(2,1fr)}.impact-card,.impact-card:nth-child(even){grid-template-columns:1fr}.impact-card:nth-child(even) .impact-photo{order:0}}
+  @media(max-width:560px){.impact-metric-grid{grid-template-columns:1fr}.impact-metrics{margin-top:-30px}.impact-copy{padding:28px}.impact-commitment{padding:34px 26px}}
+</style>
+{% endblock %}
+{% block content %}
+<section class="photo-hero impact-hero">
+  <div class="hero-bg" style="background-image:url('{% if profile.impact_hero_image %}{{ profile.impact_hero_image.url }}{% else %}{% static 'website/images/microcredit-market-support.webp' %}{% endif %}')"></div>
+  <div class="wrap"><div class="hero-content"><div class="kicker">Our Impact</div><h1 class="display">{{ profile.impact_headline|default:"Creating opportunity beyond credit" }}</h1><p class="lead">{{ profile.impact_subheadline }}</p></div></div>
+</section>
+{% if impact_stats %}<div class="wrap impact-metrics"><div class="impact-metric-grid">{% for stat in impact_stats %}<div class="impact-metric"><strong>{{ stat.value }}</strong><b>{{ stat.label }}</b>{% if stat.detail %}<span>{{ stat.detail }}</span>{% endif %}</div>{% endfor %}</div></div>{% endif %}
+<section class="section"><div class="wrap impact-intro"><div class="kicker">Purpose in action</div><h2 class="title-xl">Responsible finance should strengthen the whole community</h2><p class="copy">{{ profile.impact_intro|default:"Our responsibility goes beyond providing credit. We work alongside the people and communities we serve to expand opportunity, strengthen livelihoods, and create progress that can be sustained." }}</p></div></section>
+{% if impact_initiatives %}<section class="section soft"><div class="wrap"><div class="section-head center"><div class="kicker">Programmes & initiatives</div><h2 class="title-xl">Impact you can see</h2><p class="lead">Practical action, measurable outcomes, and stories from the communities we serve.</p></div><div style="display:grid;gap:28px">{% for item in impact_initiatives %}<article class="impact-card"><div class="impact-photo"><img src="{% if item.image %}{{ item.image }}{% else %}{% static 'website/images/microcredit-team-service.webp' %}{% endif %}" alt="{{ item.title }}"></div><div class="impact-copy">{% if item.category %}<span class="badge">{{ item.category }}</span>{% endif %}<h3 class="title-lg">{{ item.title }}</h3><div class="impact-meta">{% if item.location %}<span class="badge">{{ item.location }}</span>{% endif %}{% if item.year %}<span class="badge">{{ item.year }}</span>{% endif %}</div>{% if item.summary %}<p class="copy">{{ item.summary }}</p>{% endif %}{% if item.outcome %}<div class="impact-outcome">{{ item.outcome }}</div>{% endif %}</div></article>{% endfor %}</div></div></section>{% endif %}
+<section class="section"><div class="wrap"><div class="impact-commitment"><div class="kicker">Our continuing commitment</div><h2 class="title-xl">Building lasting value, together</h2><p class="lead">{{ profile.impact_commitment|default:"We will continue listening to communities, reporting our progress honestly, and directing our skills and resources toward initiatives that create meaningful, inclusive, and lasting change." }}</p><div class="actions" style="margin-top:24px"><a class="btn accent" href="{% url 'company:contact' %}">Partner With Us</a></div></div></div></section>
+{% endblock %}

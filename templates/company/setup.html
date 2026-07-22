@@ -990,11 +990,13 @@
     .cb-field input[type="number"],
     .cb-field input[type="url"],
     .cb-field input[type="email"],
+    .cb-field input[type="file"],
     .cb-field textarea,
     .cb-field select{
       padding:7px 10px;border:1px solid var(--border);border-radius:8px;
       font-size:13px;color:var(--text);background:var(--panel);width:100%;max-width:100%;min-width:0;
     }
+    .cb-photo-preview{width:72px;height:72px;border-radius:10px;object-fit:cover;border:1px solid var(--border);margin-bottom:5px}
     .cb-field input:focus,.cb-field textarea:focus,.cb-field select:focus{outline:none;border-color:var(--primary)}
     .cb-field textarea{resize:vertical;min-height:60px;font-family:inherit}
     .cb-field input[readonly]{background:var(--bg);cursor:default;color:var(--text2);font-weight:700}
@@ -1088,6 +1090,7 @@
         <a class="ws-navlink ws-active" href="#ws-hero"     ><span class="ws-ico">🏠</span>Homepage Hero</a>
         <a class="ws-navlink"           href="#ws-content"  ><span class="ws-ico">📝</span>Homepage Content</a>
         <a class="ws-navlink"           href="#ws-about"    ><span class="ws-ico">📖</span>About Page</a>
+        <a class="ws-navlink"           href="#ws-impact"   ><span class="ws-ico">🌍</span>Our Impact</a>
         <a class="ws-navlink"           href="#ws-services" ><span class="ws-ico">💼</span>Services Page</a>
         <a class="ws-navlink"           href="#ws-team"     ><span class="ws-ico">👥</span>Team Page</a>
         <a class="ws-navlink"           href="#ws-contact"  ><span class="ws-ico">📞</span>Contact Page</a>
@@ -1487,6 +1490,37 @@
             <div style="display:none">{{ form.testimonials_text }}</div>
           </div>
 
+        </div>
+      </div>
+
+      <div class="section-card ws-section" id="ws-impact">
+        <div class="section-header">
+          <div class="section-icon">🌍</div>
+          <div class="section-header-copy">
+            <h2 class="section-title">Our Impact — Corporate Social Responsibility</h2>
+            <div class="section-desc">Tell the story of how your organisation improves livelihoods and supports communities beyond lending.</div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field-grid-2">
+            <div class="field field-span-2"><label for="{{ form.impact_headline.id_for_label }}">Page Headline</label>{{ form.impact_headline }}</div>
+            <div class="field field-span-2"><label for="{{ form.impact_subheadline.id_for_label }}">Sub-Headline</label>{{ form.impact_subheadline }}</div>
+            <div class="field field-span-2"><label for="{{ form.impact_intro.id_for_label }}">Our Impact Story</label>{{ form.impact_intro }}<div class="help">Explain your CSR approach, priority communities, and why this work matters.</div></div>
+            <div class="field field-span-2"><label for="{{ form.impact_commitment.id_for_label }}">Our Continuing Commitment</label>{{ form.impact_commitment }}</div>
+            <div class="field field-span-2">
+              <label>Impact Page Banner</label>
+              <label class="upload-area" for="{{ form.impact_hero_image.id_for_label }}"><div class="upload-icon">📸</div><div class="upload-copy"><div class="label">Upload Impact Banner</div><div class="hint">Community programme, outreach, or beneficiary image</div></div>{{ form.impact_hero_image }}</label>
+              {% if profile and profile.impact_hero_image %}<div class="current-upload"><div class="current-upload-thumb"><img src="{{ profile.impact_hero_image.url }}" alt="Current impact banner"></div><a class="current-upload-link" href="{{ profile.impact_hero_image.url }}" target="_blank">{{ profile.impact_hero_image.name }}</a></div>{% endif %}
+            </div>
+          </div>
+          <div class="field" style="margin-top:20px">
+            <div class="cb-label">Headline Impact Metrics</div><div class="cb-sublabel">Use clear, verifiable numbers that communicate scale and outcomes.</div>
+            <div class="cb-wrap" id="cb-impact-stats-wrap"></div><button type="button" class="cb-add" id="cb-impact-stats-add">+ Add Impact Metric</button><div style="display:none">{{ form.impact_stats_text }}</div>
+          </div>
+          <div class="field" style="margin-top:20px">
+            <div class="cb-label">CSR Initiatives &amp; Community Programmes</div><div class="cb-sublabel">Add projects, beneficiary outcomes, locations, years, and a strong photo for each initiative.</div>
+            <div class="cb-wrap" id="cb-impact-wrap"></div><button type="button" class="cb-add" id="cb-impact-add">+ Add Impact Initiative</button><div style="display:none">{{ form.impact_initiatives_text }}</div>
+          </div>
         </div>
       </div>
 
@@ -2319,13 +2353,14 @@
 
 /* ── Generic reusable builder ── */
 class CardBuilder {
-  constructor({ wrapperId, hiddenId, addBtnId, fields, maxItems, colCount }) {
+  constructor({ wrapperId, hiddenId, addBtnId, fields, maxItems, colCount, uploadPrefix }) {
     this.wrap     = document.getElementById(wrapperId);
     this.hidden   = document.getElementById(hiddenId);
     this.addBtn   = addBtnId ? document.getElementById(addBtnId) : null;
     this.fields   = fields;
     this.maxItems = maxItems || 50;
     this.colCount = colCount || 'auto';
+    this.uploadPrefix = uploadPrefix || 'management_team_image';
     if (!this.wrap || !this.hidden) return;
 
     let data = [];
@@ -2365,6 +2400,10 @@ class CardBuilder {
       if (f.type === 'textarea') {
         return `<div class="cb-field" style="${span}"><label>${f.label}</label><textarea data-key="${f.key}" rows="${f.rows||3}" placeholder="${f.placeholder||''}">${esc}</textarea></div>`;
       }
+      if (f.type === 'file') {
+        const preview = val ? `<img class="cb-photo-preview" src="${esc}" alt="Current management team photo">` : '';
+        return `<div class="cb-field" style="${span}"><label>${f.label}</label>${preview}<input type="hidden" data-key="${f.key}" value="${esc}"><input type="file" data-upload-key="${f.key}" accept="image/*"><small>${val ? 'Choose a new image to replace the current photo.' : 'JPG, PNG or WebP.'}</small></div>`;
+      }
       return `<div class="cb-field" style="${span}"><label>${f.label}</label><input type="${f.type||'text'}" data-key="${f.key}" value="${esc}" placeholder="${f.placeholder||''}"></div>`;
     }).join('');
 
@@ -2383,7 +2422,13 @@ class CardBuilder {
         if (el.dataset.bool) { item[el.dataset.key] = el.checked; if(el.checked) hasVal=true; }
         else { item[el.dataset.key] = el.value.trim(); if(el.value.trim()) hasVal=true; }
       });
-      if (hasVal) items.push(item);
+      const uploads = card.querySelectorAll('[data-upload-key]');
+      uploads.forEach(el => { if (el.files.length) hasVal = true; });
+      if (hasVal) {
+        const itemIndex = items.length;
+        uploads.forEach(el => { el.name = `${this.uploadPrefix}_${itemIndex}`; });
+        items.push(item);
+      }
     });
     this.hidden.value = JSON.stringify(items);
   }
@@ -2473,8 +2518,27 @@ new CardBuilder({ wrapperId:'cb-mgmt-wrap', hiddenId:'id_management_team_text', 
     {key:'name',     label:'Full Name',    placeholder:'Jane Doe'},
     {key:'title',    label:'Job Title',    placeholder:'Chief Executive Officer'},
     {key:'initials', label:'Initials',     placeholder:'JD'},
+    {key:'image',    label:'Photo',        type:'file', span:3},
     {key:'bio',      label:'Short Bio',    type:'textarea', span:3, rows:2, placeholder:'15 years in microfinance...'},
   ], colCount:3 });
+
+new CardBuilder({ wrapperId:'cb-impact-stats-wrap', hiddenId:'id_impact_stats_text', addBtnId:'cb-impact-stats-add',
+  fields:[
+    {key:'value', label:'Metric Value', placeholder:'2,500+'},
+    {key:'label', label:'Metric Label', placeholder:'People Reached'},
+    {key:'detail', label:'Supporting Detail', span:3, placeholder:'Across 12 communities'},
+  ], colCount:3, maxItems:8 });
+
+new CardBuilder({ wrapperId:'cb-impact-wrap', hiddenId:'id_impact_initiatives_text', addBtnId:'cb-impact-add', uploadPrefix:'impact_initiative_image',
+  fields:[
+    {key:'title', label:'Initiative Title', placeholder:'Women Traders Growth Programme'},
+    {key:'category', label:'Impact Area', placeholder:'Financial Inclusion'},
+    {key:'year', label:'Year / Period', placeholder:'2026'},
+    {key:'location', label:'Location', placeholder:'Greater Accra'},
+    {key:'outcome', label:'Headline Outcome', span:2, placeholder:'300 businesses strengthened'},
+    {key:'image', label:'Initiative Photo', type:'file', span:3},
+    {key:'summary', label:'Programme Story', type:'textarea', span:3, rows:3, placeholder:'Describe the need, what your team did, who benefited, and the lasting result.'},
+  ], colCount:3, maxItems:20 });
 
 /* ── TESTIMONIALS ── */
 new CardBuilder({ wrapperId:'cb-testi-wrap', hiddenId:'id_testimonials_text', addBtnId:'cb-testi-add',

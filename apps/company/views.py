@@ -742,6 +742,18 @@ def website_team(request):
     return render(request, "website/team.html", ctx)
 
 
+def website_impact(request):
+    profile = CompanyProfile.get_solo()
+    ctx = _base_ctx(profile)
+    ctx.update({
+        "title": f"Our Impact — {profile.company_name}",
+        "active_page": "impact",
+        "impact_stats": profile.impact_stats or [],
+        "impact_initiatives": profile.impact_initiatives or [],
+    })
+    return render(request, "website/impact.html", ctx)
+
+
 def website_contact(request):
     profile = CompanyProfile.get_solo()
     ctx = _base_ctx(profile)

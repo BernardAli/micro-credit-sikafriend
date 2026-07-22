@@ -360,6 +360,13 @@ class CompanyProfile(models.Model):
         default=list, blank=True,
         help_text='JSON array: [{"name":"John Doe","title":"CEO","bio":"...","initials":"JD"}, ...]'
     )
+    impact_headline = models.CharField(max_length=180, blank=True, default="Creating opportunity beyond credit")
+    impact_subheadline = models.TextField(blank=True, default="We invest in people, livelihoods, and communities so that access to finance creates lasting progress.")
+    impact_intro = models.TextField(blank=True, help_text="Overview of the company's social responsibility and community impact.")
+    impact_commitment = models.TextField(blank=True, help_text="Long-term CSR commitment or promise.")
+    impact_hero_image = models.ImageField(upload_to="company/impact/", blank=True)
+    impact_stats = models.JSONField(default=list, blank=True, help_text='Impact metrics: [{"value":"2,500+","label":"People reached","detail":"..."}]')
+    impact_initiatives = models.JSONField(default=list, blank=True, help_text='CSR initiatives with title, category, summary, outcome, location, year, and image.')
     about_image_2     = models.ImageField(upload_to="company/website/", blank=True, help_text="Second about page image")
     about_image_3     = models.ImageField(upload_to="company/website/", blank=True, help_text="Third about page image")
 

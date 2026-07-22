@@ -1,13 +1,103 @@
+import json
+from io import BytesIO
 from unittest.mock import patch
 
+from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import DatabaseError
+from django.forms.models import model_to_dict
 from django.test import TestCase
 from django.urls import reverse
+from PIL import Image
 
 from apps.communication.models import WebsiteLead
 from apps.company.models import CompanyProfile
 from apps.company.request_cache import CompanyRequestCacheMiddleware
+
+
+class ManagementTeamPhotoTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username="company-admin",
+            password="password",
+            email="admin@example.com",
+        )
+        self.profile = CompanyProfile.get_solo()
+
+    def test_uploaded_photo_is_saved_on_matching_management_team_member(self):
+        from apps.company.forms import CompanyProfileForm
+
+        image_bytes = BytesIO()
+        Image.new("RGB", (2, 2), "blue").save(image_bytes, format="PNG")
+        image = SimpleUploadedFile("director.png", image_bytes.getvalue(), content_type="image/png")
+        data = model_to_dict(self.profile)
+        data["management_team_text"] = '[{"name":"Ama Mensah","title":"CEO","initials":"AM","bio":"Founder"}]'
+        data["payroll_tax_brackets_text"] = json.dumps(self.profile.payroll_tax_brackets)
+        with patch("apps.company.forms.default_storage.save", return_value="company/management-team/director.png"), patch(
+            "apps.company.forms.default_storage.url", return_value="/media/company/management-team/director.png"
+        ):
+            form = CompanyProfileForm(data, {"management_team_image_0": image}, instance=self.profile)
+            self.assertTrue(form.is_valid(), form.errors)
+            profile = form.save()
+
+        self.assertEqual(profile.management_team[0]["image"], "/media/company/management-team/director.png")
+
+    def test_management_photo_is_rendered_on_public_team_and_about_pages(self):
+        image_url = "/media/company/management-team/director.png"
+        self.profile.management_team = [{"name": "Ama Mensah", "title": "CEO", "image": image_url}]
+        self.profile.save(update_fields=["management_team"])
+
+        for route in ("company:team", "company:about"):
+            response = self.client.get(reverse(route))
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, image_url)
+
+
+class OurImpactTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser("impact-admin", "impact@example.com", "password")
+        self.profile = CompanyProfile.get_solo()
+
+    def test_company_settings_contains_comprehensive_impact_editor(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("company:edit"))
+        self.assertContains(response, "Our Impact — Corporate Social Responsibility")
+        self.assertContains(response, "Headline Impact Metrics")
+        self.assertContains(response, "CSR Initiatives &amp; Community Programmes")
+
+    def test_public_impact_page_renders_metrics_initiatives_and_commitment(self):
+        self.profile.impact_headline = "Opportunity that lasts"
+        self.profile.impact_stats = [{"value": "500+", "label": "Women supported", "detail": "Through business training"}]
+        self.profile.impact_initiatives = [{
+            "title": "Market Women Growth Programme", "category": "Financial Inclusion",
+            "summary": "Business skills and mentoring.", "outcome": "120 businesses strengthened",
+            "location": "Accra", "year": "2026", "image": "/media/company/impact/market.jpg",
+        }]
+        self.profile.impact_commitment = "We will publish and improve our community outcomes every year."
+        self.profile.save()
+
+        response = self.client.get(reverse("company:impact"))
+        self.assertEqual(response.status_code, 200)
+        for content in ("Opportunity that lasts", "500+", "Market Women Growth Programme", "120 businesses strengthened", self.profile.impact_commitment):
+            self.assertContains(response, content)
+
+    def test_initiative_photo_upload_is_attached_to_matching_item(self):
+        from apps.company.forms import CompanyProfileForm
+
+        image_bytes = BytesIO()
+        Image.new("RGB", (2, 2), "green").save(image_bytes, format="PNG")
+        upload = SimpleUploadedFile("outreach.png", image_bytes.getvalue(), content_type="image/png")
+        data = model_to_dict(self.profile)
+        data["impact_initiatives_text"] = '[{"title":"School Support","category":"Education","summary":"Learning materials"}]'
+        data["payroll_tax_brackets_text"] = json.dumps(self.profile.payroll_tax_brackets)
+        with patch("apps.company.forms.default_storage.save", return_value="company/impact/initiatives/outreach.png"), patch(
+            "apps.company.forms.default_storage.url", return_value="/media/company/impact/initiatives/outreach.png"
+        ):
+            form = CompanyProfileForm(data, {"impact_initiative_image_0": upload}, instance=self.profile)
+            self.assertTrue(form.is_valid(), form.errors)
+            profile = form.save()
+        self.assertEqual(profile.impact_initiatives[0]["image"], "/media/company/impact/initiatives/outreach.png")
 
 
 class CompanyProfileRequestCacheTests(TestCase):

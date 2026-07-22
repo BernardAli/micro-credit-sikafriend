@@ -1,6 +1,8 @@
 import json
 from django import forms
+from django.core.files.storage import default_storage
 from django.forms import modelformset_factory
+from django.utils.text import get_valid_filename
 
 from .models import CompanyDocument, CompanyProfile, THEME_CHOICES, CURRENCY_CHOICES, REPAYMENT_CYCLE_CHOICES
 from .statutory import default_payroll_tax_brackets, normalize_tax_brackets
@@ -38,7 +40,7 @@ BUSINESS_HOURS_PLACEHOLDER = _json_placeholder(
     ' {"day":"Sunday","open":"","close":"","closed":true}]'
 )
 MANAGEMENT_PLACEHOLDER = _json_placeholder(
-    '[{"name":"Kwame Mensah","title":"CEO & Founder","bio":"15 years in microfinance...","initials":"KM"},\n'
+    '[{"name":"Kwame Mensah","title":"CEO & Founder","bio":"15 years in microfinance...","initials":"KM","image":"/media/company/management-team/kwame.jpg"},\n'
     ' {"name":"Abena Osei","title":"Head of Operations","bio":"Specialist in field...","initials":"AO"}]'
 )
 SERVICES_PLACEHOLDER = _json_placeholder(
@@ -56,6 +58,12 @@ FAQS_PLACEHOLDER = _json_placeholder(
 GOALS_PLACEHOLDER = _json_placeholder(
     '[{"icon":"🎯","title":"Financial Inclusion","description":"Making credit accessible to all..."},\n'
     ' {"icon":"🌍","title":"Community Development","description":"Building stronger communities..."}]'
+)
+IMPACT_STATS_PLACEHOLDER = _json_placeholder(
+    '[{"value":"2,500+","label":"People Reached","detail":"Across our operating communities"}]'
+)
+IMPACT_INITIATIVES_PLACEHOLDER = _json_placeholder(
+    '[{"title":"Women Traders Growth Programme","category":"Financial Inclusion","summary":"Training and support for women-led businesses.","outcome":"300 businesses strengthened","location":"Accra","year":"2026"}]'
 )
 BRANCHES_PLACEHOLDER = _json_placeholder(
     '[{"name":"Head Office","address":"123 Main St, Accra","phone":"+233244000000",'
@@ -162,6 +170,8 @@ class CompanyProfileForm(forms.ModelForm):
         required=False, label="Management Team (JSON)",
         help_text='Array of {name, title, bio, initials} objects.',
     )
+    impact_stats_text = forms.CharField(widget=forms.Textarea(attrs={"rows": 6, "placeholder": IMPACT_STATS_PLACEHOLDER, "class": "json-field"}), required=False)
+    impact_initiatives_text = forms.CharField(widget=forms.Textarea(attrs={"rows": 8, "placeholder": IMPACT_INITIATIVES_PLACEHOLDER, "class": "json-field"}), required=False)
     branches_text = forms.CharField(
         widget=forms.Textarea(attrs={"rows": 6, "placeholder": BRANCHES_PLACEHOLDER, "class": "json-field"}),
         required=False, label="Branches / Locations (JSON)",
@@ -219,6 +229,7 @@ class CompanyProfileForm(forms.ModelForm):
             "mission_statement", "vision_statement",
             "years_in_business", "clients_served", "loans_disbursed_display",
             "about_image", "about_image_2", "about_image_3",
+            "impact_headline", "impact_subheadline", "impact_intro", "impact_commitment", "impact_hero_image",
             # Business identity extras
             "founded_year", "license_number", "registration_number",
             # SEO
@@ -265,6 +276,9 @@ class CompanyProfileForm(forms.ModelForm):
             "vision_statement":     forms.Textarea(attrs={"rows": 2}),
             "hero_subheadline":     forms.Textarea(attrs={"rows": 2}),
             "contact_intro":        forms.Textarea(attrs={"rows": 2}),
+            "impact_subheadline":   forms.Textarea(attrs={"rows": 2}),
+            "impact_intro":         forms.Textarea(attrs={"rows": 4}),
+            "impact_commitment":    forms.Textarea(attrs={"rows": 4}),
             "maps_embed_url":       forms.Textarea(attrs={"rows": 2, "placeholder": "https://www.google.com/maps/embed?..."}),
             "meta_description":     forms.Textarea(attrs={"rows": 2, "placeholder": "150–160 character summary for search engines..."}),
             "about_subheadline":    forms.Textarea(attrs={"rows": 2}),
@@ -324,6 +338,8 @@ class CompanyProfileForm(forms.ModelForm):
                 "faqs_text":             "faqs",
                 "goals_text":            "goals",
                 "management_team_text":  "management_team",
+                "impact_stats_text": "impact_stats",
+                "impact_initiatives_text": "impact_initiatives",
                 "branches_text":         "branches",
                 "hero_slides_text":      "hero_slides",
             }
@@ -396,6 +412,8 @@ class CompanyProfileForm(forms.ModelForm):
             "faqs_text":            "_faqs",
             "goals_text":           "_goals",
             "management_team_text": "_management_team",
+            "impact_stats_text": "_impact_stats",
+            "impact_initiatives_text": "_impact_initiatives",
             "branches_text":        "_branches",
             "hero_slides_text":     "_hero_slides",
         }
@@ -404,6 +422,35 @@ class CompanyProfileForm(forms.ModelForm):
                 cleaned[store_key] = self._parse_json_field(form_field, cleaned)
             except forms.ValidationError as exc:
                 self.add_error(form_field, exc)
+
+        # Management team photos are dynamic file inputs generated by the card
+        # builder. Validate them as real images here and attach them to the
+        # corresponding JSON entry when the form is saved.
+        management_team = cleaned.get("_management_team", [])
+        cleaned["_management_team_uploads"] = {}
+        image_validator = forms.ImageField(required=False)
+        for index, member in enumerate(management_team):
+            if not isinstance(member, dict):
+                self.add_error("management_team_text", "Each management team entry must be an object.")
+                continue
+            upload = self.files.get(f"management_team_image_{index}")
+            if upload:
+                try:
+                    cleaned["_management_team_uploads"][index] = image_validator.clean(upload)
+                except forms.ValidationError as exc:
+                    self.add_error("management_team_text", f"Photo for {member.get('name') or f'member {index + 1}'}: {exc}")
+
+        cleaned["_impact_uploads"] = {}
+        for index, initiative in enumerate(cleaned.get("_impact_initiatives", [])):
+            if not isinstance(initiative, dict):
+                self.add_error("impact_initiatives_text", "Each impact initiative must be an object.")
+                continue
+            upload = self.files.get(f"impact_initiative_image_{index}")
+            if upload:
+                try:
+                    cleaned["_impact_uploads"][index] = image_validator.clean(upload)
+                except forms.ValidationError as exc:
+                    self.add_error("impact_initiatives_text", f"Image for {initiative.get('title') or f'initiative {index + 1}'}: {exc}")
 
         try:
             cleaned["_payroll_tax_brackets"] = normalize_tax_brackets(
@@ -419,6 +466,17 @@ class CompanyProfileForm(forms.ModelForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
+
+        management_team = self.cleaned_data.get("_management_team", [])
+        for index, upload in self.cleaned_data.get("_management_team_uploads", {}).items():
+            filename = get_valid_filename(upload.name) or f"team-member-{index + 1}.jpg"
+            stored_name = default_storage.save(f"company/management-team/{filename}", upload)
+            management_team[index]["image"] = default_storage.url(stored_name)
+        impact_initiatives = self.cleaned_data.get("_impact_initiatives", [])
+        for index, upload in self.cleaned_data.get("_impact_uploads", {}).items():
+            filename = get_valid_filename(upload.name) or f"impact-{index + 1}.jpg"
+            stored_name = default_storage.save(f"company/impact/initiatives/{filename}", upload)
+            impact_initiatives[index]["image"] = default_storage.url(stored_name)
 
         if "_loan_tiers" in self.cleaned_data:
             instance.loan_tiers = self.cleaned_data["_loan_tiers"]
@@ -437,6 +495,8 @@ class CompanyProfileForm(forms.ModelForm):
             "_faqs":           "faqs",
             "_goals":          "goals",
             "_management_team":"management_team",
+            "_impact_stats": "impact_stats",
+            "_impact_initiatives": "impact_initiatives",
             "_branches":       "branches",
             "_hero_slides":    "hero_slides",
         }

@@ -16,6 +16,7 @@ urlpatterns = [
     path("services/",       views.website_services, name="services"),
     path("services/<slug:service_slug>/", views.website_service_detail, name="service_detail"),
     path("team/",           views.website_team,     name="team"),
+    path("our-impact/",     views.website_impact,   name="impact"),
     path("documents/",      views.website_documents, name="documents"),
     path("contact/",        views.website_contact,  name="contact"),
     path("privacy-policy/", views.website_privacy,  name="privacy"),
