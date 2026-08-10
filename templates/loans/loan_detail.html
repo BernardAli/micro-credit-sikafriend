@@ -512,6 +512,7 @@
 
         <div class="hero-actions">
           <a class="btn-soft" href="{% url 'loans:borrower_detail' loan.borrower.id %}">Back to Borrower</a>
+          <a class="btn-soft" href="{% url 'loans:security_deposit' loan.id %}">Security Deposit</a>
           <a class="btn-soft btn-soft-primary" href="{% url 'loans:loan_statement' loan.id %}">View Statement</a>
         </div>
       </div>

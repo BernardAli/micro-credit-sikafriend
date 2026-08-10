@@ -246,6 +246,33 @@
     line-height:1.5;
   }
 
+  .select-filter{
+    display:grid;
+    gap:6px;
+  }
+
+  .select-filter input{
+    min-height:40px;
+    padding:8px 12px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:var(--panel);
+    color:var(--text);
+  }
+
+  .select-filter input:focus{
+    outline:none;
+    border-color:#60a5fa;
+    box-shadow:0 0 0 4px rgba(58,90,30,.10);
+  }
+
+  .select-filter-status{
+    min-height:16px;
+    color:var(--muted);
+    font-size:11px;
+    line-height:1.35;
+  }
+
   .field-error{
     color:var(--danger);
     font-size:12px;
@@ -562,6 +589,17 @@
             <div class="field-card">
               <div class="field-wrap">
                 <label for="{{ form.borrower.id_for_label }}">Borrower</label>
+                <div class="select-filter">
+                  <input
+                    id="borrower-filter"
+                    type="search"
+                    placeholder="Filter by borrower name or ID"
+                    autocomplete="off"
+                    aria-label="Filter borrowers"
+                    aria-controls="{{ form.borrower.id_for_label }}"
+                  >
+                  <div id="borrower-filter-status" class="select-filter-status" aria-live="polite"></div>
+                </div>
                 {{ form.borrower }}
                 {% if form.borrower.errors %}
                   <div class="field-error">{{ form.borrower.errors }}</div>
@@ -586,6 +624,17 @@
             <div class="field-card">
               <div class="field-wrap">
                 <label for="{{ form.agent_name.id_for_label }}">Agent</label>
+                <div class="select-filter">
+                  <input
+                    id="agent-filter"
+                    type="search"
+                    placeholder="Filter by agent name or ID"
+                    autocomplete="off"
+                    aria-label="Filter agents"
+                    aria-controls="{{ form.agent_name.id_for_label }}"
+                  >
+                  <div id="agent-filter-status" class="select-filter-status" aria-live="polite"></div>
+                </div>
                 {{ form.agent_name }}
                 {% if form.agent_name.errors %}
                   <div class="field-error">{{ form.agent_name.errors }}</div>
@@ -1152,6 +1201,41 @@
       return "Executive";
     }
 
+    function enableSelectFilter(inputId, selectId, statusId, itemLabel) {
+      const input = document.getElementById(inputId);
+      const select = document.getElementById(selectId);
+      const status = document.getElementById(statusId);
+      if (!input || !select || !status) return;
+
+      const options = Array.from(select.options).filter(function (option) {
+        return option.value;
+      });
+
+      function applyFilter() {
+        const query = input.value.trim().toLocaleLowerCase();
+        let matches = 0;
+
+        options.forEach(function (option) {
+          const isMatch = !query || option.textContent.toLocaleLowerCase().includes(query);
+          const shouldShow = isMatch || option.selected;
+          option.hidden = !shouldShow;
+          option.style.display = shouldShow ? "" : "none";
+          if (isMatch) matches += 1;
+        });
+
+        if (!query) {
+          status.textContent = options.length + " " + itemLabel + (options.length === 1 ? " available" : "s available");
+        } else if (matches) {
+          status.textContent = matches + " matching " + itemLabel + (matches === 1 ? "" : "s");
+        } else {
+          status.textContent = "No matching " + itemLabel + "s";
+        }
+      }
+
+      input.addEventListener("input", applyFilter);
+      applyFilter();
+    }
+
     function repaymentCount(frequency, months, weeks) {
       if (frequency === "DAILY") {
         return (months * 30) + (weeks * 7);
@@ -1272,6 +1356,8 @@
       borrowerEl.addEventListener("change", fetchCrossCompanyCheck);
     }
 
+    enableSelectFilter("borrower-filter", "id_borrower", "borrower-filter-status", "borrower");
+    enableSelectFilter("agent-filter", "id_agent_name", "agent-filter-status", "agent");
     updatePreview();
     renderCrossCompanyCheck({{ selected_external_debt_check_json|safe }});
   })();

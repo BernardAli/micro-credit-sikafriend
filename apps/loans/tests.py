@@ -12,8 +12,10 @@ from django.test import TestCase
 from apps.accounts.models import Agent
 from apps.company.models import CompanyProfile
 from apps.loans.cross_company import empty_cross_company_debt_check, format_cross_company_debt_summary, serialize_cross_company_debt_check
-from apps.loans.models import Borrower, Loan, Payment, RepaymentCollection
+from apps.loans.models import Borrower, Loan, Payment, RepaymentCollection, SecurityDeposit, SecurityDepositTransaction
 from apps.loans.payment_gateway import initiate_repayment_collection, process_collection_callback
+from apps.core.approvals import approve_and_execute_request
+from apps.core.models import ApprovalRequest
 import requests
 from apps.loans.services_sms import _response_detail, normalize_phone, safe_send_sms, send_sms
 
@@ -67,6 +69,101 @@ class PrefetchedLoanPaymentTotalsTests(TestCase):
             self.assertEqual(loan.total_principal_paid + loan.total_roic_paid, Decimal("120.00"))
             self.assertEqual(loan.balance_amount, Decimal("1080.00"))
             self.assertEqual(loan.principal_outstanding + loan.roic_outstanding, Decimal("1080.00"))
+
+
+class PaymentEntryFlowTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="payment-admin", password="SafePass123!", is_staff=True)
+        self.agent = Agent.objects.create(
+            agent_id="PAY-AGENT",
+            name="Payment Agent",
+            phone="0200000000",
+            location="Accra",
+        )
+        self.borrower = Borrower.objects.create(
+            borrower_id="PAY-BORROWER",
+            full_name="Payment Borrower",
+            national_id="PAY-NATIONAL-ID",
+            phone="0200000001",
+            location="Accra",
+            photo="borrowers/photos/payment.jpg",
+            ghana_card_front="borrowers/ghana_cards/front/payment.jpg",
+            ghana_card_back="borrowers/ghana_cards/back/payment.jpg",
+            ghana_card_number="PAY-GHANA-CARD",
+            group_name="Payment Group",
+            preferred_language="Twi",
+        )
+        self.loan = Loan.objects.create(
+            borrower=self.borrower,
+            agent_name=self.agent,
+            amount=Decimal("1000.00"),
+            duration_weeks=10,
+            weekly_payment=Decimal("120.00"),
+        )
+        self.client.force_login(self.user)
+
+    @patch("apps.loans.views.safe_send_sms")
+    def test_payment_save_reopens_the_same_loan_payment_form(self, _send_sms):
+        response = self.client.post(
+            reverse("loans:loan_payment_create", args=[self.loan.pk]),
+            {
+                "payment_date": "2026-08-10",
+                "amount": "120.00",
+                "reference": "MOMO-001",
+                "note": "First collection",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("loans:loan_payment_create", args=[self.loan.pk]),
+        )
+        self.assertTrue(Payment.objects.filter(loan=self.loan, amount=Decimal("120.00")).exists())
+
+
+class SecurityDepositWorkflowTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser(username="deposit-owner", password="SafePass123!")
+        self.agent = Agent.objects.create(agent_id="DEPOSIT-AGENT", name="Deposit Agent", phone="0200000010", location="Accra")
+        self.borrower = Borrower.objects.create(
+            borrower_id="DEPOSIT-BORROWER", full_name="Deposit Borrower", national_id="DEPOSIT-NATIONAL-ID",
+            phone="0200000011", location="Accra", photo="borrowers/photos/deposit.jpg",
+            ghana_card_front="borrowers/ghana_cards/front/deposit.jpg", ghana_card_back="borrowers/ghana_cards/back/deposit.jpg",
+            ghana_card_number="DEPOSIT-GHANA-CARD", group_name="Deposit Group", preferred_language="Twi",
+        )
+        self.loan = Loan.objects.create(borrower=self.borrower, agent_name=self.agent, amount=Decimal("5000.00"), duration_weeks=10, weekly_payment=Decimal("550.00"))
+        self.deposit = SecurityDeposit.objects.create(borrower=self.borrower, loan=self.loan, required_amount=Decimal("500.00"))
+        self.client.force_login(self.user)
+
+    def test_existing_loan_without_a_deposit_record_opens_the_deposit_page(self):
+        self.deposit.delete()
+
+        response = self.client.get(reverse("loans:security_deposit", args=[self.loan.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        deposit = SecurityDeposit.objects.get(loan=self.loan)
+        self.assertEqual(deposit.required_amount, Decimal("500.00"))
+
+    def test_deposit_collection_requires_approval_and_unblocks_the_loan_when_fully_secured(self):
+        blocked = self.client.post(reverse("loans:loan_payment_create", args=[self.loan.pk]), {"payment_date": "2026-08-10", "amount": "10.00"})
+        self.assertRedirects(blocked, reverse("loans:security_deposit", args=[self.loan.pk]))
+
+        response = self.client.post(reverse("loans:security_deposit", args=[self.loan.pk]), {
+            "action": "COLLECTION", "amount": "500.00", "transaction_date": "2026-08-10", "payment_method": "MOBILE_MONEY", "reference": "MOMO-DEPOSIT-1", "notes": "Verified at branch",
+            "verified_customer_name": self.borrower.full_name, "verified_customer_phone": self.borrower.phone,
+            "verified_customer_reference": self.borrower.borrower_id, "customer_authorized": "on",
+        })
+        self.assertRedirects(response, reverse("loans:security_deposit", args=[self.loan.pk]))
+        approval = ApprovalRequest.objects.get(workflow_type="SECURITY_DEPOSIT")
+        approve_and_execute_request(approval, self.user, note="Identity and funds verified")
+
+        self.deposit.refresh_from_db()
+        self.loan.refresh_from_db()
+        transaction = SecurityDepositTransaction.objects.get(deposit=self.deposit)
+        self.assertEqual(self.deposit.required_amount, Decimal("500.00"))
+        self.assertTrue(self.deposit.is_secured)
+        self.assertEqual(self.loan.disbursed_at.isoformat(), "2026-08-10")
+        self.assertIsNotNone(transaction.accounting_entry_id)
 
 
 class LoanSMSServiceTests(SimpleTestCase):

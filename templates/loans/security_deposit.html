@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load currency %}
+{% block content %}
+<style>
+  .deposit-shell{max-width:1120px;margin:0 auto;display:grid;gap:18px}.deposit-card{border:1px solid var(--border);border-radius:24px;background:var(--panel);padding:22px;box-shadow:0 18px 45px rgba(26,31,20,.05)}.deposit-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.deposit-metric{border:1px solid var(--border);border-radius:16px;background:var(--panel-strong);padding:14px}.deposit-label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase}.deposit-value{font-size:22px;font-weight:900;margin-top:5px}.deposit-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.deposit-form p{margin:0;display:grid;gap:6px}.deposit-form input,.deposit-form select,.deposit-form textarea{width:100%;box-sizing:border-box}.full{grid-column:1 / -1}.deposit-row{border-top:1px solid var(--border);padding:13px 0}.muted{color:var(--muted)}@media(max-width:760px){.deposit-grid,.deposit-form{grid-template-columns:1fr}}
+</style>
+<div class="deposit-shell">
+  <section class="deposit-card">
+    <a class="btn" href="{% url 'loans:loan_detail' loan.id %}">Back to Loan</a>
+    <h1>Security Deposit — Loan #{{ loan.id }}</h1>
+    <p class="muted">{{ loan.borrower.full_name }} · Customer ID: {{ loan.borrower.borrower_id }} · Phone: {{ loan.borrower.phone }}</p>
+    <div class="deposit-grid">
+      <div class="deposit-metric"><div class="deposit-label">Required (10%)</div><div class="deposit-value">{{ deposit.required_amount|ghs }}</div></div>
+      <div class="deposit-metric"><div class="deposit-label">Held separately</div><div class="deposit-value">{{ deposit.held_amount|ghs }}</div></div>
+      <div class="deposit-metric"><div class="deposit-label">Still due</div><div class="deposit-value">{{ deposit.amount_due|ghs }}</div></div>
+      <div class="deposit-metric"><div class="deposit-label">Control status</div><div class="deposit-value">{{ deposit.get_status_display }}</div></div>
+    </div>
+    {% if not deposit.is_secured %}<p class="muted" style="margin-top:16px">Loan disbursement and repayment posting are blocked until the full deposit is approved and collected.</p>{% endif %}
+  </section>
+  <section class="deposit-card">
+    <h2>Submit controlled deposit action</h2><p class="muted">Confirm the customer’s name, phone, and borrower ID/loan reference. Every action requires management approval and creates a separate audit/accounting record.</p>
+    <form method="post" class="deposit-form">{% csrf_token %}
+      {% for field in form %}<p class="{% if field.name == 'notes' or field.name == 'customer_authorized' %}full{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<span style="color:var(--danger)">{{ error }}</span>{% endfor %}</p>{% endfor %}
+      <div class="full"><button class="btn btn-primary" type="submit">Submit for Approval</button></div>
+    </form>
+  </section>
+  <section class="deposit-card"><h2>Approved transaction history</h2>{% for tx in transactions %}<div class="deposit-row"><strong>{{ tx.get_action_display }} — {{ tx.amount|ghs }}</strong><div class="muted">{{ tx.transaction_date }} · {{ tx.get_payment_method_display }} · Ref: {{ tx.reference }} · Approved by {{ tx.approved_by|default:"—" }}</div>{% if tx.notes %}<div class="muted">{{ tx.notes }}</div>{% endif %}</div>{% empty %}<p class="muted">No cash deposit action has been approved yet.</p>{% endfor %}{% for transfer in transfers %}<div class="deposit-row"><strong>Prior-cycle deposit carried forward — {{ transfer.amount|ghs }}</strong><div class="muted">From Loan #{{ transfer.source.loan_id }} · Ref: {{ transfer.reference }} · Approved by {{ transfer.approved_by|default:"—" }}</div></div>{% endfor %}</section>
+</div>
+{% endblock %}

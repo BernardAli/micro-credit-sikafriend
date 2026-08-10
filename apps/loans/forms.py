@@ -2,10 +2,11 @@ from decimal import Decimal
 
 from django import forms
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from apps.accounts.usernames import portal_username_exists, validate_portal_username
 
-from .models import Borrower, Loan, Payment
+from .models import Borrower, Loan, Payment, SecurityDeposit
 
 UserModel = get_user_model()
 
@@ -701,3 +702,81 @@ class PaymentCreateForm(forms.ModelForm):
         if amount <= Decimal("0.00"):
             raise forms.ValidationError("Payment amount must be greater than 0.")
         return amount
+
+
+class SecurityDepositActionForm(forms.Form):
+    action = forms.ChoiceField(
+        choices=[
+            ("COLLECTION", "Collect security deposit"),
+            ("REFUND", "Refund security deposit"),
+            ("DEFAULT_APPLICATION", "Apply deposit against loan default"),
+            ("CARRY_FORWARD", "Apply a previous deposit to this loan"),
+        ],
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    amount = forms.DecimalField(min_value=Decimal("0.01"), decimal_places=2, max_digits=12, widget=forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}))
+    transaction_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}))
+    payment_method = forms.ChoiceField(choices=Payment.PAYMENT_METHOD_CHOICES, widget=forms.Select(attrs={"class": "form-select"}))
+    reference = forms.CharField(max_length=120, widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Receipt, MoMo, or bank reference"}))
+    notes = forms.CharField(required=False, widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}))
+    verified_customer_name = forms.CharField(max_length=160, widget=forms.TextInput(attrs={"class": "form-control"}))
+    verified_customer_phone = forms.CharField(max_length=30, widget=forms.TextInput(attrs={"class": "form-control"}))
+    verified_customer_reference = forms.CharField(max_length=80, widget=forms.TextInput(attrs={"class": "form-control", "help_text": "Borrower ID or loan number."}))
+    customer_authorized = forms.BooleanField(required=True, label="Customer identity and authorization have been confirmed")
+
+    def __init__(self, *args, deposit: SecurityDeposit, **kwargs):
+        self.deposit = deposit
+        super().__init__(*args, **kwargs)
+        self.fields["transaction_date"].initial = timezone.localdate()
+        self.fields["source_deposit"] = forms.ModelChoiceField(
+            required=False,
+            queryset=SecurityDeposit.objects.filter(borrower=deposit.borrower, loan__status="CLOSED").exclude(pk=deposit.pk),
+            widget=forms.Select(attrs={"class": "form-select"}),
+            label="Previous completed-loan deposit to carry forward",
+        )
+
+    @staticmethod
+    def _normalise_phone(value):
+        return "".join(char for char in (value or "") if char.isdigit()).lstrip("0")
+
+    def clean(self):
+        cleaned = super().clean()
+        borrower = self.deposit.borrower
+        action = cleaned.get("action")
+        amount = cleaned.get("amount") or Decimal("0.00")
+        reference = (cleaned.get("reference") or "").strip()
+        verified_name = (cleaned.get("verified_customer_name") or "").strip()
+        verified_phone = self._normalise_phone(cleaned.get("verified_customer_phone"))
+        verified_reference = (cleaned.get("verified_customer_reference") or "").strip()
+
+        if verified_name.casefold() != borrower.full_name.strip().casefold():
+            self.add_error("verified_customer_name", "Enter the borrower name exactly as recorded.")
+        if verified_phone != self._normalise_phone(borrower.phone):
+            self.add_error("verified_customer_phone", "The verified phone number does not match this borrower.")
+        valid_references = {borrower.borrower_id, str(self.deposit.loan_id), f"LOAN-{self.deposit.loan_id}"}
+        if verified_reference.upper() not in {value.upper() for value in valid_references}:
+            self.add_error("verified_customer_reference", "Enter this borrower ID or the linked loan number.")
+        if not reference:
+            self.add_error("reference", "A verified collection or payout reference is required.")
+
+        if action == "COLLECTION" and amount > self.deposit.amount_due:
+            self.add_error("amount", f"Collection cannot exceed the outstanding deposit of GHS {self.deposit.amount_due:,.2f}.")
+        if action == "REFUND":
+            if self.deposit.loan.status != "CLOSED":
+                self.add_error("action", "A security deposit can be refunded only after the loan is closed.")
+            elif amount > self.deposit.held_amount:
+                self.add_error("amount", "Refund cannot exceed the deposit held for this customer.")
+        if action == "DEFAULT_APPLICATION":
+            if self.deposit.loan.status != "DEFAULT":
+                self.add_error("action", "A deposit can be applied only to a defaulted loan.")
+            elif amount > min(self.deposit.held_amount, self.deposit.loan.balance_amount):
+                self.add_error("amount", "Application cannot exceed the held deposit or loan balance.")
+        if action == "CARRY_FORWARD":
+            source = cleaned.get("source_deposit")
+            if not source:
+                self.add_error("source_deposit", "Select the completed-loan deposit being applied to this loan.")
+            elif amount > source.held_amount:
+                self.add_error("amount", "The selected previous deposit does not hold that amount.")
+            elif amount > self.deposit.amount_due:
+                self.add_error("amount", "Carry-forward cannot exceed this loan's remaining deposit requirement.")
+        return cleaned

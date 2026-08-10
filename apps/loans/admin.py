@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.db.models import Sum
 from django.utils.html import format_html
 
-from .models import Borrower, Loan, Payment, RepaymentCollection
+from .models import Borrower, Loan, Payment, RepaymentCollection, SecurityDeposit, SecurityDepositTransaction
 
 
 class PaymentInline(admin.TabularInline):
@@ -550,3 +550,17 @@ class RepaymentCollectionAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related("loan", "borrower", "payment", "submitted_by")
+
+
+class SecurityDepositTransactionInline(admin.TabularInline):
+    model = SecurityDepositTransaction
+    extra = 0
+    readonly_fields = ("approved_by", "approval_request", "accounting_entry", "created_at")
+
+
+@admin.register(SecurityDeposit)
+class SecurityDepositAdmin(admin.ModelAdmin):
+    list_display = ("loan", "borrower", "required_amount", "held_amount", "amount_due", "status")
+    list_filter = ("status",)
+    search_fields = ("loan__id", "borrower__full_name", "borrower__borrower_id")
+    inlines = [SecurityDepositTransactionInline]

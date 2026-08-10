@@ -16,6 +16,7 @@ APPROVAL_WORKFLOW_CHOICES = [
     ("PAYROLL_RUN_APPROVAL", "Payroll Run Approval"),
     ("ACCOUNTING_JOURNAL", "Accounting Journal"),
     ("ASSET_DISPOSAL", "Asset Disposal"),
+    ("SECURITY_DEPOSIT", "Security Deposit Control"),
 ]
 
 AUDIT_CATEGORY_CHOICES = [
@@ -24,6 +25,7 @@ AUDIT_CATEGORY_CHOICES = [
     ("PAYROLL", "Payroll"),
     ("ACCOUNTING", "Accounting"),
     ("ASSET", "Asset"),
+    ("SECURITY_DEPOSIT", "Security Deposit"),
     ("IMPORT", "Import"),
     ("SYSTEM", "System"),
 ]

@@ -547,38 +547,497 @@
   .modal-overlay{
     position:fixed;
     inset:0;
-    background:rgba(26,31,20,.55);
+    background:rgba(15,23,12,.72);
     display:none;
     align-items:center;
     justify-content:center;
-    z-index:999;
-    padding:20px;
+    z-index:1200;
+    padding:24px;
+    backdrop-filter:blur(7px);
   }
 
   .modal-card{
     width:100%;
-    max-width:760px;
-    background:rgba(255,255,255,.98);
-    backdrop-filter:blur(12px);
-    border-radius:24px;
-    padding:26px;
+    max-width:1120px;
+    max-height:calc(100vh - 48px);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    background:var(--panel);
+    border:1px solid rgba(255,255,255,.18);
+    border-radius:28px;
     box-shadow:0 40px 90px rgba(26,31,20,.25);
   }
 
   .modal-header{
     display:flex;
     justify-content:space-between;
+    align-items:flex-start;
+    gap:18px;
+    padding:22px 24px;
+    border-bottom:1px solid var(--border-soft);
+    background:linear-gradient(135deg,var(--panel-strong),color-mix(in srgb,var(--primary) 5%,var(--panel)));
+    flex:0 0 auto;
+  }
+
+  .loan-modal-heading{
+    display:flex;
     align-items:center;
-    margin-bottom:18px;
+    gap:14px;
+    min-width:0;
+  }
+
+  .loan-modal-avatar{
+    width:48px;
+    height:48px;
+    flex:0 0 auto;
+    display:grid;
+    place-items:center;
+    overflow:hidden;
+    border-radius:15px;
+    background:var(--primary);
+    color:#fff;
+    font-size:18px;
+    font-weight:900;
+    box-shadow:0 10px 24px var(--primary-glow);
+  }
+
+  .loan-modal-avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+
+  .loan-modal-kicker{
+    margin-bottom:4px;
+    color:var(--gold);
+    font-size:10px;
+    font-weight:900;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+  }
+
+  .loan-modal-title{
+    margin:0;
+    color:var(--text);
+    font-family:var(--font-serif);
+    font-size:22px;
+    line-height:1.2;
+  }
+
+  .loan-modal-subtitle{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.5;
   }
 
   .modal-close{
-    font-size:22px;
-    background:none;
-    border:none;
+    width:38px;
+    height:38px;
+    display:grid;
+    place-items:center;
+    flex:0 0 auto;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:var(--panel-strong);
     cursor:pointer;
-    font-weight:bold;
+    font-size:22px;
+    font-weight:700;
     color:var(--muted);
+    transition:all .16s ease;
+  }
+
+  .modal-close:hover{
+    border-color:rgba(220,38,38,.20);
+    background:rgba(220,38,38,.06);
+    color:var(--danger);
+  }
+
+  .loan-modal-form{
+    min-height:0;
+    display:flex;
+    flex:1;
+    flex-direction:column;
+  }
+
+  .loan-modal-body{
+    min-height:0;
+    overflow-y:auto;
+    padding:22px 24px 28px;
+    overscroll-behavior:contain;
+  }
+
+  .loan-modal-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 280px;
+    gap:20px;
+    align-items:start;
+  }
+
+  .loan-form-sections{
+    display:grid;
+    gap:16px;
+    min-width:0;
+  }
+
+  .loan-form-section{
+    overflow:hidden;
+    border:1px solid var(--border);
+    border-radius:20px;
+    background:var(--panel-strong);
+  }
+
+  .loan-form-section__head{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    padding:16px 18px 12px;
+    border-bottom:1px solid var(--border-soft);
+  }
+
+  .loan-section-number{
+    width:30px;
+    height:30px;
+    display:grid;
+    place-items:center;
+    flex:0 0 auto;
+    border-radius:10px;
+    background:rgba(58,90,30,.10);
+    color:var(--primary);
+    font-size:12px;
+    font-weight:900;
+  }
+
+  .loan-form-section__title{
+    color:var(--text);
+    font-size:14px;
+    font-weight:900;
+  }
+
+  .loan-form-section__sub{
+    margin-top:3px;
+    color:var(--muted);
+    font-size:11.5px;
+    line-height:1.45;
+  }
+
+  .loan-form-section__body{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:14px;
+    padding:16px 18px 18px;
+  }
+
+  .loan-field{
+    min-width:0;
+  }
+
+  .loan-field--full{
+    grid-column:1 / -1;
+  }
+
+  .loan-field label{
+    display:block;
+    margin-bottom:7px;
+    color:var(--text-2);
+    font-size:11.5px;
+    font-weight:850;
+  }
+
+  .loan-field input:not([type="checkbox"]),
+  .loan-field select,
+  .loan-field textarea{
+    width:100%;
+    min-height:43px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:9px 11px;
+    background:var(--panel);
+    color:var(--text);
+    outline:none;
+    transition:border-color .16s ease,box-shadow .16s ease,background .16s ease;
+  }
+
+  .loan-field input:focus,
+  .loan-field select:focus,
+  .loan-field textarea:focus{
+    border-color:color-mix(in srgb,var(--primary) 45%,var(--border));
+    box-shadow:0 0 0 3px var(--primary-glow);
+    background:var(--panel-strong);
+  }
+
+  .loan-field input[readonly]{
+    background:var(--bg-soft);
+    color:var(--muted);
+  }
+
+  .agent-combobox{
+    position:relative;
+  }
+
+  .agent-combobox__input-wrap{
+    position:relative;
+  }
+
+  .agent-combobox__input{
+    padding-right:42px !important;
+  }
+
+  .agent-combobox__toggle{
+    position:absolute;
+    top:50%;
+    right:8px;
+    width:30px;
+    height:30px;
+    display:grid;
+    place-items:center;
+    padding:0;
+    border:0;
+    border-radius:9px;
+    background:transparent;
+    color:var(--muted);
+    cursor:pointer;
+    transform:translateY(-50%);
+    transition:background .16s ease,color .16s ease,transform .16s ease;
+  }
+
+  .agent-combobox__toggle:hover,
+  .agent-combobox__toggle:focus-visible{
+    background:var(--bg-soft);
+    color:var(--primary);
+    outline:none;
+  }
+
+  .agent-combobox.is-open .agent-combobox__toggle{
+    transform:translateY(-50%) rotate(180deg);
+  }
+
+  .agent-combobox > select{
+    position:absolute !important;
+    width:1px !important;
+    height:1px !important;
+    margin:-1px !important;
+    padding:0 !important;
+    overflow:hidden !important;
+    clip:rect(0 0 0 0) !important;
+    clip-path:inset(50%) !important;
+    white-space:nowrap !important;
+    border:0 !important;
+  }
+
+  .agent-combobox__options{
+    position:absolute;
+    z-index:30;
+    top:calc(100% + 7px);
+    left:0;
+    right:0;
+    max-height:240px;
+    overflow-y:auto;
+    padding:6px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:var(--panel-strong);
+    box-shadow:0 18px 45px rgba(26,31,20,.18);
+  }
+
+  .agent-combobox__options[hidden]{
+    display:none;
+  }
+
+  .agent-combobox__option{
+    width:100%;
+    display:block;
+    padding:10px 11px;
+    border:0;
+    border-radius:10px;
+    background:transparent;
+    color:var(--text);
+    text-align:left;
+    cursor:pointer;
+  }
+
+  .agent-combobox__option:hover,
+  .agent-combobox__option.is-active,
+  .agent-combobox__option[aria-selected="true"]{
+    background:color-mix(in srgb,var(--primary) 10%,var(--panel));
+    color:var(--primary);
+  }
+
+  .agent-combobox__empty{
+    padding:12px;
+    color:var(--muted);
+    font-size:12px;
+    text-align:center;
+  }
+
+  .agent-combobox__hint{
+    margin-top:6px;
+    color:var(--muted);
+    font-size:11px;
+  }
+
+  .agent-combobox.has-error .agent-combobox__input{
+    border-color:var(--danger);
+    box-shadow:0 0 0 3px rgba(220,38,38,.08);
+  }
+
+  .loan-check{
+    min-height:43px;
+    display:flex;
+    gap:10px;
+    align-items:center;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:var(--bg-soft);
+  }
+
+  .loan-check input{
+    width:18px;
+    height:18px;
+    flex:0 0 auto;
+    accent-color:var(--primary);
+  }
+
+  .loan-check label{
+    margin:0;
+    line-height:1.4;
+  }
+
+  .loan-field-error{
+    margin-top:6px;
+    color:var(--danger);
+    font-size:11px;
+    font-weight:750;
+    line-height:1.4;
+  }
+
+  .loan-field-error ul,
+  .loan-form-alert ul{
+    margin:0;
+    padding-left:17px;
+  }
+
+  .loan-form-alert{
+    margin-bottom:16px;
+    padding:12px 14px;
+    border:1px solid rgba(220,38,38,.16);
+    border-radius:14px;
+    background:rgba(220,38,38,.06);
+    color:var(--danger);
+    font-size:12px;
+    font-weight:750;
+    line-height:1.55;
+  }
+
+  .loan-agent-banner{
+    margin-bottom:16px;
+    padding:11px 14px;
+    border:1px solid var(--border-accent);
+    border-radius:14px;
+    background:var(--gold-pale);
+    color:var(--text);
+    font-size:12.5px;
+  }
+
+  .loan-summary{
+    position:sticky;
+    top:0;
+    overflow:hidden;
+    border:1px solid var(--border);
+    border-radius:20px;
+    background:linear-gradient(160deg,var(--primary-2),var(--primary));
+    color:#fff;
+    box-shadow:0 18px 45px var(--primary-glow);
+  }
+
+  .loan-summary__head{
+    padding:17px 18px 14px;
+    border-bottom:1px solid rgba(255,255,255,.12);
+  }
+
+  .loan-summary__kicker{
+    color:var(--gold);
+    font-size:9.5px;
+    font-weight:900;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+  }
+
+  .loan-summary__title{
+    margin-top:5px;
+    font-size:16px;
+    font-weight:900;
+  }
+
+  .loan-summary__body{
+    display:grid;
+    gap:0;
+    padding:5px 18px 10px;
+  }
+
+  .loan-summary-row{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    padding:11px 0;
+    border-bottom:1px solid rgba(255,255,255,.10);
+    font-size:11.5px;
+  }
+
+  .loan-summary-row:last-child{
+    border-bottom:0;
+  }
+
+  .loan-summary-row span{
+    color:rgba(255,255,255,.68);
+  }
+
+  .loan-summary-row strong{
+    max-width:58%;
+    color:#fff;
+    text-align:right;
+    font-size:12px;
+  }
+
+  .loan-summary-note{
+    margin:0 18px 18px;
+    padding:11px 12px;
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:12px;
+    background:rgba(255,255,255,.07);
+    color:rgba(255,255,255,.76);
+    font-size:10.5px;
+    line-height:1.5;
+  }
+
+  .loan-modal-footer{
+    display:flex;
+    justify-content:space-between;
+    gap:14px;
+    align-items:center;
+    padding:15px 24px;
+    border-top:1px solid var(--border-soft);
+    background:var(--panel-strong);
+    flex:0 0 auto;
+  }
+
+  .loan-modal-footer__note{
+    max-width:560px;
+    color:var(--muted);
+    font-size:11.5px;
+    line-height:1.45;
+  }
+
+  .loan-modal-actions{
+    display:flex;
+    gap:10px;
+    flex:0 0 auto;
+  }
+
+  body.loan-modal-open{
+    overflow:hidden;
   }
 
   @media (max-width:1400px){
@@ -594,6 +1053,8 @@
     .metrics-grid-3,
     .form-grid{ grid-template-columns:1fr; }
     .metrics-grid-6{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .loan-modal-grid{ grid-template-columns:1fr; }
+    .loan-summary{ position:relative; }
   }
 
   @media (max-width:640px){
@@ -602,6 +1063,15 @@
     .hero-title{ font-size:24px; }
     .stat-value{ font-size:22px; }
     .tab-nav{ display:grid; grid-template-columns:1fr 1fr; }
+    .modal-overlay{ padding:0; align-items:stretch; }
+    .modal-card{ max-height:100vh; border-radius:0; }
+    .modal-header{ padding:17px 16px; }
+    .loan-modal-body{ padding:16px; }
+    .loan-form-section__body{ grid-template-columns:1fr; padding:14px; }
+    .loan-field--full{ grid-column:auto; }
+    .loan-modal-footer{ align-items:stretch; flex-direction:column; padding:13px 16px; }
+    .loan-modal-actions{ width:100%; }
+    .loan-modal-actions .btn-soft{ flex:1; }
   }
 </style>
 
@@ -921,6 +1391,7 @@
 
                   <div style="display:flex; gap:10px; flex-wrap:wrap;">
                     <button class="btn-soft" type="button" onclick="toggleStatement('{{ l.id }}')">Statement</button>
+                    {% if l.security_deposit %}<a class="btn-soft" href="{% url 'loans:security_deposit' l.id %}">Security Deposit</a>{% endif %}
                     <button class="btn-soft btn-soft-primary" type="button" onclick="togglePay('{{ l.id }}')">Add Payment</button>
                   </div>
                 </div>
@@ -1005,181 +1476,323 @@
 </div>
 
 {% if user_role == "admin" or user_role == "agent" %}
-<div id="loanModal" class="modal-overlay">
-  <div class="modal-card">
+<div id="loanModal" class="modal-overlay" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="loanModalTitle" tabindex="-1">
     <div class="modal-header">
-      <h3 style="margin:0;">Give Loan to {{ borrower.full_name }}</h3>
-      <button type="button" class="modal-close" onclick="closeLoanModal()">×</button>
+      <div class="loan-modal-heading">
+        <div class="loan-modal-avatar">
+          {% if borrower.photo %}
+            <img src="{{ borrower.photo.url }}" alt="">
+          {% else %}
+            {{ borrower.full_name|slice:":1"|upper }}
+          {% endif %}
+        </div>
+        <div>
+          <div class="loan-modal-kicker">New loan application</div>
+          <h3 class="loan-modal-title" id="loanModalTitle">Give Loan to {{ borrower.full_name }}</h3>
+          <div class="loan-modal-subtitle">
+            {{ borrower.borrower_id }} · {{ borrower.phone }} · {{ borrower.location }} · Status: {{ borrower.status }}
+          </div>
+        </div>
+      </div>
+      <button type="button" class="modal-close" onclick="closeLoanModal()" aria-label="Close loan application">×</button>
     </div>
 
-    <form method="post">
+    <form method="post" class="loan-modal-form" id="giveLoanForm">
       {% csrf_token %}
 
-      {% if loan_form.non_field_errors %}
-        <div style="margin-bottom:14px;padding:10px 13px;border-radius:12px;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.14);font-size:12.5px;color:var(--danger);font-weight:700;">
-          {{ loan_form.non_field_errors }}
-        </div>
-      {% endif %}
-
-      {% if user_role == "agent" %}
-        {# Agent: agent_name is a hidden field auto-set by the form #}
-        {{ loan_form.agent_name }}
-        <div style="margin-bottom:14px;padding:10px 13px;border-radius:12px;background:var(--gold-pale);border:1px solid var(--border-accent);font-size:12.5px;color:var(--text);">
-          <strong>Issuing as:</strong> {{ agent_profile.name }} ({{ agent_profile.agent_id }})
-        </div>
-      {% endif %}
-
-      <div class="form-grid">
-        {% if user_role == "admin" %}
-        <div>
-          <label>Agent Name</label>
-          {{ loan_form.agent_name }}
-        </div>
+      <div class="loan-modal-body">
+        {% if loan_form.errors %}
+          <div class="loan-form-alert" role="alert">
+            <strong>Please correct the highlighted fields before submitting.</strong>
+            {{ loan_form.non_field_errors }}
+          </div>
         {% endif %}
-        <div>
-          <label>Amount (GHS)</label>
-          {{ loan_form.amount }}
-        </div>
-        <div>
-          <label>Loan Category</label>
-          {{ loan_form.loan_category_display }}
-        </div>
-        <div>
-          <label>Loan Acquisition Date</label>
-          {{ loan_form.loan_acquisition_date }}
-        </div>
-        <div>
-          <label>Repayment Frequency</label>
-          {{ loan_form.repayment_frequency }}
-        </div>
-        <div>
-          <label>Proposed Daily or Weekly Repayment (GHS)</label>
-          {{ loan_form.weekly_payment }}
-        </div>
-        <div>
-          <label>Duration (Months)</label>
-          {{ loan_form.duration_months }}
-        </div>
-        <div>
-          <label>Duration (Weeks)</label>
-          {{ loan_form.duration_weeks }}
-        </div>
-        <div>
-          <label>Loan Repayment Start Date</label>
-          {{ loan_form.start_date }}
-        </div>
-        <div>
-          <label>Client Sector / Industry</label>
-          {{ loan_form.sector }}
-        </div>
-        <div>
-          <label>Other Sector</label>
-          {{ loan_form.sector_other }}
-        </div>
-        <div>
-          <label>Borrower Declaration Accepted</label>
-          {{ loan_form.borrower_declaration_accepted }}
-        </div>
-        <div>
-          <label>Borrower's Name / Signature</label>
-          {{ loan_form.borrower_signature_name }}
-        </div>
-        <div>
-          <label>Borrower Signed Date</label>
-          {{ loan_form.borrower_signed_date }}
-        </div>
-        <div>
-          <label>Guarantor / Group Leader Name</label>
-          {{ loan_form.guarantor_name }}
-        </div>
-        <div>
-          <label>Guarantor ID Number</label>
-          {{ loan_form.guarantor_id_number }}
-        </div>
-        <div>
-          <label>Guarantor Signature</label>
-          {{ loan_form.guarantor_signature_name }}
-        </div>
-        <div>
-          <label>Guarantor Signed Date</label>
-          {{ loan_form.guarantor_signed_date }}
-        </div>
-        <div>
-          <label>Type of Collateral</label>
-          {{ loan_form.collateral_type }}
-        </div>
-        <div>
-          <label>Collateral Details / ID Number</label>
-          {{ loan_form.collateral_details }}
-        </div>
-        <div>
-          <label>Estimated Collateral Value (GHS)</label>
-          {{ loan_form.collateral_estimated_value }}
-        </div>
-        <div>
-          <label>Collateral Location</label>
-          {{ loan_form.collateral_location }}
-        </div>
-        <div>
-          <label>Collateral Consent Accepted</label>
-          {{ loan_form.collateral_borrower_consent_accepted }}
-        </div>
-        <div>
-          <label>Borrower Collateral Consent Date</label>
-          {{ loan_form.collateral_borrower_signed_date }}
-        </div>
-        <div>
-          <label>Guarantor Collateral Acknowledgement</label>
-          {{ loan_form.collateral_guarantor_signature_name }}
-        </div>
-        <div>
-          <label>Guarantor Collateral Date</label>
-          {{ loan_form.collateral_guarantor_signed_date }}
-        </div>
-        <div>
-          <label>Application Received By</label>
-          {{ loan_form.application_received_by }}
-        </div>
-        <div>
-          <label>Date Received</label>
-          {{ loan_form.application_received_date }}
-        </div>
-        <div>
-          <label>Loan Amount Approved (GHS)</label>
-          {{ loan_form.approved_amount }}
-        </div>
-        <div>
-          <label>Approved Repayment Plan</label>
-          {{ loan_form.approved_repayment_plan }}
-        </div>
-        <div>
-          <label>Loan Officer Signature</label>
-          {{ loan_form.loan_officer_signature_name }}
-        </div>
-        <div>
-          <label>Approval Manager Signature</label>
-          {{ loan_form.approval_manager_signature_name }}
-        </div>
-        <div>
-          <label>Date of Approval</label>
-          {{ loan_form.approval_date }}
+
+        {% if user_role == "agent" %}
+          {{ loan_form.agent_name }}
+          <div class="loan-agent-banner">
+            <strong>Submitting as:</strong> {{ agent_profile.name }} ({{ agent_profile.agent_id }}). The loan will remain assigned to your portfolio.
+            {% if loan_form.agent_name.errors %}<div class="loan-field-error">{{ loan_form.agent_name.errors }}</div>{% endif %}
+          </div>
+        {% endif %}
+
+        <div class="loan-modal-grid">
+          <div class="loan-form-sections">
+            <section class="loan-form-section">
+              <div class="loan-form-section__head">
+                <span class="loan-section-number">01</span>
+                <div>
+                  <div class="loan-form-section__title">Loan terms</div>
+                  <div class="loan-form-section__sub">Set the principal, repayment schedule, duration, and purpose.</div>
+                </div>
+              </div>
+              <div class="loan-form-section__body">
+                {% if user_role == "admin" %}
+                <div class="loan-field loan-field--full">
+                  <label for="responsibleAgentSearch">Responsible agent</label>
+                  <div class="agent-combobox" data-agent-combobox>
+                    <div class="agent-combobox__input-wrap">
+                      <input
+                        type="search"
+                        id="responsibleAgentSearch"
+                        class="agent-combobox__input"
+                        placeholder="Search by agent name or ID"
+                        autocomplete="off"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-expanded="false"
+                        aria-controls="responsibleAgentOptions"
+                        aria-haspopup="listbox"
+                      >
+                      <button class="agent-combobox__toggle" type="button" aria-label="Show responsible agents" tabindex="-1">⌄</button>
+                    </div>
+                    {{ loan_form.agent_name }}
+                    <div id="responsibleAgentOptions" class="agent-combobox__options" role="listbox" hidden></div>
+                    <div class="agent-combobox__hint">Start typing to filter the available agents, then select one from the list.</div>
+                  </div>
+                  {% if loan_form.agent_name.errors %}<div class="loan-field-error">{{ loan_form.agent_name.errors }}</div>{% endif %}
+                </div>
+                {% endif %}
+                <div class="loan-field">
+                  <label for="{{ loan_form.amount.id_for_label }}">Principal amount ({{ company_currency }})</label>
+                  {{ loan_form.amount }}
+                  {% if loan_form.amount.errors %}<div class="loan-field-error">{{ loan_form.amount.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.loan_category_display.id_for_label }}">Loan category</label>
+                  {{ loan_form.loan_category_display }}
+                  {% if loan_form.loan_category_display.errors %}<div class="loan-field-error">{{ loan_form.loan_category_display.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.loan_acquisition_date.id_for_label }}">Application / acquisition date</label>
+                  {{ loan_form.loan_acquisition_date }}
+                  {% if loan_form.loan_acquisition_date.errors %}<div class="loan-field-error">{{ loan_form.loan_acquisition_date.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.start_date.id_for_label }}">Repayment start date</label>
+                  {{ loan_form.start_date }}
+                  {% if loan_form.start_date.errors %}<div class="loan-field-error">{{ loan_form.start_date.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.repayment_frequency.id_for_label }}">Repayment frequency</label>
+                  {{ loan_form.repayment_frequency }}
+                  {% if loan_form.repayment_frequency.errors %}<div class="loan-field-error">{{ loan_form.repayment_frequency.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.weekly_payment.id_for_label }}">Proposed repayment ({{ company_currency }})</label>
+                  {{ loan_form.weekly_payment }}
+                  {% if loan_form.weekly_payment.errors %}<div class="loan-field-error">{{ loan_form.weekly_payment.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.duration_months.id_for_label }}">Duration in months</label>
+                  {{ loan_form.duration_months }}
+                  {% if loan_form.duration_months.errors %}<div class="loan-field-error">{{ loan_form.duration_months.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.duration_weeks.id_for_label }}">Additional weeks</label>
+                  {{ loan_form.duration_weeks }}
+                  {% if loan_form.duration_weeks.errors %}<div class="loan-field-error">{{ loan_form.duration_weeks.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.sector.id_for_label }}">Client sector / industry</label>
+                  {{ loan_form.sector }}
+                  {% if loan_form.sector.errors %}<div class="loan-field-error">{{ loan_form.sector.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field" id="loanOtherSectorField">
+                  <label for="{{ loan_form.sector_other.id_for_label }}">Specify other sector</label>
+                  {{ loan_form.sector_other }}
+                  {% if loan_form.sector_other.errors %}<div class="loan-field-error">{{ loan_form.sector_other.errors }}</div>{% endif %}
+                </div>
+              </div>
+            </section>
+
+            <section class="loan-form-section">
+              <div class="loan-form-section__head">
+                <span class="loan-section-number">02</span>
+                <div>
+                  <div class="loan-form-section__title">Declaration and guarantor</div>
+                  <div class="loan-form-section__sub">Record the borrower's declaration and guarantor acknowledgement.</div>
+                </div>
+              </div>
+              <div class="loan-form-section__body">
+                <div class="loan-field loan-field--full">
+                  <div class="loan-check">
+                    {{ loan_form.borrower_declaration_accepted }}
+                    <label for="{{ loan_form.borrower_declaration_accepted.id_for_label }}">Borrower has reviewed and accepted the loan declaration</label>
+                  </div>
+                  {% if loan_form.borrower_declaration_accepted.errors %}<div class="loan-field-error">{{ loan_form.borrower_declaration_accepted.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.borrower_signature_name.id_for_label }}">Borrower's signed name</label>
+                  {{ loan_form.borrower_signature_name }}
+                  {% if loan_form.borrower_signature_name.errors %}<div class="loan-field-error">{{ loan_form.borrower_signature_name.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.borrower_signed_date.id_for_label }}">Borrower signed date</label>
+                  {{ loan_form.borrower_signed_date }}
+                  {% if loan_form.borrower_signed_date.errors %}<div class="loan-field-error">{{ loan_form.borrower_signed_date.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.guarantor_name.id_for_label }}">Guarantor / group leader</label>
+                  {{ loan_form.guarantor_name }}
+                  {% if loan_form.guarantor_name.errors %}<div class="loan-field-error">{{ loan_form.guarantor_name.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.guarantor_id_number.id_for_label }}">Guarantor ID number</label>
+                  {{ loan_form.guarantor_id_number }}
+                  {% if loan_form.guarantor_id_number.errors %}<div class="loan-field-error">{{ loan_form.guarantor_id_number.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.guarantor_signature_name.id_for_label }}">Guarantor signature</label>
+                  {{ loan_form.guarantor_signature_name }}
+                  {% if loan_form.guarantor_signature_name.errors %}<div class="loan-field-error">{{ loan_form.guarantor_signature_name.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.guarantor_signed_date.id_for_label }}">Guarantor signed date</label>
+                  {{ loan_form.guarantor_signed_date }}
+                  {% if loan_form.guarantor_signed_date.errors %}<div class="loan-field-error">{{ loan_form.guarantor_signed_date.errors }}</div>{% endif %}
+                </div>
+              </div>
+            </section>
+
+            <section class="loan-form-section">
+              <div class="loan-form-section__head">
+                <span class="loan-section-number">03</span>
+                <div>
+                  <div class="loan-form-section__title">Collateral</div>
+                  <div class="loan-form-section__sub">Capture pledged security and the related consent details, where applicable.</div>
+                </div>
+              </div>
+              <div class="loan-form-section__body">
+                <div class="loan-field">
+                  <label for="{{ loan_form.collateral_type.id_for_label }}">Type of collateral</label>
+                  {{ loan_form.collateral_type }}
+                  {% if loan_form.collateral_type.errors %}<div class="loan-field-error">{{ loan_form.collateral_type.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.collateral_details.id_for_label }}">Collateral details / ID</label>
+                  {{ loan_form.collateral_details }}
+                  {% if loan_form.collateral_details.errors %}<div class="loan-field-error">{{ loan_form.collateral_details.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.collateral_estimated_value.id_for_label }}">Estimated value ({{ company_currency }})</label>
+                  {{ loan_form.collateral_estimated_value }}
+                  {% if loan_form.collateral_estimated_value.errors %}<div class="loan-field-error">{{ loan_form.collateral_estimated_value.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.collateral_location.id_for_label }}">Collateral location</label>
+                  {{ loan_form.collateral_location }}
+                  {% if loan_form.collateral_location.errors %}<div class="loan-field-error">{{ loan_form.collateral_location.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field loan-field--full">
+                  <div class="loan-check">
+                    {{ loan_form.collateral_borrower_consent_accepted }}
+                    <label for="{{ loan_form.collateral_borrower_consent_accepted.id_for_label }}">Borrower has accepted the collateral consent terms</label>
+                  </div>
+                  {% if loan_form.collateral_borrower_consent_accepted.errors %}<div class="loan-field-error">{{ loan_form.collateral_borrower_consent_accepted.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.collateral_borrower_signed_date.id_for_label }}">Borrower consent date</label>
+                  {{ loan_form.collateral_borrower_signed_date }}
+                  {% if loan_form.collateral_borrower_signed_date.errors %}<div class="loan-field-error">{{ loan_form.collateral_borrower_signed_date.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.collateral_guarantor_signature_name.id_for_label }}">Guarantor acknowledgement</label>
+                  {{ loan_form.collateral_guarantor_signature_name }}
+                  {% if loan_form.collateral_guarantor_signature_name.errors %}<div class="loan-field-error">{{ loan_form.collateral_guarantor_signature_name.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.collateral_guarantor_signed_date.id_for_label }}">Guarantor acknowledgement date</label>
+                  {{ loan_form.collateral_guarantor_signed_date }}
+                  {% if loan_form.collateral_guarantor_signed_date.errors %}<div class="loan-field-error">{{ loan_form.collateral_guarantor_signed_date.errors }}</div>{% endif %}
+                </div>
+              </div>
+            </section>
+
+            <section class="loan-form-section">
+              <div class="loan-form-section__head">
+                <span class="loan-section-number">04</span>
+                <div>
+                  <div class="loan-form-section__title">Internal review</div>
+                  <div class="loan-form-section__sub">Optional application-receipt and preliminary approval information.</div>
+                </div>
+              </div>
+              <div class="loan-form-section__body">
+                <div class="loan-field">
+                  <label for="{{ loan_form.application_received_by.id_for_label }}">Application received by</label>
+                  {{ loan_form.application_received_by }}
+                  {% if loan_form.application_received_by.errors %}<div class="loan-field-error">{{ loan_form.application_received_by.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.application_received_date.id_for_label }}">Date received</label>
+                  {{ loan_form.application_received_date }}
+                  {% if loan_form.application_received_date.errors %}<div class="loan-field-error">{{ loan_form.application_received_date.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.approved_amount.id_for_label }}">Recommended amount ({{ company_currency }})</label>
+                  {{ loan_form.approved_amount }}
+                  {% if loan_form.approved_amount.errors %}<div class="loan-field-error">{{ loan_form.approved_amount.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.approved_repayment_plan.id_for_label }}">Recommended repayment plan</label>
+                  {{ loan_form.approved_repayment_plan }}
+                  {% if loan_form.approved_repayment_plan.errors %}<div class="loan-field-error">{{ loan_form.approved_repayment_plan.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.loan_officer_signature_name.id_for_label }}">Loan officer signature</label>
+                  {{ loan_form.loan_officer_signature_name }}
+                  {% if loan_form.loan_officer_signature_name.errors %}<div class="loan-field-error">{{ loan_form.loan_officer_signature_name.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.approval_manager_signature_name.id_for_label }}">Approval manager signature</label>
+                  {{ loan_form.approval_manager_signature_name }}
+                  {% if loan_form.approval_manager_signature_name.errors %}<div class="loan-field-error">{{ loan_form.approval_manager_signature_name.errors }}</div>{% endif %}
+                </div>
+                <div class="loan-field">
+                  <label for="{{ loan_form.approval_date.id_for_label }}">Provisional approval date</label>
+                  {{ loan_form.approval_date }}
+                  {% if loan_form.approval_date.errors %}<div class="loan-field-error">{{ loan_form.approval_date.errors }}</div>{% endif %}
+                </div>
+              </div>
+            </section>
+
+            {% if external_debt_check.requires_review %}
+              <div class="external-risk-ack">
+                <input type="checkbox" name="confirm_external_debt_review" id="confirm_external_debt_review" {% if request.POST.confirm_external_debt_review %}checked{% endif %}>
+                <label for="confirm_external_debt_review">I reviewed this borrower's external debt exposure and still want to submit this application for approval.</label>
+              </div>
+            {% endif %}
+          </div>
+
+          <aside class="loan-summary" aria-live="polite">
+            <div class="loan-summary__head">
+              <div class="loan-summary__kicker">Live preview</div>
+              <div class="loan-summary__title">Repayment summary</div>
+            </div>
+            <div class="loan-summary__body">
+              <div class="loan-summary-row"><span>Category</span><strong id="modal-preview-category">Bronze</strong></div>
+              <div class="loan-summary-row"><span>Principal</span><strong id="modal-preview-principal">{{ company_currency }} 0.00</strong></div>
+              <div class="loan-summary-row"><span>Frequency</span><strong id="modal-preview-frequency">Weekly</strong></div>
+              <div class="loan-summary-row"><span>Installments</span><strong id="modal-preview-installments">0</strong></div>
+              <div class="loan-summary-row"><span>Expected repayment</span><strong id="modal-preview-expected">{{ company_currency }} 0.00</strong></div>
+              <div class="loan-summary-row"><span>Estimated ROIC</span><strong id="modal-preview-roic">{{ company_currency }} 0.00</strong></div>
+            </div>
+            <div class="loan-summary-note">
+              This submits an approval request. The loan is issued only after an authorized reviewer approves it.
+            </div>
+          </aside>
         </div>
       </div>
 
-      <div class="chip-row" style="margin-top:14px;">
-        <span class="chip chip-violet" id="modal-preview-category">Category: Bronze</span>
-      </div>
-
-      {% if external_debt_check.requires_review %}
-        <div class="external-risk-ack">
-          <input type="checkbox" name="confirm_external_debt_review" id="confirm_external_debt_review" {% if request.POST.confirm_external_debt_review %}checked{% endif %}>
-          <span>I have reviewed this borrower's external debt exposure with other onboarded companies and still want to submit this loan for approval.</span>
+      <div class="loan-modal-footer">
+        <div class="loan-modal-footer__note">
+          Review the figures carefully. Submission creates a pending request and does not disburse funds immediately.
         </div>
-      {% endif %}
-
-      <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
-        <button type="submit" name="loan-submit" class="btn-soft btn-soft-primary">Create Loan</button>
-        <button type="button" class="btn-soft" onclick="closeLoanModal()">Cancel</button>
+        <div class="loan-modal-actions">
+          <button type="button" class="btn-soft" onclick="closeLoanModal()">Cancel</button>
+          <button type="submit" name="loan-submit" class="btn-soft btn-soft-primary">Submit for Approval</button>
+        </div>
       </div>
     </form>
   </div>
@@ -1200,11 +1813,25 @@
   }
 
   function openLoanModal(){
-    document.getElementById("loanModal").style.display = "flex";
+    const modal = document.getElementById("loanModal");
+    if(!modal) return;
+    modal.style.display = "flex";
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("loan-modal-open");
+    window.setTimeout(function(){
+      const firstError = modal.querySelector(".loan-field-error input, .loan-field-error select, [aria-invalid='true']");
+      const firstField = modal.querySelector("input:not([type='hidden']):not([readonly]), select, textarea");
+      const dialog = modal.querySelector("[role='dialog']");
+      (firstError || firstField || dialog)?.focus();
+    }, 0);
   }
 
   function closeLoanModal(){
-    document.getElementById("loanModal").style.display = "none";
+    const modal = document.getElementById("loanModal");
+    if(!modal) return;
+    modal.style.display = "none";
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("loan-modal-open");
   }
 
   document.addEventListener("click", function(e){
@@ -1215,6 +1842,168 @@
   document.addEventListener("keydown", function(e){
     if(e.key === "Escape") closeLoanModal();
   });
+
+  (function () {
+    const root = document.querySelector("[data-agent-combobox]");
+    if (!root) return;
+
+    const select = root.querySelector("select");
+    const input = root.querySelector(".agent-combobox__input");
+    const toggle = root.querySelector(".agent-combobox__toggle");
+    const results = root.querySelector(".agent-combobox__options");
+    const form = root.closest("form");
+    if (!select || !input || !toggle || !results || !form) return;
+
+    // The visible combobox owns client-side required validation; the original
+    // select remains the field Django receives and validates on submission.
+    select.required = false;
+    input.required = true;
+    input.setAttribute("aria-required", "true");
+
+    const choices = Array.from(select.options)
+      .filter(function (option) { return option.value; })
+      .map(function (option) {
+        return {
+          value: option.value,
+          label: option.text.trim(),
+          searchText: option.text.toLocaleLowerCase()
+        };
+      });
+    let visibleChoices = [];
+    let activeIndex = -1;
+
+    function selectedChoice() {
+      return choices.find(function (choice) { return choice.value === select.value; }) || null;
+    }
+
+    function setOpen(open) {
+      root.classList.toggle("is-open", open);
+      input.setAttribute("aria-expanded", open ? "true" : "false");
+      results.hidden = !open;
+      if (!open) {
+        activeIndex = -1;
+        input.removeAttribute("aria-activedescendant");
+      }
+    }
+
+    function setActive(index) {
+      if (!visibleChoices.length) return;
+      activeIndex = (index + visibleChoices.length) % visibleChoices.length;
+      const options = Array.from(results.querySelectorAll(".agent-combobox__option"));
+      options.forEach(function (option, optionIndex) {
+        option.classList.toggle("is-active", optionIndex === activeIndex);
+      });
+      const activeOption = options[activeIndex];
+      if (activeOption) {
+        input.setAttribute("aria-activedescendant", activeOption.id);
+        activeOption.scrollIntoView({ block: "nearest" });
+      }
+    }
+
+    function choose(choice) {
+      select.value = choice.value;
+      input.value = choice.label;
+      input.setCustomValidity("");
+      root.classList.remove("has-error");
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      setOpen(false);
+    }
+
+    function render(query) {
+      const normalizedQuery = (query || "").trim().toLocaleLowerCase();
+      visibleChoices = choices.filter(function (choice) {
+        return !normalizedQuery || choice.searchText.includes(normalizedQuery);
+      });
+      results.replaceChildren();
+      activeIndex = -1;
+
+      if (!visibleChoices.length) {
+        const empty = document.createElement("div");
+        empty.className = "agent-combobox__empty";
+        empty.textContent = "No responsible agents match your search.";
+        results.appendChild(empty);
+        setOpen(true);
+        return;
+      }
+
+      visibleChoices.forEach(function (choice, index) {
+        const option = document.createElement("button");
+        option.type = "button";
+        option.id = "responsible-agent-option-" + index;
+        option.className = "agent-combobox__option";
+        option.setAttribute("role", "option");
+        option.setAttribute("aria-selected", choice.value === select.value ? "true" : "false");
+        option.textContent = choice.label;
+        option.addEventListener("mousedown", function (event) {
+          event.preventDefault();
+        });
+        option.addEventListener("click", function () {
+          choose(choice);
+          input.focus();
+        });
+        results.appendChild(option);
+      });
+      setOpen(true);
+    }
+
+    const initialChoice = selectedChoice();
+    if (initialChoice) input.value = initialChoice.label;
+
+    input.addEventListener("focus", function () {
+      render(input.value === (selectedChoice() || {}).label ? "" : input.value);
+    });
+
+    input.addEventListener("input", function () {
+      const selected = selectedChoice();
+      if (!selected || input.value !== selected.label) select.value = "";
+      input.setCustomValidity("");
+      root.classList.remove("has-error");
+      render(input.value);
+    });
+
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        if (results.hidden) render(input.value);
+        setActive(activeIndex + 1);
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        if (results.hidden) render(input.value);
+        setActive(activeIndex - 1);
+      } else if (event.key === "Enter" && !results.hidden && activeIndex >= 0) {
+        event.preventDefault();
+        choose(visibleChoices[activeIndex]);
+      } else if (event.key === "Escape") {
+        event.stopPropagation();
+        setOpen(false);
+      } else if (event.key === "Tab") {
+        setOpen(false);
+      }
+    });
+
+    toggle.addEventListener("click", function () {
+      if (results.hidden) {
+        render("");
+        input.focus();
+      } else {
+        setOpen(false);
+      }
+    });
+
+    document.addEventListener("click", function (event) {
+      if (!root.contains(event.target)) setOpen(false);
+    });
+
+    form.addEventListener("submit", function (event) {
+      if (select.value) return;
+      event.preventDefault();
+      input.setCustomValidity("Select a responsible agent from the search results.");
+      root.classList.add("has-error");
+      input.reportValidity();
+      input.focus();
+      render(input.value);
+    });
+  })();
 
   {% if loan_form.non_field_errors or loan_form.errors %}
     openLoanModal();
@@ -1249,9 +2038,31 @@
   })();
 
   (function () {
-    const amountEl = document.getElementById("loan-amount") || document.getElementById("id_loan-amount") || document.getElementById("id_amount");
-    const categoryInputEl = document.getElementById("loan-loan_category_display") || document.getElementById("id_loan-loan_category_display") || document.getElementById("id_loan_category_display");
+    const form = document.getElementById("giveLoanForm");
+    if (!form) return;
+
+    const amountEl = form.elements["loan-amount"];
+    const categoryInputEl = form.elements["loan-loan_category_display"];
+    const frequencyEl = form.elements["loan-repayment_frequency"];
+    const repaymentEl = form.elements["loan-weekly_payment"];
+    const monthsEl = form.elements["loan-duration_months"];
+    const weeksEl = form.elements["loan-duration_weeks"];
+    const sectorEl = form.elements["loan-sector"];
+    const otherSectorField = document.getElementById("loanOtherSectorField");
     const categoryPreviewEl = document.getElementById("modal-preview-category");
+    const principalPreviewEl = document.getElementById("modal-preview-principal");
+    const frequencyPreviewEl = document.getElementById("modal-preview-frequency");
+    const installmentsPreviewEl = document.getElementById("modal-preview-installments");
+    const expectedPreviewEl = document.getElementById("modal-preview-expected");
+    const roicPreviewEl = document.getElementById("modal-preview-roic");
+    const currency = "{{ company_currency|escapejs }}";
+    const loanTiers = [
+      {% if company %}
+        {% for tier in company.tiers_for_template %}
+          { label: "{{ tier.label|escapejs }}", max: Number("{{ tier.max|escapejs }}") },
+        {% endfor %}
+      {% endif %}
+    ];
 
     function toNumber(value) {
       const n = parseFloat(value);
@@ -1259,6 +2070,10 @@
     }
 
     function getCategory(amount) {
+      if (loanTiers.length) {
+        const match = loanTiers.find(function(tier){ return amount <= tier.max; });
+        return (match || loanTiers[loanTiers.length - 1]).label;
+      }
       if (amount <= 3000) return "Bronze";
       if (amount <= 5000) return "Silver";
       if (amount <= 10000) return "Gold";
@@ -1267,24 +2082,60 @@
       return "Executive";
     }
 
-    function updateLoanCategoryPreview() {
+    function formatMoney(value) {
+      return currency + " " + value.toLocaleString("en-GH", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function selectedLabel(selectEl, fallback) {
+      if (!selectEl || selectEl.selectedIndex < 0) return fallback;
+      return selectEl.options[selectEl.selectedIndex].text || fallback;
+    }
+
+    function updateLoanPreview() {
       const principal = toNumber(amountEl ? amountEl.value : 0);
       const category = getCategory(principal);
+      const frequency = frequencyEl ? frequencyEl.value : "WEEKLY";
+      const months = Math.max(0, Math.floor(toNumber(monthsEl ? monthsEl.value : 0)));
+      const weeks = Math.max(0, Math.floor(toNumber(weeksEl ? weeksEl.value : 0)));
+      const installmentAmount = Math.max(0, toNumber(repaymentEl ? repaymentEl.value : 0));
+      const installments = frequency === "DAILY"
+        ? (months * 30) + (weeks * 7)
+        : (months * 4) + weeks;
+      const totalExpected = installments * installmentAmount;
+      const roic = Math.max(0, totalExpected - principal);
 
       if (categoryInputEl) {
         categoryInputEl.value = category;
       }
       if (categoryPreviewEl) {
-        categoryPreviewEl.textContent = "Category: " + category;
+        categoryPreviewEl.textContent = category;
       }
+      if (principalPreviewEl) principalPreviewEl.textContent = formatMoney(principal);
+      if (frequencyPreviewEl) frequencyPreviewEl.textContent = selectedLabel(frequencyEl, "Weekly");
+      if (installmentsPreviewEl) installmentsPreviewEl.textContent = installments.toLocaleString("en-GH");
+      if (expectedPreviewEl) expectedPreviewEl.textContent = formatMoney(totalExpected);
+      if (roicPreviewEl) roicPreviewEl.textContent = formatMoney(roic);
     }
 
-    if (amountEl) {
-      amountEl.addEventListener("input", updateLoanCategoryPreview);
-      amountEl.addEventListener("change", updateLoanCategoryPreview);
+    function updateSectorVisibility() {
+      if (!otherSectorField) return;
+      const show = sectorEl && sectorEl.value === "OTHER";
+      otherSectorField.style.display = show ? "block" : "none";
     }
 
-    updateLoanCategoryPreview();
+    [amountEl, frequencyEl, repaymentEl, monthsEl, weeksEl].forEach(function(field){
+      if (!field) return;
+      field.addEventListener("input", updateLoanPreview);
+      field.addEventListener("change", updateLoanPreview);
+    });
+
+    if (sectorEl) sectorEl.addEventListener("change", updateSectorVisibility);
+
+    updateLoanPreview();
+    updateSectorVisibility();
   })();
 </script>
 

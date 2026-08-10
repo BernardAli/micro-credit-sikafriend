@@ -30,6 +30,7 @@ from .forms import (
     BorrowerBulkImportForm,
     LoanBulkImportForm,
     PaymentCreateForm,
+    SecurityDepositActionForm,
     LoanCreateForBorrowerForm,
 )
 from .borrower_imports import (
@@ -54,7 +55,7 @@ from .cross_company import (
     get_cross_company_debt_check,
     serialize_cross_company_debt_check,
 )
-from .models import Loan, Borrower, Payment, RepaymentCollection
+from .models import Loan, Borrower, Payment, RepaymentCollection, SecurityDeposit
 from .payment_gateway import process_collection_callback, process_collection_webhook, reconcile_collection
 from .reports import (
     EXPORT_FORMATS,
@@ -1799,6 +1800,10 @@ def loan_detail(request, loan_id: int):
     # Use PaymentCreateForm here because the loan is already known from the URL
     payment_form = PaymentCreateForm(request.POST or None)
 
+    if request.method == "POST" and not loan.is_ready_for_disbursement:
+        messages.error(request, "Collect and approve the full security deposit before recording loan repayments.")
+        return redirect("loans:security_deposit", loan_id=loan.id)
+
     if request.method == "POST" and payment_form.is_valid():
         p = payment_form.save(commit=False)
         p.loan = loan
@@ -1896,6 +1901,7 @@ def loan_detail(request, loan_id: int):
 
     context = {
         "loan": loan,
+        "security_deposit": getattr(loan, "security_deposit", None),
         "loan_category_label": loan.get_loan_category_display(),
         "payments": payments,
         "payment_form": payment_form,
@@ -1911,6 +1917,70 @@ def loan_detail(request, loan_id: int):
         "chart_outstanding_breakdown": json.dumps(outstanding_breakdown),
     }
     return render(request, "loans/loan_detail.html", context)
+
+
+@login_required
+def security_deposit(request, loan_id):
+    _role, _agent = _get_request_role(request)
+    if _role == "borrower":
+        return redirect("borrower:portal")
+    loan = get_object_or_404(Loan.objects.select_related("borrower", "agent_name"), pk=loan_id)
+    if _role == "agent" and _agent and loan.agent_name_id != _agent.pk:
+        messages.error(request, "You can only manage deposits for loans assigned to you.")
+        return redirect("agent_detail", pk=_agent.pk)
+    deposit, created = SecurityDeposit.objects.get_or_create(
+        loan=loan,
+        defaults={
+            "borrower": loan.borrower,
+            "required_amount": ((loan.approved_amount or loan.amount) * Decimal("0.10")).quantize(Decimal("0.01")),
+        },
+    )
+    if created:
+        log_activity(
+            category="SECURITY_DEPOSIT",
+            action="legacy_record_created",
+            actor=request.user,
+            object_type="SecurityDeposit",
+            object_id=deposit.pk,
+            object_label=f"Loan #{loan.id}",
+            message=f"Security-deposit record created for existing Loan #{loan.id}.",
+            metadata={"loan_id": loan.id, "borrower_id": loan.borrower_id, "required_amount": deposit.required_amount},
+            request=request,
+        )
+        messages.info(
+            request,
+            f"A GHS {deposit.required_amount:,.2f} security-deposit record was created for this existing loan. Verify and record any deposit evidence before disbursement actions.",
+        )
+    form = SecurityDepositActionForm(request.POST or None, deposit=deposit)
+    if request.method == "POST" and form.is_valid():
+        data = form.cleaned_data
+        action_label = dict(form.fields["action"].choices)[data["action"]]
+        approval = create_approval_request(
+            workflow_type="SECURITY_DEPOSIT",
+            title=f"{action_label}: {loan.borrower.full_name} — Loan #{loan.id}",
+            description=(f"{action_label} of GHS {data['amount']:,.2f} for {loan.borrower.full_name} "
+                         f"(Borrower ID {loan.borrower.borrower_id}, Loan #{loan.id})."),
+            submitted_by=request.user,
+            payload={
+                "deposit_id": deposit.pk,
+                "action": data["action"],
+                "amount": data["amount"],
+                "transaction_date": data["transaction_date"],
+                "payment_method": data["payment_method"],
+                "reference": data["reference"],
+                "notes": data["notes"],
+                "source_deposit_id": data["source_deposit"].pk if data.get("source_deposit") else None,
+                "customer_verification": {"name": data["verified_customer_name"], "phone": data["verified_customer_phone"], "reference": data["verified_customer_reference"], "authorized": data["customer_authorized"]},
+            },
+            metadata={"loan_id": loan.id, "borrower_id": loan.borrower_id, "deposit_id": deposit.pk, "action": data["action"]},
+            source_path=request.path,
+            target_reference=f"Loan #{loan.id}",
+            request=request,
+        )
+        log_activity(category="SECURITY_DEPOSIT", action="approval_requested", actor=request.user, object_type="SecurityDeposit", object_id=deposit.pk, object_label=f"Loan #{loan.id}", message=f"{action_label} submitted for approval.", metadata={"approval_id": approval.pk, "loan_id": loan.id}, request=request)
+        messages.success(request, f"{action_label} submitted for management approval.")
+        return redirect("loans:security_deposit", loan_id=loan.id)
+    return render(request, "loans/security_deposit.html", {"loan": loan, "deposit": deposit, "transactions": deposit.transactions.select_related("approved_by", "accounting_entry"), "transfers": deposit.incoming_transfers.select_related("source", "approved_by"), "form": form, "title": f"Security Deposit — Loan #{loan.id}"})
 
 
 @login_required
@@ -3375,7 +3445,9 @@ def loan_payment_create(request, loan_id):
         _m.error(request, "You can only record payments on loans assigned to you.")
         return redirect("agent_detail", pk=_agent.pk)
 
-    borrower_id = loan.borrower_id
+    if not loan.is_ready_for_disbursement:
+        messages.error(request, "Collect and approve the full security deposit before recording loan repayments.")
+        return redirect("loans:security_deposit", loan_id=loan.id)
 
     form = PaymentCreateForm(request.POST or None)
 
@@ -3392,8 +3464,11 @@ def loan_payment_create(request, loan_id):
         safe_send_sms(borrower_phone, borrower_msg)
         safe_send_sms(agent_phone, agent_msg)
 
-        messages.success(request, f"Payment recorded successfully for Loan #{loan.id}.")
-        return redirect("loans:borrower_detail", pk=borrower_id)
+        messages.success(
+            request,
+            f"Payment recorded successfully for {loan.borrower.full_name}. You can record the next payment below.",
+        )
+        return redirect("loans:loan_payment_create", loan_id=loan.id)
 
     return render(request, "loans/payments/payment_create.html", {
         "loan": loan,

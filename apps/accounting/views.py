@@ -220,13 +220,15 @@ def _sync_operational_entries(user):
     other_deduction_clearing = get_ledger_account("2060")
 
     for loan in Loan.objects.select_related("borrower", "agent_name").order_by("created_at"):
+        if not loan.is_ready_for_disbursement:
+            continue
         source_key = f"loan:{loan.pk}:disbursement"
         if JournalEntry.objects.filter(source_key=source_key, source_type="LOAN_DISBURSEMENT").exists():
             continue
         if not loan_portfolio or not bank_current:
             continue
         create_journal_entry(
-            entry_date=loan.created_at.date(),
+            entry_date=loan.disbursed_at or loan.created_at.date(),
             memo=f"Loan disbursed to {loan.borrower.full_name}",
             lines=[
                 {"account": loan_portfolio, "debit": _money(loan.amount), "credit": Decimal("0.00"), "description": f"Loan #{loan.pk} principal"},

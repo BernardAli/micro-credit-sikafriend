@@ -126,6 +126,7 @@ def approve_and_execute_request(approval, reviewer, *, note="", request=None):
         "PAYROLL_RUN_APPROVAL": _execute_payroll_run_approval,
         "ACCOUNTING_JOURNAL": _execute_accounting_journal,
         "ASSET_DISPOSAL": _execute_asset_disposal,
+        "SECURITY_DEPOSIT": _execute_security_deposit,
     }.get(approval.workflow_type)
 
     if handler is None:
@@ -188,7 +189,7 @@ def approve_and_execute_request(approval, reviewer, *, note="", request=None):
 
 
 def _execute_loan_creation(approval, reviewer, *, note=""):
-    from apps.loans.models import Borrower, Loan
+    from apps.loans.models import Borrower, Loan, SecurityDeposit
     from apps.loans.cross_company import get_cross_company_debt_check
     from apps.loans.services import build_loan_statement
     from apps.loans.services_sms import safe_send_sms
@@ -246,6 +247,12 @@ def _execute_loan_creation(approval, reviewer, *, note=""):
         approval_date=optional_date("approval_date"),
     )
     loan.borrower.refresh_status(save=True)
+    approved_amount = loan.approved_amount or loan.amount
+    deposit = SecurityDeposit.objects.create(
+        borrower=borrower,
+        loan=loan,
+        required_amount=(Decimal(approved_amount) * Decimal("0.10")).quantize(Decimal("0.01")),
+    )
 
     from apps.loans.views import _build_new_loan_sms_messages
 
@@ -271,9 +278,82 @@ def _execute_loan_creation(approval, reviewer, *, note=""):
         metadata={"borrower_id": loan.borrower_id, "agent_id": loan.agent_name_id, "approval_id": approval.pk},
     )
     return {
-        "message": f"Loan #{loan.pk} created successfully.",
+        "message": f"Loan #{loan.pk} created successfully. Collect and approve the GHS {deposit.required_amount:,.2f} security deposit before disbursement.",
         "target_reference": f"Loan #{loan.pk}",
     }
+
+
+def _execute_security_deposit(approval, reviewer, *, note=""):
+    from apps.accounting.models import create_journal_entry, ensure_default_accounting_period, ensure_default_ledger_accounts, get_ledger_account
+    from apps.loans.models import SecurityDeposit, SecurityDepositTransaction, SecurityDepositTransfer
+
+    payload = approval.payload
+    deposit = SecurityDeposit.objects.select_related("loan", "borrower").get(pk=payload["deposit_id"])
+    action = payload["action"]
+    amount = Decimal(str(payload["amount"])).quantize(Decimal("0.01"))
+    if action == "COLLECTION" and amount > deposit.amount_due:
+        raise ValueError("Deposit collection exceeds the amount due.")
+    if action == "REFUND" and (deposit.loan.status != "CLOSED" or amount > deposit.held_amount):
+        raise ValueError("This deposit cannot be refunded in the requested amount.")
+    if action == "DEFAULT_APPLICATION" and (deposit.loan.status != "DEFAULT" or amount > min(deposit.held_amount, deposit.loan.balance_amount)):
+        raise ValueError("This deposit cannot be applied against the loan in the requested amount.")
+
+    if action == "CARRY_FORWARD":
+        source = SecurityDeposit.objects.select_related("loan").get(pk=payload["source_deposit_id"])
+        if source.borrower_id != deposit.borrower_id or source.loan.status != "CLOSED":
+            raise ValueError("Only a completed loan's deposit for this borrower can be carried forward.")
+        if amount > source.held_amount or amount > deposit.amount_due:
+            raise ValueError("The requested carry-forward amount is not available or exceeds the new requirement.")
+        SecurityDepositTransfer.objects.create(source=source, target=deposit, amount=amount, reference=payload["reference"], customer_verification=payload["customer_verification"], approved_by=reviewer, approval_request=approval)
+        source.refresh_status(save=True)
+        deposit.refresh_status(save=True)
+        if deposit.is_secured and not deposit.loan.disbursed_at:
+            deposit.loan.disbursed_at = date.fromisoformat(payload["transaction_date"])
+            deposit.loan.save(update_fields=["disbursed_at"])
+        log_activity(category="SECURITY_DEPOSIT", action="carry_forward", actor=reviewer, object_type="SecurityDeposit", object_id=deposit.pk, object_label=f"Loan #{deposit.loan_id}", message=f"GHS {amount:,.2f} carried from Loan #{source.loan_id} to Loan #{deposit.loan_id}.", metadata={"approval_id": approval.pk, "source_deposit_id": source.pk, "loan_id": deposit.loan_id})
+        return {"message": f"GHS {amount:,.2f} security deposit carried forward to Loan #{deposit.loan_id}.", "target_reference": f"Loan #{deposit.loan_id}"}
+
+    tx = SecurityDepositTransaction.objects.create(
+        deposit=deposit,
+        action=action,
+        amount=amount,
+        transaction_date=date.fromisoformat(payload["transaction_date"]),
+        payment_method=payload["payment_method"],
+        reference=payload["reference"],
+        notes=payload.get("notes", ""),
+        customer_verification=payload["customer_verification"],
+        approved_by=reviewer,
+        approval_request=approval,
+    )
+    ensure_default_accounting_period()
+    ensure_default_ledger_accounts()
+    liability = get_ledger_account("2065")
+    loan_portfolio = get_ledger_account("1300")
+    method_accounts = {"CASH": get_ledger_account("1000"), "MOBILE_MONEY": get_ledger_account("1005"), "BANK": get_ledger_account("1010"), "CHEQUE": get_ledger_account("1010"), "CARD": get_ledger_account("1010"), "OTHER": get_ledger_account("1090")}
+    settlement = method_accounts.get(tx.payment_method)
+    if not liability or not loan_portfolio or not settlement:
+        raise ValueError("Security-deposit ledger accounts are not configured.")
+    if action == "COLLECTION":
+        lines = [{"account": settlement, "debit": amount, "credit": Decimal("0.00"), "description": "Security deposit received"}, {"account": liability, "debit": Decimal("0.00"), "credit": amount, "description": f"Held for Loan #{deposit.loan_id}"}]
+    elif action == "REFUND":
+        lines = [{"account": liability, "debit": amount, "credit": Decimal("0.00"), "description": f"Refund for Loan #{deposit.loan_id}"}, {"account": settlement, "debit": Decimal("0.00"), "credit": amount, "description": "Security deposit refund paid"}]
+    else:
+        lines = [{"account": liability, "debit": amount, "credit": Decimal("0.00"), "description": f"Deposit applied to Loan #{deposit.loan_id}"}, {"account": loan_portfolio, "debit": Decimal("0.00"), "credit": amount, "description": "Default recovery from security deposit"}]
+    tx.accounting_entry = create_journal_entry(entry_date=tx.transaction_date, memo=f"Security deposit: {tx.get_action_display()} — {deposit.borrower.full_name}", lines=lines, created_by=reviewer, reference=tx.reference, source_type="SECURITY_DEPOSIT", source_key=f"security-deposit:{tx.pk}", source_label=f"Loan #{deposit.loan_id}")
+    tx.save(update_fields=["accounting_entry"])
+    deposit.refresh_status(save=True)
+    if action == "COLLECTION" and deposit.is_secured and not deposit.loan.disbursed_at:
+        deposit.loan.disbursed_at = tx.transaction_date
+        deposit.loan.save(update_fields=["disbursed_at"])
+    if action == "DEFAULT_APPLICATION":
+        deposit.loan.security_deposit_applied_total = (
+            Decimal(deposit.loan.security_deposit_applied_total or Decimal("0.00")) + amount
+        ).quantize(Decimal("0.01"))
+        deposit.loan.save(update_fields=["security_deposit_applied_total"])
+        deposit.loan.refresh_status(save=True)
+        deposit.loan.borrower.refresh_status(save=True)
+    log_activity(category="SECURITY_DEPOSIT", action=action.lower(), actor=reviewer, object_type="SecurityDeposit", object_id=deposit.pk, object_label=f"Loan #{deposit.loan_id}", message=f"{tx.get_action_display()} of GHS {amount:,.2f} approved for {deposit.borrower.full_name}.", metadata={"approval_id": approval.pk, "transaction_id": tx.pk, "loan_id": deposit.loan_id})
+    return {"message": f"{tx.get_action_display()} of GHS {amount:,.2f} completed.", "target_reference": f"Loan #{deposit.loan_id}"}
 
 
 def _execute_payroll_run_approval(approval, reviewer, *, note=""):

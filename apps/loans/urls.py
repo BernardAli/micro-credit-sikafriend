@@ -12,6 +12,7 @@ urlpatterns = [
     path("loans/import/", views.loan_bulk_import, name="loan_bulk_import"),
     path("loans/import/sample/<str:file_type>/", views.loan_bulk_import_sample, name="loan_bulk_import_sample"),
     path("loans/<int:loan_id>/", views.loan_detail, name="loan_detail"),
+    path("loans/<int:loan_id>/security-deposit/", views.security_deposit, name="security_deposit"),
     path("loans/<int:loan_id>/statement/pdf/", views.loan_statement_pdf, name="loan_statement_pdf"),
     path("loans/<int:loan_id>/statement/", views.loan_statement, name="loan_statement"),
     path("loans/active/", views.active_loans_list, name="active_loans_list"),

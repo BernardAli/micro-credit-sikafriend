@@ -220,6 +220,12 @@ class Loan(models.Model):
     approval_date = models.DateField(null=True, blank=True)
 
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="ACTIVE")
+    disbursed_at = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Set automatically when the required security deposit has been approved and collected.",
+    )
+    security_deposit_applied_total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"), editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -339,8 +345,12 @@ class Loan(models.Model):
 
     @property
     def principal_outstanding(self) -> Decimal:
-        bal = self.principal_amount - self.total_principal_paid
+        bal = self.principal_amount - self.total_principal_paid - self.security_deposit_applied_amount
         return max(bal, Decimal("0.00")).quantize(Decimal("0.01"))
+
+    @property
+    def security_deposit_applied_amount(self) -> Decimal:
+        return Decimal(self.security_deposit_applied_total or Decimal("0.00")).quantize(Decimal("0.01"))
 
     @property
     def roic_outstanding(self) -> Decimal:
@@ -349,7 +359,7 @@ class Loan(models.Model):
 
     @property
     def balance_amount(self) -> Decimal:
-        bal = self.total_expected_amount - self.total_paid_amount
+        bal = self.total_expected_amount - self.total_paid_amount - self.security_deposit_applied_amount
         return max(Decimal(bal), Decimal("0.00")).quantize(Decimal("0.01"))
 
     @property
@@ -413,6 +423,14 @@ class Loan(models.Model):
                 Loan.objects.filter(pk=self.pk).update(status=new_status)
 
         return new_status
+
+    @property
+    def is_ready_for_disbursement(self) -> bool:
+        """Legacy loans remain operational; new loans require a fully secured deposit."""
+        try:
+            return self.security_deposit.is_secured
+        except SecurityDeposit.DoesNotExist:
+            return True
 
     def save(self, *args, **kwargs):
         self.loan_category = self.get_loan_category()
@@ -616,3 +634,121 @@ class RepaymentCollection(models.Model):
 
     def __str__(self):
         return f"Collection {self.client_reference} - Loan #{self.loan_id} - GHS {self.amount}"
+
+
+class SecurityDeposit(models.Model):
+    """Customer funds held separately as security for one approved loan."""
+
+    STATUS_CHOICES = [
+        ("REQUIRED", "Deposit Required"),
+        ("SECURED", "Fully Secured"),
+        ("REFUNDED", "Refunded"),
+        ("APPLIED", "Applied Against Default"),
+    ]
+
+    borrower = models.ForeignKey(Borrower, on_delete=models.PROTECT, related_name="security_deposits")
+    loan = models.OneToOneField(Loan, on_delete=models.PROTECT, related_name="security_deposit")
+    required_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="REQUIRED")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    @property
+    def collected_amount(self):
+        return self.transactions.filter(action="COLLECTION").aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+
+    @property
+    def refunded_amount(self):
+        return self.transactions.filter(action="REFUND").aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+
+    @property
+    def applied_amount(self):
+        return self.transactions.filter(action="DEFAULT_APPLICATION").aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+
+    @property
+    def transferred_in_amount(self):
+        return self.incoming_transfers.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+
+    @property
+    def transferred_out_amount(self):
+        return self.outgoing_transfers.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+
+    @property
+    def held_amount(self):
+        return max(Decimal("0.00"), self.collected_amount + self.transferred_in_amount - self.refunded_amount - self.applied_amount - self.transferred_out_amount).quantize(Decimal("0.01"))
+
+    @property
+    def amount_due(self):
+        return max(Decimal("0.00"), Decimal(self.required_amount) - self.held_amount).quantize(Decimal("0.01"))
+
+    @property
+    def is_secured(self):
+        return self.held_amount >= Decimal(self.required_amount)
+
+    def refresh_status(self, save=True):
+        if self.held_amount <= Decimal("0.00") and self.refunded_amount > 0:
+            status = "REFUNDED"
+        elif self.held_amount <= Decimal("0.00") and self.applied_amount > 0:
+            status = "APPLIED"
+        elif self.is_secured:
+            status = "SECURED"
+        else:
+            status = "REQUIRED"
+        if self.status != status:
+            self.status = status
+            if save and self.pk:
+                SecurityDeposit.objects.filter(pk=self.pk).update(status=status)
+        return status
+
+    def __str__(self):
+        return f"Security deposit — Loan #{self.loan_id}"
+
+
+class SecurityDepositTransaction(models.Model):
+    ACTION_CHOICES = [
+        ("COLLECTION", "Deposit Collection"),
+        ("REFUND", "Deposit Refund"),
+        ("DEFAULT_APPLICATION", "Apply Against Default"),
+    ]
+
+    deposit = models.ForeignKey(SecurityDeposit, on_delete=models.PROTECT, related_name="transactions")
+    action = models.CharField(max_length=24, choices=ACTION_CHOICES)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    transaction_date = models.DateField(default=timezone.localdate)
+    payment_method = models.CharField(max_length=20, choices=Payment.PAYMENT_METHOD_CHOICES, default="CASH")
+    reference = models.CharField(max_length=120)
+    notes = models.TextField(blank=True)
+    customer_verification = models.JSONField(default=dict, blank=True)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="approved_security_deposit_transactions")
+    approval_request = models.OneToOneField("core.ApprovalRequest", on_delete=models.SET_NULL, null=True, blank=True, related_name="security_deposit_transaction")
+    accounting_entry = models.ForeignKey("accounting.JournalEntry", on_delete=models.SET_NULL, null=True, blank=True, related_name="security_deposit_transactions")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-transaction_date", "-pk"]
+
+    def __str__(self):
+        return f"{self.get_action_display()} — Loan #{self.deposit.loan_id}"
+
+
+class SecurityDepositTransfer(models.Model):
+    """An approved, customer-authorised deposit carry-forward between loan cycles."""
+
+    source = models.ForeignKey(SecurityDeposit, on_delete=models.PROTECT, related_name="outgoing_transfers")
+    target = models.ForeignKey(SecurityDeposit, on_delete=models.PROTECT, related_name="incoming_transfers")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    reference = models.CharField(max_length=120)
+    customer_verification = models.JSONField(default=dict, blank=True)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="approved_security_deposit_transfers")
+    approval_request = models.OneToOneField("core.ApprovalRequest", on_delete=models.SET_NULL, null=True, blank=True, related_name="security_deposit_transfer")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [models.CheckConstraint(condition=~models.Q(source=models.F("target")), name="security_deposit_transfer_distinct_deposits")]
+
+    def __str__(self):
+        return f"GHS {self.amount} carried from Loan #{self.source.loan_id} to Loan #{self.target.loan_id}"
