@@ -3,6 +3,7 @@
 {% load currency %}
 
 {% block content %}
+<div class="card p-3 mb-3"><strong>Customer ID: {{ loan.borrower.borrower_id }}</strong><span>Portfolio: {{ loan.portfolio|default:"Pending assignment" }}</span></div>
 
 <style>
   .loan-shell{

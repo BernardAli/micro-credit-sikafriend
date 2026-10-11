@@ -4,6 +4,8 @@ For the complete operating, development, deployment, security, workflow, and tro
 
 For PythonAnywhere deployment with MySQL, see [deployment/PYTHONANYWHERE.md](deployment/PYTHONANYWHERE.md).
 
+For the portfolio and permanent SikaFriend Customer ID update, including management review of existing customers and deployment to an existing PythonAnywhere database, see [deployment/PORTFOLIO_UPDATE.md](deployment/PORTFOLIO_UPDATE.md).
+
 Standalone Django ERP for running a single micro-credit company. It includes borrower and loan operations, repayment tracking, workforce and payroll, accounting, fixed assets, communications, a borrower self-service portal, and a configurable public company website.
 
 ## Current Architecture
@@ -48,6 +50,10 @@ Some internal field names still contain `tenant_` because they came from an earl
 - `/redirect/` role-based post-login redirect
 - `/dashboard/` loan dashboard
 - `/borrowers/` borrower management
+- `/portfolios/` named loan portfolios and officer assignments
+- `/portfolios/<id>/` portfolio financial overview, customer/loan/payment registers, risk, deposits, collection pipeline, officer history, and exports
+- `/portfolios/<id>/edit/` management of portfolio officers and status
+- `/portfolios/customers/` customer portfolio assignment and permanent Customer ID issuance
 - `/loans/` loan management
 - `/agents/` workforce and payroll
 - `/accounting/` accounting hub

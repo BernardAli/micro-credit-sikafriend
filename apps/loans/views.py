@@ -9,6 +9,8 @@ from django.contrib.admin.views.decorators import staff_member_required
 from weasyprint import HTML
 
 from django.contrib import messages
+from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.db.models import Sum, Count, F, DecimalField, ExpressionWrapper, Q, Prefetch
@@ -72,7 +74,9 @@ from .reports import (
     report_catalog_groups,
     resolve_report_period,
 )
+from .portfolio_analytics import dashboard_portfolios
 from .services import build_loan_statement
+from .portfolios import agent_portfolio_ids, agent_can_access, loan_contact_agent
 from .services_sms import safe_send_sms
 from apps.accounts.models import Agent
 from apps.accounts.usernames import build_portal_username, visible_portal_username
@@ -93,6 +97,15 @@ def _get_request_role(request):
     role  = get_user_role(request.user)
     agent = get_agent_for_user(request.user) if role == "agent" else None
     return role, agent
+
+
+def _can_view_loan(request, loan):
+    role, agent = _get_request_role(request)
+    if role == "admin":
+        return True
+    if role == "agent":
+        return agent_can_access(agent, loan)
+    return role == "borrower" and loan.borrower.user_id == request.user.pk
 
 
 def _payment_webhook_authorized(request) -> bool:
@@ -329,6 +342,7 @@ def _build_new_loan_sms_messages(loan):
     borrower_msg = (
         f"{company_name} New Loan Alert!\n"
         f"Hello {borrower_name},\n"
+        f"Customer ID: {loan.borrower.borrower_id}\n"
         f"Your GHS {amount} loan is approved & disbursed.\n"
         f"{repayment_label}: GHS {weekly_payment}\n"
         f"Duration: {duration}\n"
@@ -346,7 +360,8 @@ def _build_new_loan_sms_messages(loan):
 
 def _build_payment_create_sms_messages(loan, payment):
     borrower_name = _first_name(loan.borrower.full_name)
-    agent_name = _first_name(loan.agent_name.name if loan.agent_name else "")
+    officer = loan_contact_agent(loan, payment)
+    agent_name = _first_name(officer.name if officer else "")
     payment_amount = _sms_amount(payment.amount)
     loan_amount = _sms_amount(loan.amount)
     weekly_payment = _sms_amount(loan.weekly_payment)
@@ -357,6 +372,7 @@ def _build_payment_create_sms_messages(loan, payment):
     borrower_msg = (
         f"{company_name} Payment Alert!\n"
         f"Hello {borrower_name},\n"
+        f"Customer ID: {loan.borrower.borrower_id}\n"
         f"Your payment of GHS {payment_amount} has been received successfully.\n"
         f"Loan: GHS {loan_amount} | Weekly: GHS {weekly_payment}\n"
         f"Weeks Paid: {weeks_paid} | Remaining: {weeks_remaining}\n"
@@ -1660,6 +1676,8 @@ def dashboard(request):
         "loans": loans_list_all[:50],
     }
 
+    context["portfolio_dashboard"] = dashboard_portfolios(request.user)
+
     return render(request, "loans/dashboard.html", context)
 
 
@@ -1789,7 +1807,7 @@ def loan_detail(request, loan_id: int):
         id=loan_id
     )
     # Agents may only view loans assigned to them
-    if _role == "agent" and _agent and loan.agent_name_id != _agent.pk:
+    if _role == "agent" and _agent and not agent_can_access(_agent, loan):
         from django.contrib import messages as _m
         _m.error(request, "You can only view loans assigned to you.")
         return redirect("agent_detail", pk=_agent.pk)
@@ -1807,6 +1825,7 @@ def loan_detail(request, loan_id: int):
     if request.method == "POST" and payment_form.is_valid():
         p = payment_form.save(commit=False)
         p.loan = loan
+        p.submitted_by = request.user
         p.save()
 
         # refresh from DB after payment save
@@ -1824,7 +1843,8 @@ def loan_detail(request, loan_id: int):
         )
 
         borrower_phone = loan.borrower.phone
-        agent_phone = loan.agent_name.phone if loan.agent_name and loan.agent_name.phone else None
+        officer = loan_contact_agent(loan, p)
+        agent_phone = officer.phone if officer else None
 
         borrower_msg = (
             f"{_company_name()}: Payment received for Loan #{loan.id} "
@@ -1925,7 +1945,7 @@ def security_deposit(request, loan_id):
     if _role == "borrower":
         return redirect("borrower:portal")
     loan = get_object_or_404(Loan.objects.select_related("borrower", "agent_name"), pk=loan_id)
-    if _role == "agent" and _agent and loan.agent_name_id != _agent.pk:
+    if _role == "agent" and _agent and not agent_can_access(_agent, loan):
         messages.error(request, "You can only manage deposits for loans assigned to you.")
         return redirect("agent_detail", pk=_agent.pk)
     deposit, created = SecurityDeposit.objects.get_or_create(
@@ -1986,6 +2006,8 @@ def security_deposit(request, loan_id):
 @login_required
 def loan_statement(request, loan_id: int):
     loan = get_object_or_404(Loan, id=loan_id)
+    if not _can_view_loan(request, loan):
+        raise Http404
     statement = build_loan_statement(loan)
     return render(request, "loans/statement.html", {
         "loan": loan,
@@ -2000,6 +2022,8 @@ def loan_statement_pdf(request, loan_id: int):
         Loan.objects.select_related("borrower", "agent_name").prefetch_related("payments"),
         id=loan_id,
     )
+    if not _can_view_loan(request, loan):
+        raise Http404
     payments = loan.payments.filter(is_void=False).order_by("payment_date", "id")
     statement = build_loan_statement(loan)
     generated_at = timezone.localtime()
@@ -2061,13 +2085,13 @@ def active_loans_list(request):
     )
     # Agents see only their own loans
     if _role == "agent" and _agent:
-        loans_qs = loans_qs.filter(agent_name=_agent)
+        loans_qs = loans_qs.filter(portfolio_id__in=agent_portfolio_ids(_agent))
 
     if q:
         loans_qs = loans_qs.filter(
             Q(borrower__full_name__icontains=q) |
             Q(borrower__national_id__icontains=q) |
-            Q(borrower__borrower_id__icontains=q) |
+            Q(borrower__borrower_id__icontains=q) | Q(borrower__legacy_borrower_id__icontains=q) |
             Q(borrower__phone__icontains=q) |
             Q(borrower__email__icontains=q) |
             Q(borrower__ghana_card_number__icontains=q) |
@@ -2244,6 +2268,7 @@ def borrower_create(request):
         request.POST or None,
         request.FILES or None,
         creating=True,
+        agent_override=_creator_agent,
     )
 
     if request.method == "POST" and form.is_valid():
@@ -2256,21 +2281,27 @@ def borrower_create(request):
         stored_username = build_portal_username(username)
         temp_password = _generate_temp_password()
 
-        portal_user = _User.objects.create_user(
-            username=stored_username,
-            email=(borrower.email or "").strip().lower(),
-            password=temp_password,
-        )
-        borrower.user = portal_user
-        borrower.save()
-        borrower.refresh_status(save=True)
+        try:
+            with transaction.atomic():
+                portal_user = _User.objects.create_user(
+                    username=stored_username,
+                    email=(borrower.email or "").strip().lower(),
+                    password=temp_password,
+                )
+                borrower.user = portal_user
+                borrower.save()
+                borrower.refresh_status(save=True)
+        except ValidationError as exc:
+            form.add_error(None, "; ".join(exc.messages))
+            return render(request, "loans/borrowers/borrower_create.html", {"form": form, "title": "Add New Borrower"})
+
 
         # ── Send temp password via SMS ────────────────────────
         company = _company_name()
         borrower_phone = borrower.phone
 
         borrower_sms = (
-            f"{company}: Your portal account has been created. "
+            f"{company}: Customer ID {borrower.borrower_id}. Your portal account has been created. "
             f"Username: {username}  Temp Password: {temp_password}  "
             f"Login at /login/ and change your password immediately."
         )
@@ -2441,7 +2472,7 @@ def borrower_list(request):
     )
     # Agents see only borrowers who have at least one loan under them
     if _role == "agent" and _agent:
-        borrowers = borrowers.filter(loans__agent_name=_agent).distinct()
+        borrowers = borrowers.filter(portfolio_id__in=agent_portfolio_ids(_agent))
 
     q = (request.GET.get("q") or "").strip()
     location = (request.GET.get("location") or "").strip()
@@ -2458,7 +2489,7 @@ def borrower_list(request):
             Q(phone__icontains=q) |
             Q(email__icontains=q) |
             Q(national_id__icontains=q) |
-            Q(borrower_id__icontains=q) |
+            Q(borrower_id__icontains=q) | Q(legacy_borrower_id__icontains=q) |
             Q(ghana_card_number__icontains=q)
         )
 
@@ -2621,7 +2652,7 @@ def borrower_analytics(request):
             Q(phone__icontains=q) |
             Q(email__icontains=q) |
             Q(national_id__icontains=q) |
-            Q(borrower_id__icontains=q) |
+            Q(borrower_id__icontains=q) | Q(legacy_borrower_id__icontains=q) |
             Q(ghana_card_number__icontains=q)
         )
 
@@ -3007,6 +3038,12 @@ def borrower_status_analytics(request):
         Prefetch("loans", queryset=Loan.objects.select_related("agent_name").prefetch_related("payments"))
     ).order_by("full_name")
 
+    role, agent = _get_request_role(request)
+    if role not in ("admin", "agent"):
+        return redirect("borrower:portal")
+    if role == "agent":
+        borrowers = borrowers.filter(portfolio_id__in=agent_portfolio_ids(agent))
+
     q = (request.GET.get("q") or "").strip()
     location = (request.GET.get("location") or "").strip()
     group_name = (request.GET.get("group_name") or "").strip()
@@ -3019,7 +3056,7 @@ def borrower_status_analytics(request):
             Q(phone__icontains=q) |
             Q(email__icontains=q) |
             Q(national_id__icontains=q) |
-            Q(borrower_id__icontains=q) |
+            Q(borrower_id__icontains=q) | Q(legacy_borrower_id__icontains=q) |
             Q(ghana_card_number__icontains=q)
         )
 
@@ -3323,17 +3360,9 @@ def borrower_detail(request, pk):
 
     borrower = get_object_or_404(Borrower, pk=pk)
 
-    # Agents may only view borrowers assigned to them OR borrowers with no loans yet
-    # (so they can issue the first loan). Once a loan exists under another agent,
-    # access is denied.
-    if _role == "agent" and _agent:
-        has_own_loans   = borrower.loans.filter(agent_name=_agent).exists()
-        has_other_loans = borrower.loans.exclude(agent_name=_agent).exists()
-        has_any_loans   = borrower.loans.exists()
-        if has_any_loans and not has_own_loans:
-            from django.contrib import messages as _m
-            _m.error(request, "This borrower is assigned to a different agent.")
-            return redirect("agent_detail", pk=_agent.pk)
+    if _role == "agent" and not agent_can_access(_agent, borrower):
+        messages.error(request, "This customer belongs to a portfolio you do not manage.")
+        return redirect("agent_detail", pk=_agent.pk)
 
     borrower.refresh_status(save=True)
     external_debt_check = _loan_external_debt_check_for_borrower(borrower, request)
@@ -3341,6 +3370,7 @@ def borrower_detail(request, pk):
     loan_form = LoanCreateForBorrowerForm(
         request.POST or None,
         prefix="loan",
+        borrower=borrower,
         agent_override=_agent if _role == "agent" else None,
     )
     payment_form = PaymentCreateForm(prefix="pay")
@@ -3440,7 +3470,7 @@ def loan_payment_create(request, loan_id):
     loan = get_object_or_404(Loan.objects.select_related("borrower", "agent_name"), pk=loan_id)
 
     # Agents may only post payments on their own loans
-    if _role == "agent" and _agent and loan.agent_name_id != _agent.pk:
+    if _role == "agent" and _agent and not agent_can_access(_agent, loan):
         from django.contrib import messages as _m
         _m.error(request, "You can only record payments on loans assigned to you.")
         return redirect("agent_detail", pk=_agent.pk)
@@ -3454,11 +3484,13 @@ def loan_payment_create(request, loan_id):
     if request.method == "POST" and form.is_valid():
         payment = form.save(commit=False)
         payment.loan = loan
+        payment.submitted_by = request.user
         payment.save()
         loan.borrower.refresh_status(save=True)
 
         borrower_phone = loan.borrower.phone
-        agent_phone = loan.agent_name.phone
+        officer = loan_contact_agent(loan, payment)
+        agent_phone = officer.phone if officer else None
         borrower_msg, agent_msg = _build_payment_create_sms_messages(loan, payment)
 
         safe_send_sms(borrower_phone, borrower_msg)
@@ -3493,7 +3525,7 @@ def pending_payments_list(request):
         .order_by("-created_at")
     )
     if _role == "agent" and _agent:
-        pending = pending.filter(loan__agent_name=_agent)
+        pending = pending.filter(loan__portfolio_id__in=agent_portfolio_ids(_agent))
 
     pending_list = list(pending)
     total_pending_amount = sum((p.amount for p in pending_list), Decimal("0.00"))
@@ -3517,11 +3549,13 @@ def payment_confirm(request, payment_id):
     from .models import Payment
     payment = get_object_or_404(Payment, pk=payment_id, is_pending=True, is_void=False)
 
-    if _role == "agent" and _agent and payment.loan.agent_name_id != _agent.pk:
+    if _role == "agent" and _agent and not agent_can_access(_agent, payment.loan):
         messages.error(request, "You can only confirm payments on your own loans.")
         return redirect("loans:pending_payments")
 
     payment.is_pending = False
+    if not payment.collected_by_id and _agent:
+        payment.collected_by = _agent
     payment.save()
     log_activity(
         category="LOAN",
@@ -3562,7 +3596,7 @@ def payment_reject(request, payment_id):
     from .models import Payment
     payment = get_object_or_404(Payment, pk=payment_id, is_pending=True, is_void=False)
 
-    if _role == "agent" and _agent and payment.loan.agent_name_id != _agent.pk:
+    if _role == "agent" and _agent and not agent_can_access(_agent, payment.loan):
         messages.error(request, "You can only reject payments on your own loans.")
         return redirect("loans:pending_payments")
 
@@ -3611,7 +3645,7 @@ def payment_reconciliation_queue(request):
         .order_by("-initiated_at")
     )
     if _role == "agent" and _agent:
-        collections = collections.filter(loan__agent_name=_agent)
+        collections = collections.filter(loan__portfolio_id__in=agent_portfolio_ids(_agent))
 
     inflight = list(collections.filter(status__in=["PENDING", "PROCESSING", "SUCCEEDED"], payment__isnull=True)[:25])
     review_queue = list(collections.filter(status__in=["MANUAL_REVIEW", "FAILED"], payment__isnull=True)[:25])
@@ -3643,7 +3677,7 @@ def payment_collection_mark_success(request, collection_id):
         RepaymentCollection.objects.select_related("loan", "borrower", "loan__agent_name"),
         pk=collection_id,
     )
-    if _role == "agent" and _agent and collection.loan.agent_name_id != _agent.pk:
+    if _role == "agent" and _agent and not agent_can_access(_agent, collection.loan):
         messages.error(request, "You can only reconcile collections on your own loans.")
         return redirect("loans:payment_reconciliation")
 
@@ -3679,7 +3713,7 @@ def payment_collection_force_reconcile(request, collection_id):
         RepaymentCollection.objects.select_related("loan", "borrower", "loan__agent_name"),
         pk=collection_id,
     )
-    if _role == "agent" and _agent and collection.loan.agent_name_id != _agent.pk:
+    if _role == "agent" and _agent and not agent_can_access(_agent, collection.loan):
         messages.error(request, "You can only reconcile collections on your own loans.")
         return redirect("loans:payment_reconciliation")
 
@@ -3711,7 +3745,7 @@ def payment_collection_mark_failed(request, collection_id):
         RepaymentCollection.objects.select_related("loan", "borrower", "loan__agent_name"),
         pk=collection_id,
     )
-    if _role == "agent" and _agent and collection.loan.agent_name_id != _agent.pk:
+    if _role == "agent" and _agent and not agent_can_access(_agent, collection.loan):
         messages.error(request, "You can only update collections on your own loans.")
         return redirect("loans:payment_reconciliation")
 
@@ -3772,7 +3806,7 @@ def loans_list(request):
         .order_by("-created_at")
     )
     if _role == "agent" and _agent:
-        loans = loans.filter(agent_name=_agent)
+        loans = loans.filter(portfolio_id__in=agent_portfolio_ids(_agent))
 
     q = (request.GET.get("q") or "").strip()
     status = (request.GET.get("status") or "").strip()
@@ -3788,7 +3822,7 @@ def loans_list(request):
         loans = loans.filter(
             Q(id__icontains=q) |
             Q(borrower__full_name__icontains=q) |
-            Q(borrower__borrower_id__icontains=q) |
+            Q(borrower__borrower_id__icontains=q) | Q(borrower__legacy_borrower_id__icontains=q) |
             Q(borrower__national_id__icontains=q) |
             Q(borrower__phone__icontains=q) |
             Q(borrower__email__icontains=q) |
@@ -3956,7 +3990,7 @@ def loan_analytics(request):
         loans = loans.filter(
             Q(id__icontains=q) |
             Q(borrower__full_name__icontains=q) |
-            Q(borrower__borrower_id__icontains=q) |
+            Q(borrower__borrower_id__icontains=q) | Q(borrower__legacy_borrower_id__icontains=q) |
             Q(borrower__national_id__icontains=q) |
             Q(agent_name__name__icontains=q)
         )

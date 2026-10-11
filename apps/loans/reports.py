@@ -15,7 +15,7 @@ from openpyxl.styles import Font, PatternFill
 
 from apps.company.models import CompanyProfile
 
-from .models import Borrower, Loan, Payment
+from .models import Borrower, Loan, Payment, Portfolio
 
 
 QUANT = Decimal("0.01")
@@ -39,6 +39,7 @@ EXPORT_FORMATS = [
 ]
 
 REPORT_CATALOG = [
+    {"key": "portfolio_ownership", "group": "Portfolio", "title": "SikaFriend Portfolio Ownership", "description": "Current portfolio ownership, assigned officers, permanent Customer IDs, and outstanding loans."},
     {"key": "executive_summary", "group": "Management", "title": "Executive Summary", "description": "High-level performance, risk, outreach, and cash movement for the selected window."},
     {"key": "loan_portfolio", "group": "Portfolio", "title": "Loan Portfolio", "description": "Loan book position, repayment status, sector mix, product mix, and outstanding exposure."},
     {"key": "loan_aging", "group": "Portfolio", "title": "Portfolio Aging & PAR", "description": "Current, overdue, and portfolio-at-risk exposure by aging bucket."},
@@ -256,14 +257,14 @@ def _loan_snapshot(loan, period_end):
 def _base_snapshot(period):
     start = period["start"]
     end = period["end"]
-    loans_qs = Loan.objects.select_related("borrower", "agent_name").prefetch_related("payments")
+    loans_qs = Loan.objects.select_related("borrower", "agent_name", "portfolio").prefetch_related("payments")
     loans_as_of = list(loans_qs.filter(start_date__lte=end))
     period_loans = [loan for loan in loans_as_of if loan.start_date and start <= loan.start_date <= end]
     snapshots = [_loan_snapshot(loan, end) for loan in loans_as_of]
     period_snapshots = [item for item in snapshots if item["loan"] in period_loans]
     active_snapshots = [item for item in snapshots if item["balance"] > 0]
     payments = list(
-        Payment.objects.select_related("loan", "loan__borrower", "loan__agent_name")
+        Payment.objects.select_related("loan", "loan__borrower", "loan__agent_name", "collected_by", "loan__portfolio")
         .filter(is_void=False, is_pending=False, payment_date__gte=start, payment_date__lte=end)
         .order_by("payment_date", "id")
     )
@@ -456,7 +457,7 @@ def _loan_portfolio(key, period, data):
         if item["balance"] > 0:
             loan_rows.append([
                 loan.id,
-                loan.borrower.full_name,
+                f"{loan.borrower.full_name} ({loan.borrower.borrower_id})",
                 _agent_label(loan),
                 category,
                 _sector_label(loan),
@@ -537,7 +538,7 @@ def _disbursements(key, period, data):
         [
             loan.id,
             loan.start_date,
-            loan.borrower.full_name,
+            f"{loan.borrower.full_name} ({loan.borrower.borrower_id})",
             _agent_label(loan),
             _location_label(loan),
             _sector_label(loan),
@@ -573,14 +574,14 @@ def _collections(key, period, data):
         by_method[method]["amount"] += _money(payment.amount)
         by_method[method]["principal"] += _money(payment.principal_paid)
         by_method[method]["roic"] += _money(payment.roic_paid)
-        by_agent[_agent_label(payment.loan)]["count"] += 1
-        by_agent[_agent_label(payment.loan)]["amount"] += _money(payment.amount)
+        by_agent[_collection_officer(payment)]["count"] += 1
+        by_agent[_collection_officer(payment)]["amount"] += _money(payment.amount)
         rows.append([
             payment.payment_date,
             payment.id,
             payment.loan_id,
-            payment.loan.borrower.full_name,
-            _agent_label(payment.loan),
+            f"{payment.loan.borrower.full_name} ({payment.loan.borrower.borrower_id})",
+            _collection_officer(payment),
             method,
             payment.reference,
             payment.amount,
@@ -594,6 +595,37 @@ def _collections(key, period, data):
         _section("Collection Register", ["Date", "Payment", "Loan", "Borrower", "Agent", "Method", "Reference", "Amount", "Principal", "ROIC"], rows[:1000]) if rows else _empty_section("Collection Register"),
     ]
     return _report_shell(key, period, [_metric("Payments", len(payments)), _metric("Collections", total)], sections)
+
+
+def _collection_officer(payment):
+    return payment.collected_by.name if payment.collected_by_id else "Staff / unrecorded collector"
+
+
+def _portfolio_ownership(key, period, data):
+    totals = defaultdict(lambda: {"loans": 0, "outstanding": Decimal("0.00"), "collections": Decimal("0.00")})
+    register = []
+    for snapshot in data["snapshots"]:
+        loan = snapshot["loan"]
+        row = totals[loan.portfolio_id]
+        row["loans"] += 1
+        row["outstanding"] += snapshot["balance"]
+        register.append([loan.borrower.borrower_id, loan.borrower.legacy_borrower_id, f"{loan.borrower.full_name} ({loan.borrower.borrower_id})",
+                         str(loan.portfolio or "Needs assignment"), loan.pk, snapshot["balance"]])
+    for payment in data["payments"]:
+        totals[payment.loan.portfolio_id]["collections"] += payment.amount
+    summary = []
+    for portfolio in Portfolio.objects.prefetch_related("assignments__agent"):
+        row = totals[portfolio.pk]
+        officers = ", ".join(assignment.agent.name for assignment in portfolio.assignments.all() if assignment.ended_at is None)
+        summary.append([portfolio.number, portfolio.name, officers or "Needs assignment", portfolio.borrowers.count(),
+                        row["loans"], _money(row["outstanding"]), _money(row["collections"])])
+    pending = totals[None]
+    if pending["loans"]:
+        summary.append(["", "Needs assignment", "", Borrower.objects.filter(portfolio__isnull=True).count(), pending["loans"], _money(pending["outstanding"]), _money(pending["collections"])])
+    return _report_shell(key, period, [_metric("Named portfolios", Portfolio.objects.count())], [
+        _section("Current Portfolio Ownership", ["Portfolio No.", "Name", "Current Officers", "Customers", "Loans", "Outstanding", "Period Collections"], summary),
+        _section("Customer Loan Register", ["Customer ID", "Legacy ID", "Customer", "Portfolio", "Loan", "Outstanding"], register),
+    ])
 
 
 def _borrower_outreach(key, period, data):
@@ -636,7 +668,7 @@ def _agent_performance(key, period, data):
         row["period_disbursed"] += _money(loan.amount)
         row["borrowers"].add(loan.borrower_id)
     for payment in data["payments"]:
-        agent_rows[_agent_label(payment.loan)]["collections"] += _money(payment.amount)
+        agent_rows[_collection_officer(payment)]["collections"] += _money(payment.amount)
     for item in data["active_snapshots"]:
         row = agent_rows[_agent_label(item["loan"])]
         row["borrowers"].add(item["loan"].borrower_id)
@@ -691,7 +723,7 @@ def _collateral_register(key, period, data):
         secured_balance += item["balance"]
         rows.append([
             loan.id,
-            loan.borrower.full_name,
+            f"{loan.borrower.full_name} ({loan.borrower.borrower_id})",
             _agent_label(loan),
             loan.collateral_type or "Unspecified",
             loan.collateral_details,
@@ -871,6 +903,7 @@ def _accounting_report(key, period, data):
 
 
 REPORT_BUILDERS = {
+    "portfolio_ownership": _portfolio_ownership,
     "executive_summary": _executive_summary,
     "loan_portfolio": _loan_portfolio,
     "loan_aging": _loan_aging,

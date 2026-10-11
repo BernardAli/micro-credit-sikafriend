@@ -404,10 +404,10 @@
           <div class="section-body">
             <div class="field-grid">
               <div class="field-card">
-                <label class="field-label">Borrower ID</label>
-                {{ form.borrower_id }}
-                {% if form.borrower_id.errors %}<div class="error-box">{{ form.borrower_id.errors }}</div>{% endif %}
-                <div class="field-help">Internal borrower reference used across the lending system.</div>
+                <label class="field-label">Portfolio</label>
+                {{ form.portfolio }}<div class="field-help">Customer ID: {{ borrower.borrower_id }} (permanent). Changing portfolio also transfers their loans.</div>
+                {% if form.portfolio.errors %}<div class="error-box">{{ form.portfolio.errors }}</div>{% endif %}
+                <div class="field-help">Current portfolio ownership is independent of the assigned officer.</div>
               </div>
 
               <div class="field-card">

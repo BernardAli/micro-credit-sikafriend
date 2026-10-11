@@ -1,11 +1,71 @@
 from decimal import Decimal, ROUND_HALF_UP
+import re
 
 from django.contrib.auth.models import User
-from django.db import models
+from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
+from django.db import models, transaction, router
 from django.db.models import Sum
 from django.utils import timezone
 
 from apps.accounts.models import Agent
+
+
+class Portfolio(models.Model):
+    number = models.CharField(max_length=2, unique=True, validators=[RegexValidator(r"^(0[1-9]|[1-9][0-9])$", "Use a portfolio number from 01 to 99.")])
+    name = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    next_customer_number = models.PositiveIntegerField(default=1, editable=False)
+
+    class Meta:
+        ordering = ["number"]
+        constraints = [models.CheckConstraint(condition=models.Q(next_customer_number__gte=1, next_customer_number__lte=1001), name="portfolio_customer_capacity")]
+
+    def save(self, *args, **kwargs):
+        using = kwargs.get("using") or router.db_for_write(type(self), instance=self)
+        with transaction.atomic(using=using):
+            if self.pk:
+                original = type(self).objects.using(using).select_for_update().get(pk=self.pk)
+                if self.number != original.number:
+                    raise ValidationError("A portfolio number is permanent.")
+                self.next_customer_number = original.next_customer_number
+            self.full_clean()
+            super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.number} — {self.name}"
+
+
+class PortfolioAssignment(models.Model):
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.PROTECT, related_name="assignments")
+    agent = models.ForeignKey(Agent, on_delete=models.PROTECT, related_name="portfolio_assignments")
+    started_at = models.DateTimeField(default=timezone.now)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    assigned_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        ordering = ["-started_at", "-pk"]
+
+    def __str__(self):
+        return f"{self.portfolio} / {self.agent.name}"
+
+
+class CustomerIdentity(models.Model):
+    """Permanent issuance register: deleting a customer never releases their number."""
+    customer_id = models.CharField(max_length=8, primary_key=True)
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.PROTECT, related_name="issued_ids")
+    number = models.PositiveIntegerField()
+    borrower = models.OneToOneField("Borrower", on_delete=models.SET_NULL, null=True, blank=True, related_name="identity")
+    issued_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["portfolio", "number"], name="unique_portfolio_customer_number"),
+            models.CheckConstraint(condition=models.Q(number__gte=1, number__lte=1000), name="customer_number_range"),
+        ]
+
+    def __str__(self):
+        return self.customer_id
 
 
 class Borrower(models.Model):
@@ -56,7 +116,9 @@ class Borrower(models.Model):
         help_text="Login account for this borrower.",
     )
 
-    borrower_id = models.CharField(max_length=50, unique=True)
+    borrower_id = models.CharField("Customer ID", max_length=50, unique=True, blank=True)
+    legacy_borrower_id = models.CharField(max_length=50, blank=True, editable=False, db_index=True)
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.PROTECT, null=True, blank=True, related_name="borrowers")
 
     full_name = models.CharField(max_length=160)
     national_id = models.CharField(max_length=80, unique=True)
@@ -90,8 +152,44 @@ class Borrower(models.Model):
 
     def save(self, *args, **kwargs):
         self.email = (self.email or "").strip().lower()
-        super().save(*args, **kwargs)
-        self.sync_login_email()
+        using = kwargs.get("using") or router.db_for_write(type(self), instance=self)
+        with transaction.atomic(using=using):
+            original = type(self).objects.using(using).select_for_update().filter(pk=self.pk).first() if self.pk else None
+            if original and self.borrower_id != original.borrower_id:
+                raise ValidationError({"borrower_id": "Customer IDs cannot be changed. Use portfolio assignment to issue an ID to a legacy customer."})
+            identity = CustomerIdentity.objects.using(using).filter(borrower_id=self.pk).first() if self.pk else None
+            if identity and self.borrower_id != identity.customer_id:
+                raise ValidationError({"borrower_id": "This customer's permanent ID cannot be changed."})
+            if identity and not self.portfolio_id:
+                raise ValidationError({"portfolio": "A customer must belong to a portfolio."})
+            if not original and not self.portfolio_id:
+                raise ValidationError({"portfolio": "Select a portfolio before registering a customer."})
+            issuing = self.portfolio_id and not identity
+            if issuing:
+                portfolio = Portfolio.objects.using(using).select_for_update().get(pk=self.portfolio_id)
+                if not portfolio.is_active:
+                    raise ValidationError({"portfolio": "This portfolio is inactive."})
+                requested = self.borrower_id if re.fullmatch(r"SF\d{6}", self.borrower_id or "") else ""
+                number = int(requested[4:]) if requested else portfolio.next_customer_number
+                if number < 1 or number > 1000:
+                    raise ValidationError({"portfolio": "This portfolio has issued all 1,000 Customer IDs."})
+                if requested and requested[2:4] != portfolio.number:
+                    raise ValidationError({"borrower_id": "Customer ID must match the issuing portfolio."})
+                customer_id = f"SF{portfolio.number}{number:04d}"
+                if CustomerIdentity.objects.using(using).filter(customer_id=customer_id).exists() or type(self).objects.using(using).exclude(pk=self.pk).filter(borrower_id=customer_id).exists():
+                    raise ValidationError({"borrower_id": "This Customer ID has already been issued and cannot be reused."})
+                if not requested:
+                    self.legacy_borrower_id = self.borrower_id or self.legacy_borrower_id
+                self.borrower_id = customer_id
+                Portfolio.objects.using(using).filter(pk=portfolio.pk).update(next_customer_number=max(portfolio.next_customer_number, number + 1))
+                if kwargs.get("update_fields") is not None:
+                    kwargs["update_fields"] = set(kwargs["update_fields"]) | {"borrower_id", "legacy_borrower_id", "portfolio"}
+            super().save(*args, **kwargs)
+            if issuing:
+                CustomerIdentity.objects.using(using).create(customer_id=self.borrower_id, portfolio=portfolio, number=number, borrower=self)
+            if original and original.portfolio_id != self.portfolio_id:
+                Loan.objects.using(using).filter(borrower_id=self.pk).update(portfolio_id=self.portfolio_id)
+            self.sync_login_email()
 
     def sync_login_email(self):
         if not self.user_id:
@@ -180,6 +278,7 @@ class Loan(models.Model):
 
     borrower = models.ForeignKey("Borrower", on_delete=models.PROTECT, related_name="loans")
     agent_name = models.ForeignKey(Agent, on_delete=models.PROTECT, related_name="loans")
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.PROTECT, null=True, blank=True, related_name="loans")
 
     amount = models.DecimalField(max_digits=12, decimal_places=2)  # principal
     loan_category = models.CharField(
@@ -433,6 +532,10 @@ class Loan(models.Model):
             return True
 
     def save(self, *args, **kwargs):
+        if not self.pk:
+            if not self.borrower.portfolio_id:
+                raise ValidationError("Assign the customer to a portfolio before issuing a loan.")
+            self.portfolio_id = self.borrower.portfolio_id
         self.loan_category = self.get_loan_category()
         super().save(*args, **kwargs)
 
@@ -471,6 +574,7 @@ class Payment(models.Model):
         User, null=True, blank=True, on_delete=models.SET_NULL,
         related_name="submitted_payments",
     )
+    collected_by = models.ForeignKey(Agent, null=True, blank=True, on_delete=models.PROTECT, related_name="collected_payments")
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -547,6 +651,8 @@ class Payment(models.Model):
         self.roic_paid = Decimal(roic_part).quantize(q)
 
     def save(self, *args, **kwargs):
+        if not self.pk and not self.collected_by_id and self.submitted_by_id:
+            self.collected_by = Agent.objects.filter(user_id=self.submitted_by_id).first()
         self.allocate_components()
         super().save(*args, **kwargs)
 

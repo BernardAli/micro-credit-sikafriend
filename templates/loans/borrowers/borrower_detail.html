@@ -2,6 +2,7 @@
 {% load loan_extras %}
 {% load currency %}
 {% block content %}
+<div class="card p-3 mb-3"><strong>Customer ID: {{ borrower.borrower_id }}</strong><span>Portfolio: {{ borrower.portfolio|default:"Needs assignment" }}</span>{% if borrower.legacy_borrower_id %}<small>Legacy ID: {{ borrower.legacy_borrower_id }}</small>{% endif %}{% if user_role == "admin" %}<a href="{% url 'loans:portfolio_customers' %}?show=all&q={{ borrower.borrower_id|urlencode }}">Manage portfolio assignment</a>{% endif %}</div>
 
 <style>
   .borrower-shell{

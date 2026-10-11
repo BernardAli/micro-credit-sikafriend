@@ -382,10 +382,10 @@
           <div class="section-body">
             <div class="field-grid">
               <div class="field-card">
-                <label class="field-label">Borrower ID</label>
-                {{ form.borrower_id }}
-                {% if form.borrower_id.errors %}<div class="error-box">{{ form.borrower_id.errors }}</div>{% endif %}
-                <div class="field-help">Unique internal reference for the borrower record.</div>
+                <label class="field-label">Portfolio</label>
+                {{ form.portfolio }}
+                {% if form.portfolio.errors %}<div class="error-box">{{ form.portfolio.errors }}</div>{% endif %}
+                <div class="field-help">Choose the customer’s portfolio. The permanent Customer ID is generated automatically.</div>
               </div>
 
               <div class="field-card">

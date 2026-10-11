@@ -197,6 +197,11 @@ def _execute_loan_creation(approval, reviewer, *, note=""):
 
     payload = approval.payload
     borrower = Borrower.objects.get(pk=payload["borrower_id"])
+    from apps.accounts.models import Agent
+    from apps.loans.portfolios import agent_can_access
+    officer = Agent.objects.get(pk=payload["agent_id"])
+    if not agent_can_access(officer, borrower):
+        raise ValueError("The requested officer is no longer assigned to this customer's portfolio. Submit a new loan request with a current officer.")
     latest_check = get_cross_company_debt_check(borrower=borrower)
     if latest_check["requires_review"] and not (note or "").strip():
         raise ValueError(

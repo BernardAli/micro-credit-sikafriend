@@ -449,6 +449,7 @@
           </div>
         </div>
         <div class="hero-actions">
+          <a href="{% url 'loans:portfolio_list' %}" class="btn-hero">Loan Portfolios</a>
           <a href="{% url 'loans:loan_analytics' %}" class="btn-hero">Loan Analytics</a>
           <a href="{% url 'loans:borrower_analytics' %}" class="btn-hero">Borrower Analytics</a>
           <a href="{% url 'loans:loan_monthly_analytics' %}" class="btn-hero">Monthly Analytics</a>
@@ -485,6 +486,8 @@
       </div>
     </div>
   </section>
+
+  {% include "loans/portfolios/dashboard_cards.html" %}
 
   <section class="tabs-card">
     <div class="tabs-head">

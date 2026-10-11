@@ -12,7 +12,7 @@ from apps.accounts.models import Agent
 from apps.company.models import CompanyProfile
 from apps.communication.services_sms import normalize_phone as communication_normalize_phone
 from apps.communication.views import build_recipients
-from apps.loans.models import Borrower, Loan, Payment
+from apps.loans.models import Portfolio, PortfolioAssignment, Borrower, Loan, Payment
 
 
 class StandaloneDataTestCase(TestCase):
@@ -48,7 +48,9 @@ class ManagementMessageCenterTests(StandaloneDataTestCase):
             ghana_card_number="AGCARD001",
             group_name="Field Team",
         )
+        PortfolioAssignment.objects.get_or_create(portfolio=Portfolio.objects.get(number="01"), agent=self.agent)
         self.borrower = Borrower.objects.create(
+            portfolio=Portfolio.objects.get(number="01"),
             borrower_id="BW001",
             full_name="Ama Borrower",
             national_id="NAT001",
@@ -150,7 +152,9 @@ class HubtelUSSDTests(StandaloneDataTestCase):
             ghana_card_number="AGCARD100",
             group_name="Field Team",
         )
+        PortfolioAssignment.objects.get_or_create(portfolio=Portfolio.objects.get(number="01"), agent=self.agent)
         self.borrower = Borrower.objects.create(
+            portfolio=Portfolio.objects.get(number="01"),
             borrower_id="BW100",
             full_name="Adwoa Mensah",
             national_id="NAT100",

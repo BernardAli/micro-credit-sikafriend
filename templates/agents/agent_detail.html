@@ -137,6 +137,8 @@
     </div>
   </section>
 
+  {% if agent.is_field_agent %}{% include "loans/portfolios/dashboard_cards.html" %}{% endif %}
+
   <section class="grid-4">
     <div class="stat-card"><div class="stat-label">Base Salary</div><div class="stat-value">{{ agent.base_salary|currency }}</div><div class="stat-sub">Fixed monthly salary before allowances and variable pay.</div></div>
     <div class="stat-card"><div class="stat-label">Regular Monthly Pay</div><div class="stat-value">{{ agent.gross_regular_pay|currency }}</div><div class="stat-sub">Base salary plus recurring fixed allowances.</div></div>

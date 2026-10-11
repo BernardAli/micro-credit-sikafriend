@@ -2,6 +2,7 @@
 {% load currency %}
 {% load humanize %}
 {% block content %}
+<div class="card p-3 mb-3"><strong>Customer ID: {{ borrower_profile.borrower_id }}</strong><span>Portfolio: {{ borrower_profile.portfolio|default:"Pending assignment" }}</span></div>
 
 <style>
   .portal-shell { display:grid; gap:20px; }

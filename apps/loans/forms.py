@@ -6,7 +6,8 @@ from django.utils import timezone
 
 from apps.accounts.usernames import portal_username_exists, validate_portal_username
 
-from .models import Borrower, Loan, Payment, SecurityDeposit
+from .models import Borrower, Loan, Payment, SecurityDeposit, Portfolio
+from .portfolios import agent_portfolio_ids, agent_can_access
 
 UserModel = get_user_model()
 
@@ -66,9 +67,13 @@ class BorrowerForm(forms.ModelForm):
         widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "e.g. kofi.mensah"}),
     )
 
-    def __init__(self, *args, creating=True, **kwargs):
+    def __init__(self, *args, creating=True, agent_override=None, **kwargs):
         self.creating = creating
         super().__init__(*args, **kwargs)
+        self.fields["portfolio"].required = True
+        self.fields["portfolio"].queryset = Portfolio.objects.filter(is_active=True)
+        if agent_override:
+            self.fields["portfolio"].queryset = self.fields["portfolio"].queryset.filter(pk__in=agent_portfolio_ids(agent_override))
 
         # On edit, hide the portal_username field (login already exists)
         if not creating:
@@ -97,7 +102,7 @@ class BorrowerForm(forms.ModelForm):
     class Meta:
         model = Borrower
         fields = [
-            "borrower_id",
+            "portfolio",
             "full_name",
             "national_id",
             "gender",
@@ -121,7 +126,7 @@ class BorrowerForm(forms.ModelForm):
             "preferred_language",
         ]
         widgets = {
-            "borrower_id": forms.TextInput(attrs={"class": "form-control", "placeholder": "Enter borrower ID"}),
+            "portfolio": forms.Select(attrs={"class": "form-select"}),
             "full_name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Enter full name"}),
             "national_id": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ghana Card / Passport number"}),
             "gender": forms.Select(attrs={"class": "form-select"}),
@@ -160,6 +165,9 @@ class BorrowerForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        portfolio = cleaned_data.get("portfolio")
+        if portfolio and (not self.instance.pk or not hasattr(self.instance, "identity")) and portfolio.next_customer_number > 1000:
+            self.add_error("portfolio", "This portfolio has issued all 1,000 Customer IDs.")
         residence_status = cleaned_data.get("residence_status")
         residence_status_other = (cleaned_data.get("residence_status_other") or "").strip()
         if residence_status == "OTHER" and not residence_status_other:
@@ -346,6 +354,8 @@ class LoanForm(forms.ModelForm):
             self.fields["agent_name"].widget   = forms.HiddenInput()
             self.fields["agent_name"].required = False
             self.agent_override = agent_override
+            self.fields["agent_name"].disabled = True
+            self.fields["borrower"].queryset = Borrower.objects.filter(portfolio_id__in=agent_portfolio_ids(agent_override))
         else:
             self.agent_override = None
 
@@ -437,6 +447,12 @@ class LoanForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        borrower = cleaned_data.get("borrower")
+        agent = self.agent_override or cleaned_data.get("agent_name")
+        if borrower and not borrower.portfolio_id:
+            self.add_error("borrower", "Assign this customer to a portfolio first.")
+        elif borrower and agent and not agent_can_access(agent, borrower):
+            self.add_error("agent_name", "Select an officer currently assigned to this customer's portfolio.")
         months = cleaned_data.get("duration_months") or 0
         weeks = cleaned_data.get("duration_weeks") or 0
         sector = cleaned_data.get("sector")
@@ -565,18 +581,20 @@ class LoanCreateForBorrowerForm(forms.ModelForm):
             "approval_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
         }
 
-    def __init__(self, *args, agent_override=None, **kwargs):
+    def __init__(self, *args, agent_override=None, borrower=None, **kwargs):
         """
         agent_override: Agent instance. When set the agent_name field is hidden
         and locked — the agent issues the loan under their own name automatically.
         """
         super().__init__(*args, **kwargs)
+        self.borrower = borrower
 
         if agent_override is not None:
             self.fields["agent_name"].initial  = agent_override.pk
             self.fields["agent_name"].widget   = forms.HiddenInput()
             self.fields["agent_name"].required = False
             self.agent_override = agent_override
+            self.fields["agent_name"].disabled = True
         else:
             self.agent_override = None
 
@@ -667,6 +685,11 @@ class LoanCreateForBorrowerForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        agent = self.agent_override or cleaned_data.get("agent_name")
+        if self.borrower and not self.borrower.portfolio_id:
+            self.add_error(None, "Assign this customer to a portfolio first.")
+        elif self.borrower and agent and not agent_can_access(agent, self.borrower):
+            self.add_error("agent_name", "Select an officer currently assigned to this customer's portfolio.")
         months = cleaned_data.get("duration_months") or 0
         weeks = cleaned_data.get("duration_weeks") or 0
         sector = cleaned_data.get("sector")

@@ -1,18 +1,45 @@
-CREATE DATABASE sikafriend_local
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
+# Django
+DJANGO_DEBUG=False
+DJANGO_SECRET_KEY=GCkMDAJQdN0KoPZd_Gu_2nfgHD1Ee1Akl2yPWEfJbY62tXaNaH4V9qMXQ5Rvp4BZGS2z9ubVH-umMuK00L-57g
+DJANGO_ALLOWED_HOSTS=sikafriend.pythonanywhere.com
+DJANGO_CSRF_TRUSTED_ORIGINS=https://sikafriend.pythonanywhere.com
+TIME_ZONE=Africa/Accra
 
-CREATE USER 'sikafriend_local'@'localhost'
-IDENTIFIED BY 'Matt6:33';
+# HTTPS security
+DJANGO_SECURE_SSL_REDIRECT=True
+DJANGO_SESSION_COOKIE_SECURE=True
+DJANGO_CSRF_COOKIE_SECURE=True
+DJANGO_SECURE_HSTS_SECONDS=31536000
+DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS=True
+DJANGO_SECURE_HSTS_PRELOAD=True
+DJANGO_TRUST_PROXY_HTTPS=True
 
-GRANT ALL PRIVILEGES ON sikafriend_local.*
-TO 'sikafriend_local'@'localhost';
+# Current MySQL database
+DB_ENGINE=mysql
+DB_NAME=sikafriend$sikafriend
+DB_USER=sikafriend
+DB_PASSWORD=General040625.
+DB_HOST=sikafriend.mysql.pythonanywhere-services.com
+DB_PORT=3306
+DB_CONN_MAX_AGE=60
 
-FLUSH PRIVILEGES;
-EXIT;
+# Legacy source database, used temporarily during migration
+LEGACY_DB_NAME=sikafriend$legacy_import
+# LEGACY_DB_USER=sikafriend
+# LEGACY_DB_PASSWORD=General040625.
+LEGACY_DB_HOST=sikafriend.mysql.pythonanywhere-services.com
+LEGACY_DB_PORT=3306
 
-mysql \
-  -u sikafriend_local -p \
-  --default-character-set=utf8mb4 \
-  sikafriend_local \
-  < /home/allgift/Downloads//sikafriend-current.sql
+# Email
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+DEFAULT_FROM_EMAIL=no-reply@sikafriend.com
+
+# SMS
+ARKESEL_API_KEY=
+ARKESEL_SENDER_ID=SikaFriend
+ARKESEL_BASE_URL=https://sms.arkesel.com/api/v2
+
+# Payment and USSD security
+PAYMENT_WEBHOOK_SECRET=CHANGE_ME_TO_ANOTHER_LONG_RANDOM_SECRET
+ALLOW_INSECURE_PAYMENT_WEBHOOKS=False
+ALLOW_INSECURE_USSD_CALLBACKS=False

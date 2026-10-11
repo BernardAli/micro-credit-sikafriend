@@ -775,7 +775,8 @@
           <div class="top-actions">
             <span class="top-pill">
               <span class="dot" aria-hidden="true"></span>
-              {% if user_role == "admin" %}Admin Portal
+              {% if user_role == "admin" %}
+          <a href="{% url 'loans:portfolio_list' %}" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">📁</span><span>Loan Portfolios</span></span></a>Admin Portal
               {% elif user_role == "agent" %}Agent Portal
               {% elif user_role == "borrower" %}My Account
               {% else %}Credit Operations{% endif %}

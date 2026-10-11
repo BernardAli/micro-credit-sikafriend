@@ -12,7 +12,7 @@ from django.test import TestCase
 from apps.accounts.models import Agent
 from apps.company.models import CompanyProfile
 from apps.loans.cross_company import empty_cross_company_debt_check, format_cross_company_debt_summary, serialize_cross_company_debt_check
-from apps.loans.models import Borrower, Loan, Payment, RepaymentCollection, SecurityDeposit, SecurityDepositTransaction
+from apps.loans.models import Portfolio, PortfolioAssignment, Borrower, Loan, Payment, RepaymentCollection, SecurityDeposit, SecurityDepositTransaction
 from apps.loans.payment_gateway import initiate_repayment_collection, process_collection_callback
 from apps.core.approvals import approve_and_execute_request
 from apps.core.models import ApprovalRequest
@@ -36,7 +36,9 @@ class PrefetchedLoanPaymentTotalsTests(TestCase):
             phone="0200000000",
             location="Accra",
         )
+        PortfolioAssignment.objects.get_or_create(portfolio=Portfolio.objects.get(number="01"), agent=self.agent)
         self.borrower = Borrower.objects.create(
+            portfolio=Portfolio.objects.get(number="01"),
             borrower_id="CACHE-BORROWER",
             full_name="Cache Borrower",
             national_id="CACHE-NATIONAL-ID",
@@ -80,7 +82,9 @@ class PaymentEntryFlowTests(TestCase):
             phone="0200000000",
             location="Accra",
         )
+        PortfolioAssignment.objects.get_or_create(portfolio=Portfolio.objects.get(number="01"), agent=self.agent)
         self.borrower = Borrower.objects.create(
+            portfolio=Portfolio.objects.get(number="01"),
             borrower_id="PAY-BORROWER",
             full_name="Payment Borrower",
             national_id="PAY-NATIONAL-ID",
@@ -125,7 +129,9 @@ class SecurityDepositWorkflowTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_superuser(username="deposit-owner", password="SafePass123!")
         self.agent = Agent.objects.create(agent_id="DEPOSIT-AGENT", name="Deposit Agent", phone="0200000010", location="Accra")
+        PortfolioAssignment.objects.get_or_create(portfolio=Portfolio.objects.get(number="01"), agent=self.agent)
         self.borrower = Borrower.objects.create(
+            portfolio=Portfolio.objects.get(number="01"),
             borrower_id="DEPOSIT-BORROWER", full_name="Deposit Borrower", national_id="DEPOSIT-NATIONAL-ID",
             phone="0200000011", location="Accra", photo="borrowers/photos/deposit.jpg",
             ghana_card_front="borrowers/ghana_cards/front/deposit.jpg", ghana_card_back="borrowers/ghana_cards/back/deposit.jpg",
@@ -325,7 +331,9 @@ class DashboardHeroMetricsTests(StandaloneDataTestCase):
             ghana_card_number="AGCARD001",
             group_name="Field Team",
         )
+        PortfolioAssignment.objects.get_or_create(portfolio=Portfolio.objects.get(number="01"), agent=self.agent)
         self.borrower = Borrower.objects.create(
+            portfolio=Portfolio.objects.get(number="01"),
             borrower_id="BW001",
             full_name="Ama Borrower",
             national_id="NAT001",
@@ -414,7 +422,9 @@ class RepaymentCollectionTests(StandaloneDataTestCase):
             ghana_card_number="AGCOL900",
             group_name="Collections",
         )
+        PortfolioAssignment.objects.get_or_create(portfolio=Portfolio.objects.get(number="01"), agent=self.agent)
         self.borrower = Borrower.objects.create(
+            portfolio=Portfolio.objects.get(number="01"),
             user=self.borrower_user,
             borrower_id="BW900",
             full_name="Collection Borrower",

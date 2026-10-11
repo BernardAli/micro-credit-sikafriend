@@ -1,3 +1,4 @@
+from apps.loans.portfolios import agent_portfolio_ids
 import re
 from decimal import Decimal
 from dataclasses import dataclass
@@ -141,7 +142,8 @@ def _ussd_main_menu() -> str:
         "2. Loan Disbursement Confirmation\n"
         "3. Check Balance\n"
         "4. Referrals\n"
-        "5. Contact Us"
+        "5. Contact Us\n"
+        "6. Customer ID / Balance"
     )
 
 
@@ -258,6 +260,17 @@ def _build_ussd_response(phone_number: str, text: str) -> str:
         return _ussd_main_menu()
 
     option = menu_parts[0]
+    if option == "6":
+        if len(menu_parts) == 1:
+            return _ussd_continue("Enter your permanent Customer ID (e.g. SF070428):")
+        from apps.loans.portfolios import customer_lookup
+        try:
+            customer = customer_lookup(menu_parts[1].upper())
+        except ValueError:
+            return _ussd_end("Customer ID could not be verified for this phone number.")
+        if not normalize_phone(phone_number) or normalize_phone(customer.phone) != normalize_phone(phone_number):
+            return _ussd_end("Customer ID could not be verified for this phone number.")
+        return _check_balance_message(customer)
     if option == "1":
         return _loan_repayment_message(borrower)
     if option == "2":
@@ -423,7 +436,7 @@ def _borrowers_matching_campaign(cleaned_data):
     elif audience == "BAD_BORROWERS":
         borrowers = borrowers.filter(status="BAD")
     elif audience == "BORROWERS_BY_AGENT" and agent:
-        borrowers = borrowers.filter(loans__agent_name=agent).distinct()
+        borrowers = borrowers.filter(portfolio_id__in=agent_portfolio_ids(agent))
     elif audience == "BORROWERS_BY_LOCATION" and location:
         borrowers = borrowers.filter(location__icontains=location)
     elif audience == "BORROWERS_BY_GROUP" and group_name:
@@ -702,7 +715,7 @@ def build_recipients(cleaned_data) -> list[RecipientItem]:
                 recipients.append(RecipientItem(label=b.full_name, phone=phone, category="Borrower Loan Category"))
 
     elif recipient_group == "BORROWERS_BY_AGENT":
-        borrowers = Borrower.objects.filter(loans__agent_name=agent).distinct().order_by("full_name")
+        borrowers = Borrower.objects.filter(portfolio_id__in=agent_portfolio_ids(agent)).order_by("full_name")
         for b in borrowers:
             phone = get_borrower_phone(b)
             if phone:

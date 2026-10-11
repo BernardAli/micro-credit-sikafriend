@@ -178,6 +178,8 @@ Large or complex production migrations should be rehearsed in a separate MySQL d
 
 ## 11. Updates
 
+For the SikaFriend portfolio and permanent Customer ID release, use [the portfolio update guide](PORTFOLIO_UPDATE.md). It includes the database-preserving migration, management review, confirmed-ID CSV transfer, source ZIP deployment, and rollback steps.
+
 ```bash
 cd ~/micro-credit-standalone
 git pull

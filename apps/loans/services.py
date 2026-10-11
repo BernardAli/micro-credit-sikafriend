@@ -6,6 +6,8 @@ def build_loan_statement(loan: Loan, borrower_display_name: str | None = None) -
 
     lines: list[str] = []
     lines.append(f"{name}'s Loan Statement")
+    lines.append(f"Customer ID: {loan.borrower.borrower_id}")
+    lines.append(f"Portfolio: {loan.portfolio or 'Awaiting assignment'}")
     lines.append(f"Principal: GHS {loan.principal_amount}")
     lines.append(f"ROIC: GHS {loan.roic_amount}")
     lines.append(f"Total Expected Repayment: GHS {loan.total_expected_amount}")

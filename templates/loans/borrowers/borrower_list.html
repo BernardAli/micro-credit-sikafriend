@@ -451,7 +451,7 @@
                 <div class="borrower-name">{{ b.full_name }}</div>
 
                 <div class="borrower-meta">
-                  Borrower ID: {{ b.borrower_id }} · National ID: {{ b.national_id }} · Ghana Card: {{ b.ghana_card_number }}
+                  Customer ID: {{ b.borrower_id }} · Portfolio: {{ b.portfolio|default:"Needs assignment" }} · National ID: {{ b.national_id }} · Ghana Card: {{ b.ghana_card_number }}
                 </div>
 
                 <div class="borrower-meta">

@@ -1,9 +1,15 @@
 from django.urls import path
 from . import views
+from . import portfolio_views
 
 app_name = "loans"
 
 urlpatterns = [
+    path("portfolios/", portfolio_views.portfolio_list, name="portfolio_list"),
+    path("portfolios/customers/", portfolio_views.portfolio_customers, name="portfolio_customers"),
+    path("portfolios/export/", portfolio_views.portfolio_export, name="portfolio_export"),
+    path("portfolios/<int:pk>/", portfolio_views.portfolio_detail, name="portfolio_detail"),
+    path("portfolios/<int:pk>/edit/", portfolio_views.portfolio_update, name="portfolio_update"),
     path("dashboard/", views.dashboard, name="dashboard"),
     path("reports/", views.reports_center, name="reports_center"),
     path("reports/business-state/pdf/", views.business_state_pdf_report, name="business_state_pdf_report"),

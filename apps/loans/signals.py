@@ -14,6 +14,7 @@ def _build_new_loan_alert(loan: Loan) -> str:
     return (
         "New Loan Alert!\n\n"
         f"Name: {b.full_name}\n"
+        f"Customer ID: {b.borrower_id}\n"
         f"ID: {b.national_id}\n"
         f"Amount: GHS {loan.amount}\n"
         f"Duration: {loan.duration_weeks} weeks\n"
@@ -47,7 +48,7 @@ def on_payment_received(sender, instance: Payment, created, raw=False, **kwargs)
     staff_users = User.objects.filter(is_staff=True, is_active=True)
     msg = (
         "Payment Received!\n\n"
-        f"Borrower: {loan.borrower.full_name} ({loan.borrower.national_id})\n"
+        f"Borrower: {loan.borrower.full_name} ({loan.borrower.borrower_id})\n"
         f"Loan ID: {loan.id}\n"
         f"Amount Paid: GHS {instance.amount}\n"
         f"Date: {instance.payment_date:%d/%m/%Y}\n"

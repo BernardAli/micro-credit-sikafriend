@@ -2,7 +2,43 @@ from django.contrib import admin
 from django.db.models import Sum
 from django.utils.html import format_html
 
-from .models import Borrower, Loan, Payment, RepaymentCollection, SecurityDeposit, SecurityDepositTransaction
+from .models import Borrower, Loan, Payment, RepaymentCollection, SecurityDeposit, SecurityDepositTransaction, Portfolio, PortfolioAssignment, CustomerIdentity
+
+
+@admin.register(Portfolio)
+class PortfolioAdmin(admin.ModelAdmin):
+    list_display = ("number", "name", "is_active", "next_customer_number")
+    readonly_fields = ("next_customer_number",)
+
+    def get_readonly_fields(self, request, obj=None):
+        return self.readonly_fields + (("number",) if obj else ())
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PortfolioAssignment)
+class PortfolioAssignmentAdmin(admin.ModelAdmin):
+    list_display = ("portfolio", "agent", "started_at", "ended_at")
+    readonly_fields = ("portfolio", "agent", "started_at", "ended_at", "assigned_by")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(CustomerIdentity)
+class CustomerIdentityAdmin(admin.ModelAdmin):
+    list_display = ("customer_id", "portfolio", "number", "borrower", "issued_at")
+    readonly_fields = ("customer_id", "portfolio", "number", "borrower", "issued_at")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 class PaymentInline(admin.TabularInline):
@@ -29,8 +65,14 @@ class PaymentInline(admin.TabularInline):
 
 @admin.register(Borrower)
 class BorrowerAdmin(admin.ModelAdmin):
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields["portfolio"].required = True
+        return form
+
     list_display = (
         "borrower_id",
+        "portfolio",
         "full_name",
         "phone",
         "email",
@@ -68,6 +110,8 @@ class BorrowerAdmin(admin.ModelAdmin):
         "group_name",
     )
     readonly_fields = (
+        "borrower_id",
+        "legacy_borrower_id",
         "status",
         "created_at",
         "borrower_summary",
@@ -76,6 +120,8 @@ class BorrowerAdmin(admin.ModelAdmin):
         ("Borrower Information", {
             "fields": (
                 "borrower_id",
+                "legacy_borrower_id",
+                "portfolio",
                 "full_name",
                 "national_id",
                 "gender",
@@ -210,12 +256,14 @@ class LoanAdmin(admin.ModelAdmin):
         "id",
         "borrower__full_name",
         "borrower__borrower_id",
+        "borrower__legacy_borrower_id",
         "borrower__national_id",
         "borrower__phone",
         "agent_name__name",
     )
     readonly_fields = (
         "loan_category",
+        "portfolio",
         "status",
         "created_at",
         "loan_metrics",
@@ -224,6 +272,7 @@ class LoanAdmin(admin.ModelAdmin):
         ("Loan Information", {
             "fields": (
                 "borrower",
+                "portfolio",
                 "amount",
                 "loan_category",
                 "loan_acquisition_date",

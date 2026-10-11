@@ -32,6 +32,8 @@ from .forms import (
 from apps.core.approvals import create_approval_request
 from apps.core.audit import log_activity
 from apps.core.pagination import paginate_items
+from apps.loans.portfolios import agent_portfolio_ids
+from apps.loans.portfolio_analytics import dashboard_portfolios
 from apps.core.roles import admin_required, agent_or_admin_required, get_user_role, get_agent_for_user
 from apps.company.models import CompanyProfile
 from apps.company.statutory import calculate_progressive_tax
@@ -113,7 +115,8 @@ def _employee_period_metrics(employee, period_start, period_end):
     )
     payments = Payment.objects.filter(
         is_void=False,
-        loan__agent_name=employee,
+        collected_by=employee,
+        is_pending=False,
         payment_date__gte=period_start,
         payment_date__lte=period_end,
     )
@@ -122,7 +125,7 @@ def _employee_period_metrics(employee, period_start, period_end):
         "disbursements": _money(loans.aggregate(total=Sum("amount"))["total"]),
         "payments_count": payments.count(),
         "loans_count": loans.count(),
-        "active_loans": Loan.objects.filter(agent_name=employee, status="ACTIVE").count(),
+        "active_loans": Loan.objects.filter(portfolio_id__in=agent_portfolio_ids(employee), status="ACTIVE").count(),
     }
 
 
@@ -236,7 +239,7 @@ def _calculate_payroll_snapshot(
 
 
 def _build_workforce_row(employee):
-    loans = list(employee.loans.all()) if hasattr(employee, "loans") else []
+    loans = list(Loan.objects.filter(portfolio_id__in=agent_portfolio_ids(employee)).prefetch_related("payments"))
     total_loans = len(loans)
     active_loans = sum(1 for loan in loans if loan.status == "ACTIVE")
     default_loans = sum(1 for loan in loans if loan.status == "DEFAULT")
@@ -452,7 +455,7 @@ def agent_list(request):
     agents_with_default_loans = 0
 
     for agent in agents:
-        loans = list(agent.loans.all())
+        loans = list(Loan.objects.filter(portfolio_id__in=agent_portfolio_ids(agent)).prefetch_related("payments"))
         total_loans = len(loans)
         active_loans = sum(1 for l in loans if l.status == "ACTIVE")
         default_loans = sum(1 for l in loans if l.status == "DEFAULT")
@@ -642,7 +645,7 @@ def agents_analytics(request):
     status_map = {"No Loan": 0, "Active": 0, "Closed": 0, "Default": 0}
 
     for agent in agents:
-        loans = list(agent.loans.all())
+        loans = list(Loan.objects.filter(portfolio_id__in=agent_portfolio_ids(agent)).prefetch_related("payments"))
 
         total_loans_a = len(loans)
         active_loans = sum(1 for l in loans if l.status == "ACTIVE")
@@ -1025,7 +1028,7 @@ def agents_monthly_range_analysis(request):
 
     for agent in agents:
         range_loans = [
-            loan for loan in agent.loans.all()
+            loan for loan in Loan.objects.filter(portfolio_id__in=agent_portfolio_ids(agent)).prefetch_related("payments")
             if start_date <= loan.created_at.date() <= end_date
         ]
 
@@ -1214,7 +1217,7 @@ def agent_detail(request, pk):
 
     loans_qs = (
         Loan.objects
-        .filter(agent_name=agent)
+        .filter(portfolio_id__in=agent_portfolio_ids(agent))
         .select_related("borrower", "agent_name")
         .prefetch_related("payments")
         .order_by("-created_at")
@@ -1385,6 +1388,8 @@ def agent_detail(request, pk):
 
         "title": f"{title_prefix}: {agent.name}",
     }
+    context["portfolio_dashboard"] = dashboard_portfolios(agent=agent)
+
     return render(request, "agents/agent_detail.html", context)
 
 @admin_required
@@ -1477,7 +1482,7 @@ def agent_comprehensive_analysis(request, pk):
 
     loans_qs = (
         Loan.objects
-        .filter(agent_name=agent)
+        .filter(portfolio_id__in=agent_portfolio_ids(agent))
         .select_related("borrower", "agent_name")
         .prefetch_related("payments")
         .order_by("-created_at")
@@ -1485,7 +1490,7 @@ def agent_comprehensive_analysis(request, pk):
 
     payments_qs = (
         Payment.objects
-        .filter(is_void=False, loan__agent_name=agent)
+        .filter(is_void=False, loan__portfolio_id__in=agent_portfolio_ids(agent))
         .select_related("loan", "loan__borrower")
         .order_by("-created_at")
     )
@@ -1641,7 +1646,7 @@ def agent_monthly_range_analysis(request, pk):
 
     loans_qs = (
         Loan.objects
-        .filter(agent_name=agent, created_at__date__gte=start_date, created_at__date__lte=end_date)
+        .filter(portfolio_id__in=agent_portfolio_ids(agent), created_at__date__gte=start_date, created_at__date__lte=end_date)
         .select_related("borrower", "agent_name")
         .prefetch_related("payments")
         .order_by("-created_at")
@@ -1651,7 +1656,7 @@ def agent_monthly_range_analysis(request, pk):
         Payment.objects
         .filter(
             is_void=False,
-            loan__agent_name=agent,
+            loan__portfolio_id__in=agent_portfolio_ids(agent),
             payment_date__gte=start_date,
             payment_date__lte=end_date,
         )

@@ -13,7 +13,8 @@ from openpyxl import Workbook, load_workbook
 
 from apps.core.limits import can_create_borrower
 
-from .models import Borrower
+from .models import Borrower, Portfolio
+from .portfolios import customer_lookup
 
 UserModel = get_user_model()
 
@@ -46,6 +47,7 @@ BORROWER_IMPORT_FORMATS = [
 
 BORROWER_SAMPLE_COLUMNS = [
     "borrower_id",
+    "portfolio_number",
     "full_name",
     "national_id",
     "phone",
@@ -71,7 +73,8 @@ def get_borrower_import_formats():
 
 def get_borrower_import_column_help():
     return [
-        {"name": "borrower_id", "required": True, "help": "Unique borrower code used in the platform."},
+        {"name": "borrower_id", "required": False, "help": "Permanent Customer ID or legacy reference for updates. Leave blank for automatic numbering; an already-issued SF ID can be imported for a new customer."},
+        {"name": "portfolio_number", "required": True, "help": "Current portfolio number, e.g. 01. Required for new customers."},
         {"name": "full_name", "required": True, "help": "Borrower full name as it should appear on records."},
         {"name": "national_id", "required": True, "help": "Unique national identity reference."},
         {"name": "phone", "required": True, "help": "Primary mobile or contact number."},
@@ -155,7 +158,8 @@ def import_borrower_rows(rows: list[dict], *, import_mode: str = "create_only") 
 def build_borrower_import_sample(file_type: str):
     sample_rows = [
         {
-            "borrower_id": "BRW-1001",
+            "borrower_id": "",
+            "portfolio_number": "01",
             "full_name": "Ama Mensah",
             "national_id": "GHA-AMA-1001",
             "phone": "0241000001",
@@ -166,7 +170,8 @@ def build_borrower_import_sample(file_type: str):
             "preferred_language": "Twi",
         },
         {
-            "borrower_id": "BRW-1002",
+            "borrower_id": "",
+            "portfolio_number": "02",
             "full_name": "Kojo Asare",
             "national_id": "GHA-KOJO-1002",
             "phone": "0241000002",
@@ -303,8 +308,6 @@ def _stringify(value) -> str:
 
 def _save_borrower_row(row: dict, *, import_mode: str, default_language: str, allowed_languages: list[str]):
     borrower_id = row.get("borrower_id", "")
-    if not borrower_id:
-        raise ValueError("Missing required field: borrower_id.")
 
     full_name = row.get("full_name", "")
     national_id = row.get("national_id", "")
@@ -325,7 +328,13 @@ def _save_borrower_row(row: dict, *, import_mode: str, default_language: str, al
         if not value:
             raise ValueError(f"Missing required field: {field_name}.")
 
-    existing = Borrower.objects.filter(borrower_id=borrower_id).first()
+    existing = None
+    if borrower_id:
+        try:
+            existing = customer_lookup(borrower_id)
+        except ValueError:
+            if Borrower.objects.filter(legacy_borrower_id=borrower_id).count() > 1:
+                raise ValueError("Legacy ID matches multiple customers; use the permanent Customer ID.")
     if existing is not None and import_mode == "create_only":
         raise ValueError(f"Borrower ID '{borrower_id}' already exists.")
     if existing is None:
@@ -346,7 +355,16 @@ def _save_borrower_row(row: dict, *, import_mode: str, default_language: str, al
 
     _assert_unique_borrower_fields(target, national_id=national_id, ghana_card_number=ghana_card_number)
 
-    target.borrower_id = borrower_id
+    if existing is None:
+        target.borrower_id = borrower_id
+    portfolio_number = row.get("portfolio_number", "").zfill(2)
+    if row.get("portfolio_number"):
+        try:
+            target.portfolio = Portfolio.objects.get(number=portfolio_number, is_active=True)
+        except Portfolio.DoesNotExist:
+            raise ValueError("portfolio_number must identify an active portfolio.")
+    elif existing is None:
+        raise ValueError("Missing required field: portfolio_number.")
     target.full_name = full_name
     target.national_id = national_id
     target.phone = phone

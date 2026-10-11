@@ -402,8 +402,8 @@
               </div>
 
               <div class="muted" style="margin-top:6px;">
-                Borrower ID: {{ l.borrower.borrower_id }}
-                · Agent: {{ l.agent_name.name }}
+                Customer ID: {{ l.borrower.borrower_id }} · Portfolio: {{ l.portfolio|default:"Needs assignment" }}
+                · Original officer: {{ l.agent_name.name }}
                 · Start: {{ l.start_date|date:"d/m/Y" }}
                 · Weekly: {{ l.weekly_payment|ghs }}
               </div>

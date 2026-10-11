@@ -205,7 +205,7 @@
   <div class="section">
     <h2 class="section-title">Loan Summary</h2>
     <table class="details">
-      <tr><td class="label">Borrower ID</td><td>{{ loan.borrower.borrower_id }}</td><td class="label">Start Date</td><td>{{ loan.start_date }}</td></tr>
+      <tr><td class="label">Customer ID</td><td>{{ loan.borrower.borrower_id }}<br>Portfolio: {{ loan.portfolio|default:"Needs assignment" }}</td><td class="label">Start Date</td><td>{{ loan.start_date }}</td></tr>
       <tr><td class="label">National ID</td><td>{{ loan.borrower.national_id }}</td><td class="label">Duration</td><td>{{ loan.duration_weeks }} weeks</td></tr>
       <tr><td class="label">Phone</td><td>{{ loan.borrower.phone }}</td><td class="label">Weekly Payment</td><td>{{ loan.weekly_payment|ghs }}</td></tr>
       <tr><td class="label">Location</td><td>{{ loan.borrower.location }}</td><td class="label">Expected Payments</td><td>{{ loan.expected_payments_count }}</td></tr>

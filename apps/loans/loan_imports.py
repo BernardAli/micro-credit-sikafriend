@@ -301,9 +301,8 @@ def _save_loan_row(row: dict, *, import_mode: str):
     if not agent_code:
         raise ValueError("Missing required field: agent_id.")
 
-    borrower = Borrower.objects.filter(borrower_id=borrower_code).first()
-    if borrower is None:
-        raise ValueError(f"Borrower ID '{borrower_code}' does not exist.")
+    from .portfolios import customer_lookup, agent_can_access
+    borrower = customer_lookup(borrower_code)
 
     agent = Agent.objects.filter(agent_id=agent_code).first()
     if agent is None:
@@ -321,8 +320,13 @@ def _save_loan_row(row: dict, *, import_mode: str):
             raise ValueError("loan_id should be left blank when creating new loans.")
 
     previous_borrower = existing.borrower if existing is not None else None
+    if existing is None and not agent_can_access(agent, borrower):
+        raise ValueError("Assign the customer and officer to the same portfolio before importing a new loan.")
+    if existing is not None and existing.agent_name_id != agent.pk:
+        raise ValueError("The original loan officer is historical. Change current officers through portfolio assignments.")
     target = existing or Loan()
     target.borrower = borrower
+    target.portfolio_id = borrower.portfolio_id
     target.agent_name = agent
     target.amount = amount
     target.duration_weeks = duration_weeks

@@ -3,7 +3,7 @@ apps/core/roles.py
 ──────────────────
 Role helpers for the three user types:
   - Admin   : Django staff/superuser — full access to everything
-  - Agent   : has agent_profile — sees only their own portfolio + borrowers
+  - Agent   : has agent_profile — sees portfolios currently assigned to them and their customers
   - Borrower: has borrower_profile — sees only their own loan records
 
 Single login URL for all user types; role_redirect_view routes them after login.
@@ -124,7 +124,7 @@ def admin_required(view_func):
 
 
 def agent_or_admin_required(view_func):
-    """Allow agents (own portfolio only) and admins (all)."""
+    """Allow agents (assigned portfolios only) and admins (all)."""
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
