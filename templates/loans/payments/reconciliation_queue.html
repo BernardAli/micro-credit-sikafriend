@@ -43,13 +43,13 @@
     border:1px solid var(--border); background:var(--panel); font-size:12px; font-weight:800; color:var(--text-2);
   }
   .rq-chip.pending, .rq-chip.processing, .rq-chip.succeeded {
-    background:rgba(245,158,11,.10); color:#b45309; border-color:rgba(245,158,11,.18);
+    background:rgba(245,158,11,.10); color:var(--warning); border-color:rgba(245,158,11,.18);
   }
   .rq-chip.failed, .rq-chip.manual_review {
-    background:rgba(220,38,38,.10); color:#b91c1c; border-color:rgba(220,38,38,.18);
+    background:rgba(220,38,38,.10); color:var(--danger); border-color:rgba(220,38,38,.18);
   }
   .rq-chip.reconciled {
-    background:rgba(22,163,74,.10); color:#15803d; border-color:rgba(22,163,74,.18);
+    background:rgba(22,163,74,.10); color:var(--success); border-color:rgba(22,163,74,.18);
   }
   .rq-amount {
     font-size:20px; font-weight:900; color:var(--text);
@@ -64,7 +64,7 @@
   }
   .rq-action--success { background:var(--primary); color:#fff; }
   .rq-action--ghost { background:var(--panel); color:var(--text); border:1px solid var(--border); }
-  .rq-action--danger { background:rgba(220,38,38,.10); color:#b91c1c; border:1px solid rgba(220,38,38,.18); }
+  .rq-action--danger { background:rgba(220,38,38,.10); color:var(--danger); border:1px solid rgba(220,38,38,.18); }
   .rq-empty { padding:36px 12px; text-align:center; color:var(--muted); }
   @media(max-width:900px){ .rq-metrics { grid-template-columns:1fr; } }
 </style>

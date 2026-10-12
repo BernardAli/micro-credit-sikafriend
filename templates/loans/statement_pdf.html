@@ -194,6 +194,7 @@
       <td class="metric">
         <div class="metric-label">Total Paid</div>
         <div class="metric-value">{{ loan.total_paid_amount|ghs }}</div>
+        {% if loan.total_customer_credit %}<div>Customer credit held: {{ loan.total_customer_credit|ghs }}</div>{% endif %}
       </td>
       <td class="metric">
         <div class="metric-label">Balance</div>
@@ -224,6 +225,7 @@
           <th class="right">Amount</th>
           <th class="right">Principal</th>
           <th class="right">ROIC</th>
+          <th class="right">Credit Held</th>
           <th>Method</th>
           <th>Reference</th>
         </tr>
@@ -236,12 +238,13 @@
             <td class="right">{{ payment.amount|ghs }}</td>
             <td class="right">{{ payment.principal_paid|ghs }}</td>
             <td class="right">{{ payment.roic_paid|ghs }}</td>
+            <td class="right">{{ payment.customer_credit|ghs }}</td>
             <td>{{ payment.get_payment_method_display }}</td>
             <td>{{ payment.reference|default:"-" }}</td>
           </tr>
         {% empty %}
           <tr>
-            <td colspan="7">No payments recorded yet.</td>
+            <td colspan="8">No payments recorded yet.</td>
           </tr>
         {% endfor %}
       </tbody>

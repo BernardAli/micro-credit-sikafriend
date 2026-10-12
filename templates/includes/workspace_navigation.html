@@ -1,0 +1,161 @@
+
+          {% if user_role == "admin" %}
+            {# ── ADMIN: full platform access ── #}
+            <div class="nav-section-label">Overview</div>
+            <a href="/dashboard/" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">📊</span><span>Dashboard</span></span>
+              <span class="badge">01</span>
+            </a>
+
+            <div class="nav-section-label">Loan Operations</div>
+            <a href="{% url 'loans:portfolio_list' %}" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">📁</span><span>Loan Portfolios</span></span></a>
+            <a href="/loans/list/" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">📋</span><span>All Loans</span></span>
+              <span class="badge">02</span>
+            </a>
+            <a href="{% url 'loans:pending_payments' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">⏳</span><span>Pending Payments</span></span>
+            </a>
+            <a href="/loans/new/" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">➕</span><span>New Loan</span></span>
+              <span class="badge">+</span>
+            </a>
+            <a href="/borrowers/" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">👥</span><span>Borrowers</span></span>
+              <span class="badge">03</span>
+            </a>
+            <a href="{% url 'core:loan_requests' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">LR</span><span>Loan Requests</span></span>
+            </a>
+            <a href="/agents/" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">🤝</span><span>Workforce</span></span>
+              <span class="badge">04</span>
+            </a>
+            <a href="{% url 'payroll_hub' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">💵</span><span>Payroll</span></span>
+              <span class="badge">04A</span>
+            </a>
+            <a href="{% url 'accounting:hub' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">📚</span><span>Accounting</span></span>
+              <span class="badge">04B</span>
+            </a>
+            <a href="{% url 'assets:hub' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">🧰</span><span>Assets</span></span>
+              <span class="badge">04C</span>
+            </a>
+
+            <div class="nav-section-label">Insights</div>
+            <a href="{% url 'loans:reports_center' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">📑</span><span>Reports Center</span></span>
+              <span class="badge">R</span>
+            </a>
+            <a href="/loans/analytics/" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">📈</span><span>Loan Analytics</span></span>
+              <span class="badge">05</span>
+            </a>
+            <a href="/borrowers/analytics/" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">🔍</span><span>Borrower Analytics</span></span>
+              <span class="badge">06</span>
+            </a>
+
+            <div class="nav-section-label">Communications</div>
+            <a href="{% url 'communications:marketing_hub' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">📣</span><span>Marketing</span></span>
+              <span class="badge">07</span>
+            </a>
+            <a href="{% url 'communications:management_message_center' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">💬</span><span>Messages</span></span>
+              <span class="badge">08</span>
+            </a>
+            <a href="/notifications/inbox/" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">🔔</span><span>Notifications</span></span>
+              <span class="badge">09</span>
+            </a>
+
+            <div class="nav-section-label">System</div>
+            <a href="{% url 'core:reversals' %}" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">↩</span><span>Transaction Reversals</span></span></a>
+            <a href="{% url 'core:approvals' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">OK</span><span>Approvals</span></span>
+            </a>
+            <a href="{% url 'core:audit_trail' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">AT</span><span>Audit Trail</span></span>
+            </a>
+            <a href="{% url 'company:edit' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">🏢</span><span>Company Settings</span></span>
+            </a>
+            <a href="{% url 'company:edit' %}#ws-impact" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">🌍</span><span>Our Impact</span></span>
+            </a>
+            <a href="{% url 'company:backup' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">🗄️</span><span>Database Backup</span></span>
+            </a>
+            <a href="/admin/" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">⚙️</span><span>Admin Panel</span></span>
+            </a>
+
+          {% elif user_role == "agent" and agent_profile %}
+            {# ── AGENT: own portfolio only ── #}
+            <div class="nav-section-label">My Portfolio</div>
+            <a href="{% url 'core:reversals' %}" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">↩</span><span>Reversal Requests</span></span></a>
+            <a href="{% url 'agent_detail' agent_profile.pk %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">📊</span><span>My Dashboard</span></span>
+            </a>
+            <a href="{% url 'loans:portfolio_list' %}" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">📁</span><span>Loan Portfolios</span></span></a>
+            <a href="{% url 'agent_comprehensive_analysis' agent_profile.pk %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">📈</span><span>Analysis</span></span>
+            </a>
+            <a href="{% url 'agent_monthly_range_analysis' agent_profile.pk %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">📅</span><span>Monthly Range</span></span>
+            </a>
+
+            <div class="nav-section-label">My Borrowers</div>
+            <a href="/borrowers/?agent={{ agent_profile.pk }}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">👥</span><span>My Borrowers</span></span>
+            </a>
+            <a href="/borrowers/new/" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">➕</span><span>Add Borrower</span></span>
+            </a>
+            <a href="/loans/active/?agent={{ agent_profile.pk }}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">📋</span><span>Active Loans</span></span>
+            </a>
+            <a href="/loans/new/" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">💳</span><span>New Loan</span></span>
+            </a>
+            <a href="{% url 'loans:pending_payments' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">⏳</span><span>Pending Payments</span></span>
+            </a>
+
+            <div class="nav-section-label">Communications</div>
+            <a href="/notifications/inbox/" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">🔔</span><span>Notifications</span></span>
+            </a>
+
+          {% elif user_role == "borrower" and borrower_profile %}
+            {# ── BORROWER: own records only ── #}
+            <div class="nav-section-label">My Account</div>
+            <a href="{% url 'borrower:portal' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">🏠</span><span>My Overview</span></span>
+            </a>
+            <a href="{% url 'borrower:change_password' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">🔑</span><span>Change Password</span></span>
+            </a>
+
+            <div class="nav-section-label">My Loans</div>
+            {% for loan in borrower_profile.loans.all %}
+              <a href="{% url 'borrower:loan_detail' loan.pk %}" class="nav-link" data-nav>
+                <span class="nav-link-inner">
+                  <span class="nav-link-icon">📄</span>
+                  <span>Loan #{{ loan.id }}</span>
+                </span>
+                <span class="badge {% if loan.status == 'ACTIVE' %}chip-gold{% elif loan.status == 'DEFAULT' %}chip-red{% else %}chip-green{% endif %}" style="border:none;">
+                  {{ loan.status }}
+                </span>
+              </a>
+              {% if loan.status == "ACTIVE" or loan.status == "DEFAULT" %}
+              <a href="{% url 'borrower:make_payment' loan.pk %}" class="nav-link" data-nav style="padding-left:28px;">
+                <span class="nav-link-inner"><span class="nav-link-icon">💳</span><span>Pay Loan #{{ loan.id }}</span></span>
+              </a>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+

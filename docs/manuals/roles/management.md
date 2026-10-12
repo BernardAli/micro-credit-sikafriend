@@ -18,6 +18,8 @@ Management users may approve or reject requests they submitted themselves. This 
 
 Self-review is an exception, not the preferred routine. When another qualified manager is available, use independent review.
 
+Transaction reversals always require a different active administrator, including for management and superuser requests. Approval and rejection require a review note of at least ten characters. See chapter 14 of the [complete handbook](../SikaFriend_Complete_Project_Manual.pdf).
+
 ## Loan review standard
 
 Before approving a loan request:

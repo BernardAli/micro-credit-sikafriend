@@ -2,6 +2,8 @@
 
 This manual describes the current standalone codebase.
 
+For the current comprehensive instructions, printable statements, customer-credit treatment and independent administrator-approved reversals, use the [complete PDF handbook](docs/manuals/SikaFriend_Complete_Project_Manual.pdf).
+
 ## 1. Purpose
 
 Micro Credit ERP is a single-company Django application for managing micro-credit operations. It combines:
@@ -112,7 +114,7 @@ Owns borrower self-service:
 - loan detail
 - password change
 - repayment initiation
-- local collection simulation helper
+- payment requests awaiting independent verification; no payment-success simulation or live charging adapter
 
 ### `apps.core`
 

@@ -225,24 +225,26 @@ def _loan_expected_due_count(loan, as_of):
 
 def _loan_snapshot(loan, period_end):
     payments = [payment for payment in loan.payments.all() if _valid_payment(payment) and payment.payment_date <= period_end]
-    paid = _money(sum((payment.amount for payment in payments), Decimal("0.00")))
+    paid = _money(sum((payment.loan_applied_amount for payment in payments), Decimal("0.00")))
     principal_paid = _money(sum((payment.principal_paid for payment in payments), Decimal("0.00")))
     roic_paid = _money(sum((payment.roic_paid for payment in payments), Decimal("0.00")))
     expected_total = _money(loan.total_expected_amount)
     principal = _money(loan.principal_amount)
     roic = _money(loan.roic_amount)
-    balance = max(expected_total - paid, Decimal("0.00")).quantize(QUANT)
-    principal_outstanding = max(principal - principal_paid, Decimal("0.00")).quantize(QUANT)
+    balance = max(expected_total - paid - loan.security_deposit_applied_amount, Decimal("0.00")).quantize(QUANT)
+    principal_outstanding = max(principal - principal_paid - loan.security_deposit_applied_amount, Decimal("0.00")).quantize(QUANT)
     roic_outstanding = max(roic - roic_paid, Decimal("0.00")).quantize(QUANT)
     expected_due = _loan_expected_due_count(loan, period_end)
     actual_count = len(payments)
-    overdue_units = max(0, expected_due - actual_count)
+    covered = int((paid + loan.security_deposit_applied_amount) // loan.weekly_payment) if loan.weekly_payment > 0 else 0
+    overdue_units = max(0, expected_due - covered) if loan.is_ready_for_disbursement else 0
     return {
         "loan": loan,
         "expected_total": expected_total,
         "principal": principal,
         "roic": roic,
         "paid": paid,
+        "customer_credit": _money(sum((p.customer_credit for p in payments), Decimal("0.00"))),
         "principal_paid": principal_paid,
         "roic_paid": roic_paid,
         "balance": balance,
@@ -290,7 +292,7 @@ def _snapshot_totals(data):
     active_snapshots = data["active_snapshots"]
     payments = data["payments"]
     total_disbursed = _money(sum((item["principal"] for item in period_snapshots), Decimal("0.00")))
-    total_collected = _money(sum((payment.amount for payment in payments), Decimal("0.00")))
+    total_collected = _money(sum((payment.loan_applied_amount for payment in payments), Decimal("0.00")))
     principal_collected = _money(sum((payment.principal_paid for payment in payments), Decimal("0.00")))
     roic_collected = _money(sum((payment.roic_paid for payment in payments), Decimal("0.00")))
     gross_portfolio = _money(sum((item["principal_outstanding"] for item in active_snapshots), Decimal("0.00")))
@@ -587,14 +589,15 @@ def _collections(key, period, data):
             payment.amount,
             payment.principal_paid,
             payment.roic_paid,
+            payment.customer_credit,
         ])
     total = _money(sum((payment.amount for payment in payments), Decimal("0.00")))
     sections = [
         _section("Collections by Method", ["Method", "Payments", "Amount", "Principal", "ROIC"], [[name, row["count"], _money(row["amount"]), _money(row["principal"]), _money(row["roic"])] for name, row in sorted(by_method.items())]),
         _section("Collections by Agent", ["Agent", "Payments", "Amount"], [[name, row["count"], _money(row["amount"])] for name, row in sorted(by_agent.items())]),
-        _section("Collection Register", ["Date", "Payment", "Loan", "Borrower", "Agent", "Method", "Reference", "Amount", "Principal", "ROIC"], rows[:1000]) if rows else _empty_section("Collection Register"),
+        _section("Collection Register", ["Date", "Payment", "Loan", "Borrower", "Agent", "Method", "Reference", "Cash Received", "Principal", "ROIC", "Customer Credit Held"], rows[:1000]) if rows else _empty_section("Collection Register"),
     ]
-    return _report_shell(key, period, [_metric("Payments", len(payments)), _metric("Collections", total)], sections)
+    return _report_shell(key, period, [_metric("Payments", len(payments)), _metric("Cash received", total), _metric("Customer credit held", _money(sum((p.customer_credit for p in payments), Decimal("0.00"))))], sections)
 
 
 def _collection_officer(payment):
@@ -612,7 +615,7 @@ def _portfolio_ownership(key, period, data):
         register.append([loan.borrower.borrower_id, loan.borrower.legacy_borrower_id, f"{loan.borrower.full_name} ({loan.borrower.borrower_id})",
                          str(loan.portfolio or "Needs assignment"), loan.pk, snapshot["balance"]])
     for payment in data["payments"]:
-        totals[payment.loan.portfolio_id]["collections"] += payment.amount
+        totals[payment.loan.portfolio_id]["collections"] += payment.loan_applied_amount
     summary = []
     for portfolio in Portfolio.objects.prefetch_related("assignments__agent"):
         row = totals[portfolio.pk]
@@ -668,7 +671,7 @@ def _agent_performance(key, period, data):
         row["period_disbursed"] += _money(loan.amount)
         row["borrowers"].add(loan.borrower_id)
     for payment in data["payments"]:
-        agent_rows[_collection_officer(payment)]["collections"] += _money(payment.amount)
+        agent_rows[_collection_officer(payment)]["collections"] += _money(payment.loan_applied_amount)
     for item in data["active_snapshots"]:
         row = agent_rows[_agent_label(item["loan"])]
         row["borrowers"].add(item["loan"].borrower_id)
@@ -841,7 +844,7 @@ def _mcag_regional(key, period, data):
         row["loans"] += 1
         row["disbursed"] += _money(loan.amount)
     for payment in data["payments"]:
-        regional[_location_label(payment.loan)]["collections"] += _money(payment.amount)
+        regional[_location_label(payment.loan)]["collections"] += _money(payment.loan_applied_amount)
     for item in data["active_snapshots"]:
         row = regional[_location_label(item["loan"])]
         row["outstanding"] += item["balance"]

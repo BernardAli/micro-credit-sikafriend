@@ -6,69 +6,9 @@
 
 <style>
   .analytics-shell{display:grid;gap:16px}
-
-  .hero-card{
-    position:relative;
-    overflow:hidden;
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:30px;
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
-      var(--primary-2) 36%,
-      var(--primary) 72%,
-      var(--gold-2) 100%
-    );
-    color:#fff;
-    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
-  }
-
-  [data-theme="dark"] .hero-card{
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
-      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
-      color-mix(in srgb,var(--primary) 60%,#000) 72%,
-      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
-    );
-    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
-  }
-
-  .hero-card::before{
-    content:"";
-    position:absolute;
-    top:-70px;
-    right:-60px;
-    width:300px;
-    height:300px;
-    border-radius:50%;
-    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
-    pointer-events:none;
-  }
-
-  .hero-card::after{
-    content:"";
-    position:absolute;
-    left:28%;
-    bottom:-60px;
-    width:380px;
-    height:220px;
-    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
-    pointer-events:none;
-  }
-
-  .hero-inner{position:relative;z-index:1;padding:28px}
   .hero-wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
-  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
   .hero-sub{opacity:.88;max-width:920px;line-height:1.65}
-
-  .btn-soft{
-    display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;
-    font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text);
-    transition:all .16s ease
-  }
   .btn-soft:hover{transform:translateY(-1px);color:var(--text)}
-  .btn-soft-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
-  .btn-soft-primary:hover{color:#fff}
 
   .metrics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
   .metrics-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
@@ -81,10 +21,9 @@
     box-shadow:0 20px 50px rgba(26,31,20,.05)
   }
 
-  .section-card{border-radius:24px;overflow:hidden}
+  .section-card{overflow:hidden}
   .stat-card{
-    border-radius:22px;
-    padding:18px;
+
     transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
   }
   .category-card{
@@ -102,7 +41,7 @@
 
   .section-head{padding:18px 20px 0}
   .section-body{padding:18px 20px 20px}
-  .section-title{margin:0;font-size:18px;font-weight:900;color:var(--text)}
+  .section-title{margin:0;}
   .section-sub,.stat-sub,.muted{color:var(--muted)}
   .stat-label{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
   .stat-value{font-size:24px;font-weight:900;margin-top:8px;color:var(--text)}
@@ -124,14 +63,13 @@
   }
 
   .chip{
-    display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);
-    background:var(--panel-strong);font-size:12px;font-weight:800;color:var(--text-2)
-  }
+    display:inline-flex;align-items:center;gap:6px;
+    }
   .chip-green{background:rgba(22,163,74,.08);color:var(--success);border-color:rgba(22,163,74,.14)}
   .chip-amber{background:rgba(245,158,11,.10);color:var(--warning);border-color:rgba(245,158,11,.16)}
   .chip-red{background:rgba(220,38,38,.08);color:var(--danger);border-color:rgba(220,38,38,.14)}
   .chip-blue{ background:rgba(46,92,138,.08); color:var(--info); border-color:rgba(46,92,138,.18); }
-  .chip-violet{background:rgba(124,58,237,.08);color:#8b5cf6;border-color:rgba(124,58,237,.14)}
+  .chip-violet{background:rgba(124,58,237,.08);color:var(--violet);border-color:rgba(124,58,237,.14)}
 
   .category-head{
     display:flex;
@@ -202,7 +140,6 @@
   @media (max-width:640px){
     .metrics-grid,
     .metrics-grid-6{grid-template-columns:1fr}
-    .hero-title{font-size:24px}
   }
 </style>
 
@@ -447,7 +384,7 @@
     if (valueEl) valueEl.textContent = "GHS " + Number(categoryValues[index] ?? 0).toFixed(2);
   });
 
-  const dailyTrendChart = echarts.init(document.getElementById('dailyTrendChart'));
+  const dailyTrendChart = SikaCharts.init(document.getElementById('dailyTrendChart'));
   dailyTrendChart.setOption({
     tooltip:{trigger:'axis'},
     legend:{bottom:0},
@@ -459,7 +396,7 @@
     ]
   });
 
-  const statusChart = echarts.init(document.getElementById('statusChart'));
+  const statusChart = SikaCharts.init(document.getElementById('statusChart'));
   statusChart.setOption({
     tooltip:{trigger:'item'},
     legend:{bottom:0},
@@ -470,7 +407,7 @@
     }]
   });
 
-  const agentChart = echarts.init(document.getElementById('agentChart'));
+  const agentChart = SikaCharts.init(document.getElementById('agentChart'));
   agentChart.setOption({
     tooltip:{trigger:'axis'},
     xAxis:{type:'category',data: agentLabels,axisLabel:{rotate:25}},
@@ -478,7 +415,7 @@
     series:[{type:'bar',data: agentValues}]
   });
 
-  const categoryChart = echarts.init(document.getElementById('categoryChart'));
+  const categoryChart = SikaCharts.init(document.getElementById('categoryChart'));
   categoryChart.setOption({
     tooltip:{trigger:'axis'},
     xAxis:{type:'category',data: categoryLabels,axisLabel:{rotate:20}},

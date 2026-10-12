@@ -1,0 +1,7 @@
+<section class="section"><div class="section-title"><span class="section-number">01</span><h2>Customer account details</h2></div><table class="details">
+<tr><td class="label">Customer ID</td><td class="value">{{ borrower.borrower_id }}</td><td class="label">Portfolio</td><td class="value">{{ borrower.portfolio|default:'Awaiting assignment' }}</td></tr>
+<tr><td class="label">Telephone</td><td class="value">{{ borrower.phone|default:'—' }}</td><td class="label">Email</td><td class="value">{{ borrower.email|default:'—' }}</td></tr>
+<tr><td class="label">Location / address</td><td class="value">{{ borrower.location }}{% if borrower.digital_address %} · {{ borrower.digital_address }}{% endif %}</td><td class="label">Group / language</td><td class="value">{{ borrower.group_name }} · {{ borrower.preferred_language }}</td></tr>
+<tr><td class="label">National ID</td><td class="value">{{ borrower.national_id|default:'—' }}</td><td class="label">Ghana Card</td><td class="value">{{ borrower.ghana_card_number|default:'—' }}</td></tr>
+<tr><td class="label">Registered</td><td class="value">{{ borrower.created_at|date:'d M Y' }}</td><td class="label">Recorded status</td><td class="value">{{ borrower.get_status_display }}</td></tr>
+{% if borrower.legacy_borrower_id %}<tr><td class="label">Legacy reference</td><td colspan="3" class="value">{{ borrower.legacy_borrower_id }}</td></tr>{% endif %}</table></section>

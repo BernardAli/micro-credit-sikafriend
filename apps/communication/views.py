@@ -229,7 +229,7 @@ def _check_balance_message(borrower: Borrower | None) -> str:
     return _ussd_end(
         f"Hello {borrower.full_name}. "
         f"Balance: {_format_money(loan.balance_amount)}. "
-        f"Paid: {loan.actual_payments_count}/{loan.expected_payments_count} installments. "
+        f"Paid: {loan.paid_installments_count}/{loan.expected_payments_count} installments. "
         f"Remaining: {loan.outstanding_payments_count}. "
         f"Status: {loan.status}."
     )

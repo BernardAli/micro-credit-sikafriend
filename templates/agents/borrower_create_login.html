@@ -16,8 +16,8 @@
   }
   .bw-avatar img { width:100%; height:100%; object-fit:cover; }
   .form-card {
-    border:1px solid var(--border); border-radius:20px;
-    background:var(--panel); box-shadow:var(--shadow-sm); overflow:hidden;
+
+      overflow:hidden;
   }
   .form-head {
     padding:18px 20px 14px; border-bottom:1px solid var(--border-soft); position:relative;
@@ -26,11 +26,10 @@
     content:""; position:absolute; bottom:0; left:0; right:0; height:1.5px;
     background:linear-gradient(90deg,var(--gold),var(--primary),transparent 60%);
   }
-  .form-title { font-family:var(--font-serif);font-size:18px;font-weight:400;color:var(--text);margin:0; }
+  .form-title { margin:0; }
   .form-sub   { font-size:12.5px;color:var(--muted);margin-top:3px; }
   .form-body  { padding:20px; display:grid; gap:14px; }
   .field { display:grid; gap:5px; }
-  .field label { font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em; }
   .field .help { font-size:11.5px;color:var(--muted-2);margin-top:3px; }
   .field .err  { font-size:11.5px;color:var(--danger);margin-top:3px;font-weight:600; }
   .action-bar {

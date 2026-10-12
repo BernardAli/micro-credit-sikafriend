@@ -7,4 +7,5 @@ MIDDLEWARE = [middleware for middleware in MIDDLEWARE if "debug_toolbar" not in 
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    "private": {"BACKEND": "django.core.files.storage.InMemoryStorage", "OPTIONS": {"base_url": "/private-media/"}},
 }

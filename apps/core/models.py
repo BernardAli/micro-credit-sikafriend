@@ -17,6 +17,7 @@ APPROVAL_WORKFLOW_CHOICES = [
     ("ACCOUNTING_JOURNAL", "Accounting Journal"),
     ("ASSET_DISPOSAL", "Asset Disposal"),
     ("SECURITY_DEPOSIT", "Security Deposit Control"),
+    ("TRANSACTION_REVERSAL", "Transaction Reversal"),
 ]
 
 AUDIT_CATEGORY_CHOICES = [
@@ -28,6 +29,7 @@ AUDIT_CATEGORY_CHOICES = [
     ("SECURITY_DEPOSIT", "Security Deposit"),
     ("IMPORT", "Import"),
     ("SYSTEM", "System"),
+    ("REVERSAL", "Transaction Reversal"),
 ]
 
 
@@ -91,3 +93,73 @@ class ActivityLog(models.Model):
 
     def __str__(self):
         return f"{self.category} - {self.action} - {self.object_label or self.object_type}"
+
+
+REVERSAL_SOURCE_CHOICES = [
+    ("PAYMENT", "Loan repayment"),
+    ("DEPOSIT", "Security deposit transaction"),
+    ("TRANSFER", "Deposit carry-forward"),
+    ("BANK", "Cashbook / bank transaction"),
+    ("INVOICE", "Unsettled sales invoice"),
+    ("BILL", "Unsettled supplier bill"),
+    ("PAYROLL", "Paid payroll run"),
+    ("JOURNAL", "Manual journal"),
+    ("DEPRECIATION", "Asset depreciation run"),
+]
+
+
+class TransactionReversal(models.Model):
+    """Permanent evidence of a completed, approved correction; never a cash refund."""
+    approval = models.OneToOneField(ApprovalRequest, on_delete=models.PROTECT, related_name="reversal")
+    source_kind = models.CharField(max_length=20, choices=REVERSAL_SOURCE_CHOICES)
+    source_id = models.PositiveBigIntegerField()
+    source_label = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=20, decimal_places=2)
+    reason = models.TextField()
+    evidence_reference = models.CharField(max_length=180, blank=True)
+    original_snapshot = models.JSONField()
+    effective_date = models.DateField()
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="transaction_reversals_approved")
+    journal_entries = models.ManyToManyField("accounting.JournalEntry", related_name="approved_reversals", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        constraints = [models.UniqueConstraint(fields=["source_kind", "source_id"], name="unique_completed_transaction_reversal")]
+
+    @property
+    def reference(self):
+        return f"REV-{self.pk:06d}"
+
+    def __str__(self):
+        return f"{self.reference} · {self.source_label}"
+
+    def save(self, *args, **kwargs):
+        if self.pk and type(self).objects.filter(pk=self.pk).exists():
+            from django.core.exceptions import ValidationError
+            raise ValidationError("Completed reversal evidence cannot be changed.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        from django.core.exceptions import ValidationError
+        raise ValidationError("Completed reversal evidence cannot be deleted.")
+
+
+class ReversibleTransaction(models.Model):
+    reversal = models.OneToOneField(TransactionReversal, null=True, blank=True, editable=False,
+        on_delete=models.PROTECT, related_name="%(app_label)s_%(class)s")
+
+    class Meta:
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        if self.pk and type(self).objects.filter(pk=self.pk, reversal__isnull=False).exists():
+            from django.core.exceptions import ValidationError
+            raise ValidationError("Reversed transaction evidence is read-only. Record a new transaction for any correction.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.reversal_id or getattr(self, "posted_entry_id", None) or getattr(self, "accounting_entry_id", None):
+            from django.core.exceptions import ValidationError
+            raise ValidationError("Financial evidence cannot be deleted. Request an approved transaction reversal.")
+        return super().delete(*args, **kwargs)

@@ -1,29 +1,29 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card p-4 mb-3">
-  <h2>Customer Portfolio Assignment</h2>
-  <p>Confirm each customer's portfolio before issuing a permanent Customer ID. Loan history is shown to help review; it does not assign customers automatically. Transferring a customer moves their loans and keeps their existing Customer ID.</p>
-  <form method="get" class="d-flex gap-2 flex-wrap">
-    <input name="q" value="{{ q }}" class="form-control" placeholder="Name, Customer ID, or legacy ID" style="max-width:320px">
-    <select name="show" class="form-select" style="max-width:220px"><option value="pending">Unassigned customers</option><option value="all" {% if show == 'all' %}selected{% endif %}>All customers / transfers</option></select>
+<section class="card">
+  <h2 class="section-title">Customer Portfolio Assignment</h2>
+  <p class="section-sub">Confirm each customer's portfolio before issuing a permanent Customer ID. Loan history is shown to help review; it does not assign customers automatically. Transferring a customer moves their loans and keeps their existing Customer ID.</p>
+  <form method="get" class="workspace-filter">
+    <input name="q" value="{{ q }}" aria-label="Search customers" placeholder="Name, Customer ID, or legacy ID">
+    <select name="show" aria-label="Customer assignment view"><option value="pending">Unassigned customers</option><option value="all" {% if show == 'all' %}selected{% endif %}>All customers / transfers</option></select>
     <button class="btn btn-outline-primary">Search</button>
     <a class="btn btn-outline-secondary" href="{% url 'loans:portfolio_export' %}">Export CSV</a>
   </form>
-</div>
-<form method="post" class="card p-3">{% csrf_token %}
-  <div class="d-flex gap-2 flex-wrap mb-3">
-    <select name="portfolio" required class="form-select" style="max-width:280px"><option value="">Choose confirmed portfolio</option>{% for portfolio in portfolios %}<option value="{{ portfolio.pk }}" {% if target_portfolio == portfolio.pk|stringformat:'s' %}selected{% endif %}>{{ portfolio }}</option>{% endfor %}</select>
-    <input name="customer_id" class="form-control" style="max-width:300px" placeholder="Already-issued SF ID (one customer only)" pattern="SF[0-9]{6}" maxlength="8">
+</section>
+<form method="post" class="card">{% csrf_token %}
+  <div class="workspace-filter">
+    <select name="portfolio" required aria-label="Confirmed portfolio"><option value="">Choose confirmed portfolio</option>{% for portfolio in portfolios %}<option value="{{ portfolio.pk }}" {% if target_portfolio == portfolio.pk|stringformat:'s' %}selected{% endif %}>{{ portfolio }}</option>{% endfor %}</select>
+    <input name="customer_id" aria-label="Already-issued Customer ID" placeholder="Already-issued SF ID (one customer only)" pattern="SF[0-9]{6}" maxlength="8">
     <button class="btn btn-primary">Assign selected customers</button>
   </div>
-  <p>Leave the SF ID blank to generate the next available number. Existing permanent IDs stay unchanged.</p>
-  <div class="table-responsive"><table class="table"><thead><tr><th>Select</th><th>Customer</th><th>Current / legacy ID</th><th>Portfolio</th><th>Historical loan officers</th></tr></thead><tbody>
+  <p class="section-sub">Leave the SF ID blank to generate the next available number. Existing permanent IDs stay unchanged.</p>
+  <div class="table-wrap"><table><thead><tr><th>Select</th><th>Customer</th><th>Current / legacy ID</th><th>Portfolio</th><th>Historical loan officers</th></tr></thead><tbody>
   {% for customer in customers %}<tr>
     <td><input type="checkbox" name="customers" value="{{ customer.pk }}" aria-label="Select {{ customer.full_name }}"></td>
     <td><a href="{% url 'loans:borrower_detail' customer.pk %}">{{ customer.full_name }}</a></td>
     <td>{{ customer.borrower_id }}{% if customer.legacy_borrower_id %}<br><small>Legacy: {{ customer.legacy_borrower_id }}</small>{% endif %}</td>
     <td>{{ customer.portfolio|default:"Needs review" }}</td>
-    <td>{% for loan in customer.loans.all %}{% ifchanged loan.agent_name_id %}<div>{{ loan.agent_name.name }}</div>{% endifchanged %}{% empty %}No loan history{% endfor %}</td>
+    <td>{% for loan in customer.portfolio_loan_history %}{% ifchanged loan.agent_name_id %}<div>{{ loan.agent_name.name }}</div>{% endifchanged %}{% empty %}No loan history{% endfor %}</td>
   </tr>{% empty %}<tr><td colspan="5">No customers match this view.</td></tr>{% endfor %}
   </tbody></table></div>
   {% include "includes/pagination.html" %}

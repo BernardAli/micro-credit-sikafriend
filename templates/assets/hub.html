@@ -3,66 +3,10 @@
 {% block content %}
 <style>
   .assets-shell{display:grid;gap:18px}
-  .hero-card{
-    position:relative;
-    overflow:hidden;
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:30px;
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
-      var(--primary-2) 36%,
-      var(--primary) 72%,
-      var(--gold-2) 100%
-    );
-    color:#fff;
-    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
-  }
-
-  [data-theme="dark"] .hero-card{
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
-      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
-      color-mix(in srgb,var(--primary) 60%,#000) 72%,
-      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
-    );
-    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
-  }
-
-  .hero-card::before{
-    content:"";
-    position:absolute;
-    top:-70px;
-    right:-60px;
-    width:300px;
-    height:300px;
-    border-radius:50%;
-    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
-    pointer-events:none;
-  }
-
-  .hero-card::after{
-    content:"";
-    position:absolute;
-    left:28%;
-    bottom:-60px;
-    width:380px;
-    height:220px;
-    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
-    pointer-events:none;
-  }
-  .hero-inner{position:relative;z-index:1;padding:28px}
   .hero-wrap{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap}
-  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
-  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
   .hero-sub{margin-top:10px;max-width:980px;line-height:1.68;opacity:.88}
   .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
-  .btn-soft{
-    display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;
-    font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text);
-    transition:all .16s ease;cursor:pointer;
-  }
   .btn-soft:hover{color:var(--text);transform:translateY(-1px)}
-  .btn-soft-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
   .metrics-grid,.category-grid,.link-grid{display:grid;gap:14px}
   .metrics-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
   .category-grid,.link-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -77,21 +21,17 @@
     background:var(--panel-strong);box-shadow:0 18px 46px rgba(26,31,20,.05);
   }
   .tab-btn{
-    display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:999px;
-    border:1px solid var(--border);background:var(--panel);color:var(--text-2);font-size:13px;font-weight:800;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;
+    border:1px solid var(--border);background:var(--panel);color:var(--text-2);cursor:pointer;
     transition:all .16s ease;
   }
   .tab-btn:hover{transform:translateY(-1px);color:var(--text)}
-  .tab-btn.active{
-    background:linear-gradient(135deg,var(--primary) 0%, color-mix(in srgb,var(--primary-2) 82%, #fff) 100%);
-    border-color:var(--primary);color:#fff;box-shadow:0 18px 44px var(--primary-glow);
-  }
   .tab-panel{display:none;gap:16px}
   .tab-panel.active{display:grid}
   .panel{border-radius:24px;overflow:hidden}
   .section{padding:20px 22px}
   .section + .section{border-top:1px solid var(--border-soft)}
-  .section-title{margin:0 0 6px;font-size:20px;font-weight:900;color:var(--text)}
+  .section-title{margin:0 0 6px;}
   .section-sub{color:var(--muted);font-size:13px;line-height:1.65;margin-bottom:16px}
   .grid-2,.grid-3{display:grid;gap:16px}
   .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -100,7 +40,6 @@
   .field-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
   .field{display:grid;gap:6px}
   .field.full{grid-column:1 / -1}
-  .field label{font-size:12px;font-weight:900;color:var(--text);text-transform:uppercase;letter-spacing:.04em}
   .field input,.field select,.field textarea{width:100%;min-height:46px;border:1px solid var(--border);border-radius:14px;padding:10px 12px;background:var(--panel)}
   .field input[type="checkbox"]{width:auto;min-height:auto}
   .field .helptext{font-size:12px;color:var(--muted);line-height:1.5}
@@ -111,7 +50,7 @@
   .table{width:100%;border-collapse:collapse;min-width:760px;background:var(--panel)}
   .table th,.table td{padding:12px 14px;border-bottom:1px solid var(--border-soft);text-align:left;font-size:13px;vertical-align:top}
   .table th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:var(--bg-soft)}
-  .chip{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;border:1px solid var(--border);background:var(--panel);font-size:11px;font-weight:800;color:var(--text-2)}
+  .chip{display:inline-flex;align-items:center;}
   .chip-green{background:rgba(22,163,74,.08);border-color:rgba(22,163,74,.16);color:var(--success)}
   .chip-red{background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.14);color:var(--danger)}
   .chip-gold{background:var(--gold-pale);border-color:color-mix(in srgb,var(--gold) 24%, transparent);color:var(--gold)}
@@ -411,6 +350,7 @@
                   <div class="item-title">{{ run.title }}</div>
                   <div class="item-meta">{{ run.period_start }} to {{ run.period_end }} · Posted {{ run.posting_date }} · {{ run.get_status_display }}</div>
                   <div class="item-meta">{{ run.lines.count }} assets · {{ run.total_depreciation|currency }}</div>
+                  {% if run.reversal_id %}<a href="{% url 'core:reversal_detail' run.reversal.approval_id %}">View {{ run.reversal.reference }}</a>{% elif run.status == 'POSTED' %}<a href="{% url 'core:reversal_request' 'DEPRECIATION' run.pk %}">Request reversal</a>{% endif %}
                 </div>
               {% empty %}
                 <div class="item"><div class="item-meta">No depreciation runs posted yet.</div></div>

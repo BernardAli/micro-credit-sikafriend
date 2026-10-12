@@ -1,5 +1,7 @@
 # SikaFriend portfolio and permanent Customer ID update
 
+**Current cumulative release:** use [SECURITY_UPDATE.md](SECURITY_UPDATE.md) and `backups/sikafriend-security-update-20261012.zip`. The security release includes the changes below plus additional required migrations and a Django update. Older packages referenced in this document remain historical releases.
+
 This update upgrades the existing database in place. The hosted database does not need to be replaced with the local database. Existing customer, loan, payment, user, payroll, security deposit, and accounting records keep their primary keys and relationships.
 
 ## What changes
@@ -12,7 +14,11 @@ Exports include an Excel workbook with separate registers, CSV summaries or a ZI
 
 **Reporting definitions:** balances reflect the current recorded book; date filters select disbursement and repayment activity. Aging measures the first scheduled repayment amount not fully covered, accounting for partial payments and approved deposit applications. PAR30 uses disbursed principal outstanding over 30 days overdue divided by all disbursed principal outstanding. Deposit funds and unreconciled collection attempts are separate from settled cash repayments. Portfolio transfers place past loan/payment records under their current owner. The screen and downloaded report explain these definitions.
 
-The dashboard/detail enhancement adds no database migrations beyond the original `0016`/`0017` portfolio release. A hosted installation already running those migrations only needs the refreshed source and a web-app reload. The cumulative package `backups/sikafriend-portfolio-dashboard-update-20261011.zip` also contains the original portfolio migration files for installations that have not received the first update.
+The dashboard/detail, theme, and template consistency enhancements add no database migrations beyond the original `0016`/`0017` portfolio release. A hosted installation already running those migrations needs the refreshed source, `collectstatic`, and a web-app reload. The cumulative package `backups/sikafriend-dashboard-consistency-update-20261011.zip` also contains the original portfolio migration files for installations that have not received the first update.
+
+The workspace and login screen now share consistent light and dark palettes, readable buttons and status badges, and responsive portfolio filters. The sun/moon control remembers an explicit choice in the browser. Until a choice is made, it follows the device's appearance setting. Charts update immediately when the theme changes. Company accent presets and custom brand colors adapt to both modes; the public website's background/text overrides stay on the public website so they cannot replace the workspace's dark surfaces.
+
+All 59 workspace page templates now use shared component styling in `static/css/workspace.css`. Page headers, cards, forms, tables, tabs, pagination, status badges, and dialogs share the same appearance and responsive behavior. `templates/includes/workspace_navigation.html` supplies both the sidebar and mobile menu, including the correct links for management, officers, and borrowers. The most specific matching page is highlighted. Report screens, customer/officer assignment forms, import guides, company settings, and borrower account pages follow the same styles.
 
 - The 11 numbered portfolios from the SikaFriend register are created by migrations `0016` and `0017`.
 - Customers and their loans belong to a portfolio. Management can assign multiple officers to a portfolio and multiple portfolios to an officer.
@@ -86,13 +92,13 @@ Enter the hosted MySQL password at the prompt. Use the database host/user/name f
 
 ## 3. Upload the source update
 
-The latest cumulative release package is `backups/sikafriend-portfolio-dashboard-update-20261011.zip`. It contains the changed source files, migrations, templates, tests, and instructions. It contains no database export, customer assignment CSV, production credentials, or uploaded media.
+The latest cumulative release package is `backups/sikafriend-dashboard-consistency-update-20261011.zip`. It contains the changed source files, migrations, templates, shared theme/component CSS and JavaScript, tests, and instructions. It contains no database export, customer assignment CSV, production credentials, or uploaded media.
 
 Upload this ZIP through PythonAnywhere Files to the project directory, then extract it **inside the existing project**:
 
 ```bash
 cd ~/micro-credit-sikafriend
-unzip -o sikafriend-portfolio-dashboard-update-20261011.zip
+unzip -o sikafriend-dashboard-consistency-update-20261011.zip
 ```
 
 This overwrites only files included in the update. Keep the hosted `.env`, database configuration, `media/`, WSGI configuration, and virtual environment. If the change is later committed and pushed to your Git repository, deployment may use `git pull --ff-only` instead of the ZIP; the current local changes must reach the remote first.
@@ -126,6 +132,8 @@ python manage.py check
 python manage.py showmigrations loans
 ```
 
+`collectstatic` is required for `static/css/theme.css`, `static/css/workspace.css`, `static/js/theme.js`, and `static/js/charts-theme.js`. Keep the PythonAnywhere `/static/` mapping pointed to this project's `staticfiles/` directory. If the browser still shows cached styles after the reload, perform a hard refresh.
+
 No dependency changes are required for this release. Do not generate migrations on PythonAnywhere or use `--fake`; deploy the supplied migration files.
 
 ## 5. Reload and verify
@@ -142,6 +150,8 @@ Verify:
 6. A newly registered customer receives the next available ID and an existing customer's ID remains unchanged after a transfer.
 7. The portfolio ownership report, statements, repayment entry, and configured USSD callback work.
 8. Dashboard portfolio cards open the overview and individual portfolios. Date filters, all detail sections, and full-register CSV/Excel/PDF/JSON downloads work.
+9. The sun/moon control works on login, dashboards, and portfolios; the selected appearance survives page navigation and refresh. Chart labels and status badges are readable in both modes, and mobile filters fit their controls.
+10. Sidebar and mobile links agree for each role. Workforce/settings tabs, borrower loan dialogs, import guides, report filters, pagination, and customer/officer assignment forms work in both themes and fit mobile screens.
 
 ## Rollback
 

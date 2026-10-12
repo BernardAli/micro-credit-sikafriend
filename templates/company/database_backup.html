@@ -38,10 +38,6 @@
   }
 
   .metrics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-  .stat-card{
-    border:1px solid var(--border);border-radius:22px;background:var(--panel);
-    box-shadow:0 18px 44px rgba(26,31,20,.05);padding:18px 18px 17px;
-  }
   .stat-label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
   .stat-value{margin-top:8px;font-size:24px;font-weight:900;color:var(--text)}
   .stat-sub{margin-top:6px;color:var(--muted);font-size:12.5px;line-height:1.6}
@@ -51,28 +47,19 @@
     box-shadow:0 22px 58px rgba(26,31,20,.06);overflow:hidden;
   }
   .panel-head{padding:20px 22px 14px;border-bottom:1px solid var(--border-soft)}
-  .panel-title{margin:0;font-size:19px;font-weight:900;color:var(--text)}
+  .panel-title{margin:0;}
   .panel-sub{margin-top:5px;font-size:13px;color:var(--muted);line-height:1.6}
   .panel-body{padding:20px 22px 24px}
 
   .chooser-row{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;flex-wrap:wrap}
   .chooser-form{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
   .field{display:grid;gap:7px}
-  .field label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
   .field select{
     min-width:280px;min-height:46px;padding:0 14px;border-radius:14px;border:1px solid var(--border);
     background:var(--panel-strong);color:var(--text);
   }
   .field-help{font-size:12px;color:var(--muted);line-height:1.55}
-
-  .btn-soft{
-    display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:10px 16px;border-radius:999px;
-    font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text);
-    box-shadow:0 10px 24px rgba(26,31,20,.06);cursor:pointer;transition:all .16s ease;
-  }
   .btn-soft:hover{transform:translateY(-1px);color:var(--text)}
-  .btn-soft-primary{background:linear-gradient(135deg,var(--primary),var(--primary-3));border-color:var(--primary);color:#fff}
-  .btn-soft-primary:hover{color:#fff}
 
   .format-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
   .format-card{

@@ -21,7 +21,8 @@ def build_loan_statement(loan: Loan, borrower_display_name: str | None = None) -
             f"{p.payment_date:%d/%m/%Y} payment: {idx}  "
             f"Amount: GHS {p.amount}  "
             f"Principal: GHS {p.principal_paid}  "
-            f"ROIC: GHS {p.roic_paid}"
+            f"ROIC: GHS {p.roic_paid}  "
+            f"Customer credit held: GHS {p.customer_credit}"
         )
         if p.reference:
             line += f"  Ref: {p.reference}"
@@ -31,6 +32,8 @@ def build_loan_statement(loan: Loan, borrower_display_name: str | None = None) -
     lines.append(f"Actual No. of payments: {loan.actual_payments_count}")
     lines.append(f"Outstanding No. of payment: {loan.outstanding_payments_count}")
     lines.append(f"Total paid: GHS {loan.total_paid_amount}")
+    lines.append(f"Cash received: GHS {loan.total_cash_received}")
+    lines.append(f"Customer credit held: GHS {loan.total_customer_credit}")
     lines.append(f"Total principal paid: GHS {loan.total_principal_paid}")
     lines.append(f"Total ROIC paid: GHS {loan.total_roic_paid}")
     lines.append(f"Principal outstanding: GHS {loan.principal_outstanding}")

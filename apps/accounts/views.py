@@ -1,4 +1,5 @@
 import csv
+from django.db import transaction
 from collections import defaultdict
 from io import BytesIO
 from datetime import date
@@ -121,7 +122,7 @@ def _employee_period_metrics(employee, period_start, period_end):
         payment_date__lte=period_end,
     )
     return {
-        "collections": _money(payments.aggregate(total=Sum("amount"))["total"]),
+        "collections": _money(payments.aggregate(total=Sum(F("amount") - F("customer_credit")))["total"]),
         "disbursements": _money(loans.aggregate(total=Sum("amount"))["total"]),
         "payments_count": payments.count(),
         "loans_count": loans.count(),
@@ -672,7 +673,7 @@ def agents_analytics(request):
         latest_payment = None
         payment_dates = []
         for l in loans:
-            for p in l.payments.filter(is_void=False):
+            for p in l.payments.filter(is_void=False, is_pending=False):
                 payment_dates.append(p.payment_date)
         if payment_dates:
             latest_payment = max(payment_dates)
@@ -1044,11 +1045,11 @@ def agents_monthly_range_analysis(request):
 
         range_payments = []
         for loan in range_loans:
-            for p in loan.payments.filter(is_void=False):
+            for p in loan.payments.filter(is_void=False, is_pending=False):
                 if start_date <= p.payment_date <= end_date:
                     range_payments.append(p)
 
-        total_collected = sum((Decimal(p.amount) for p in range_payments), Decimal("0.00"))
+        total_collected = sum((p.loan_applied_amount for p in range_payments), Decimal("0.00"))
         total_principal_collected = sum((Decimal(p.principal_paid) for p in range_payments), Decimal("0.00"))
         total_roic_collected = sum((Decimal(p.roic_paid) for p in range_payments), Decimal("0.00"))
 
@@ -1236,12 +1237,12 @@ def agent_detail(request, pk):
 
     payments_qs = (
         Payment.objects
-        .filter(is_void=False, loan__in=loans_qs)
+        .filter(is_void=False, is_pending=False, loan__in=loans_qs)
         .select_related("loan", "loan__borrower", "loan__agent_name")
     )
 
     total_payments_count = payments_qs.count()
-    total_collected = payments_qs.aggregate(s=Sum("amount"))["s"] or Decimal("0.00")
+    total_collected = payments_qs.aggregate(s=Sum(F("amount") - F("customer_credit")))["s"] or Decimal("0.00")
     total_principal_collected = payments_qs.aggregate(s=Sum("principal_paid"))["s"] or Decimal("0.00")
     total_roic_collected = payments_qs.aggregate(s=Sum("roic_paid"))["s"] or Decimal("0.00")
 
@@ -1302,7 +1303,7 @@ def agent_detail(request, pk):
 
     # This month collections and disbursement
     month_disbursed = loans_qs.filter(created_at__date__gte=month_start, created_at__date__lt=next_month).aggregate(s=Sum("amount"))["s"] or Decimal("0.00")
-    month_collected = payments_qs.filter(payment_date__gte=month_start, payment_date__lt=next_month).aggregate(s=Sum("amount"))["s"] or Decimal("0.00")
+    month_collected = payments_qs.filter(payment_date__gte=month_start, payment_date__lt=next_month).aggregate(s=Sum(F("amount") - F("customer_credit")))["s"] or Decimal("0.00")
     month_principal_collected = payments_qs.filter(payment_date__gte=month_start, payment_date__lt=next_month).aggregate(s=Sum("principal_paid"))["s"] or Decimal("0.00")
     month_roic_collected = payments_qs.filter(payment_date__gte=month_start, payment_date__lt=next_month).aggregate(s=Sum("roic_paid"))["s"] or Decimal("0.00")
 
@@ -1490,7 +1491,7 @@ def agent_comprehensive_analysis(request, pk):
 
     payments_qs = (
         Payment.objects
-        .filter(is_void=False, loan__portfolio_id__in=agent_portfolio_ids(agent))
+        .filter(is_void=False, is_pending=False, loan__portfolio_id__in=agent_portfolio_ids(agent))
         .select_related("loan", "loan__borrower")
         .order_by("-created_at")
     )
@@ -1504,7 +1505,7 @@ def agent_comprehensive_analysis(request, pk):
     total_roic = sum((loan.roic_amount for loan in loans_qs), Decimal("0.00")).quantize(Decimal("0.01"))
     total_expected = sum((loan.total_expected_amount for loan in loans_qs), Decimal("0.00")).quantize(Decimal("0.01"))
 
-    total_collected = payments_qs.aggregate(s=Sum("amount"))["s"] or Decimal("0.00")
+    total_collected = payments_qs.aggregate(s=Sum(F("amount") - F("customer_credit")))["s"] or Decimal("0.00")
     total_principal_collected = payments_qs.aggregate(s=Sum("principal_paid"))["s"] or Decimal("0.00")
     total_roic_collected = payments_qs.aggregate(s=Sum("roic_paid"))["s"] or Decimal("0.00")
 
@@ -1558,7 +1559,7 @@ def agent_comprehensive_analysis(request, pk):
 
     for p in payments_qs:
         key = p.payment_date.strftime("%Y-%m")
-        monthly_map[key]["collected"] += Decimal(p.amount)
+        monthly_map[key]["collected"] += p.loan_applied_amount
         monthly_map[key]["principal_collected"] += Decimal(p.principal_paid)
         monthly_map[key]["roic_collected"] += Decimal(p.roic_paid)
 
@@ -1656,6 +1657,7 @@ def agent_monthly_range_analysis(request, pk):
         Payment.objects
         .filter(
             is_void=False,
+            is_pending=False,
             loan__portfolio_id__in=agent_portfolio_ids(agent),
             payment_date__gte=start_date,
             payment_date__lte=end_date,
@@ -1673,7 +1675,7 @@ def agent_monthly_range_analysis(request, pk):
     total_roic = sum((loan.roic_amount for loan in loans_qs), Decimal("0.00")).quantize(Decimal("0.01"))
     total_expected = sum((loan.total_expected_amount for loan in loans_qs), Decimal("0.00")).quantize(Decimal("0.01"))
 
-    total_collected = payments_qs.aggregate(s=Sum("amount"))["s"] or Decimal("0.00")
+    total_collected = payments_qs.aggregate(s=Sum(F("amount") - F("customer_credit")))["s"] or Decimal("0.00")
     total_principal_collected = payments_qs.aggregate(s=Sum("principal_paid"))["s"] or Decimal("0.00")
     total_roic_collected = payments_qs.aggregate(s=Sum("roic_paid"))["s"] or Decimal("0.00")
 
@@ -1754,7 +1756,12 @@ def agent_monthly_range_analysis(request, pk):
 def agent_delete(request, pk):
     agent = get_object_or_404(Agent, pk=pk)
     if request.method == "POST":
-        agent.delete()
+        from django.db.models import ProtectedError
+        try:
+            agent.delete()
+        except ProtectedError:
+            messages.error(request, "This officer has loan, receipt or payroll history. Keep the record and mark their employment inactive instead.")
+            return redirect("agent_detail", pk=pk)
         return redirect("agent_list")
     return render(request, "agents/agent_confirm_delete.html", {"agent": agent, "title": "Delete Agent"})
 
@@ -1903,11 +1910,15 @@ def payroll_hub(request):
 
 
 @admin_required
+@transaction.atomic
 def payroll_run_detail(request, pk):
-    run = get_object_or_404(PayrollRun.objects.prefetch_related("lines__employee"), pk=pk)
+    run = get_object_or_404(PayrollRun.objects.select_for_update().select_related("reversal").prefetch_related("lines__employee"), pk=pk)
 
     if request.method == "POST":
         action = request.POST.get("action")
+        if run.reversal_id and action in {"recalculate", "approve", "mark_paid", "cancel"}:
+            messages.error(request, "Reversed payroll evidence is read-only. Create a new run for a corrected payment.")
+            return redirect("payroll_run_detail", pk=pk)
         if action == "recalculate" and run.status == "DRAFT":
             created_lines = _create_payroll_run_lines(run)
             log_activity(
@@ -1966,6 +1977,9 @@ def payroll_run_detail(request, pk):
             messages.success(request, "Payroll run marked as paid.")
             return redirect("payroll_run_detail", pk=pk)
         if action == "cancel":
+            if run.status == "PAID":
+                messages.warning(request, "A paid payroll run requires a reversal request and approval from a different administrator.")
+                return redirect("core:reversal_request", kind="PAYROLL", source_id=run.pk)
             run.status = "CANCELLED"
             run.save(update_fields=["status", "updated_at"])
             log_activity(

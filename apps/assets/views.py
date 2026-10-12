@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models import Sum
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -142,8 +142,12 @@ def _post_maintenance(record, user):
     return entry
 
 
+@transaction.atomic
 def _build_depreciation_run(run, user):
-    eligible_assets = AssetItem.objects.exclude(status__in=["DRAFT", "DISPOSED", "WRITTEN_OFF"]).order_by("asset_code")
+    run = DepreciationRun.objects.select_for_update().get(pk=run.pk)
+    if run.posted_entry_id:
+        return run.posted_entry
+    eligible_assets = AssetItem.objects.select_for_update().exclude(status__in=["DRAFT", "DISPOSED", "WRITTEN_OFF"]).order_by("pk")
     expense_totals = defaultdict(lambda: Decimal("0.00"))
     accumulated_totals = defaultdict(lambda: Decimal("0.00"))
     lines_payload = []
@@ -375,7 +379,7 @@ def assets_hub(request):
     recent_assets = assets[:12]
     assignments = AssetAssignment.objects.select_related("asset", "assigned_to").order_by("-assigned_date", "-created_at")[:12]
     maintenance_records = AssetMaintenance.objects.select_related("asset", "assigned_to", "vendor").order_by("-requested_on", "-created_at")[:12]
-    depreciation_runs = DepreciationRun.objects.prefetch_related("lines__asset").order_by("-posting_date", "-created_at")[:10]
+    depreciation_runs = DepreciationRun.objects.select_related("reversal").prefetch_related("lines__asset").order_by("-posting_date", "-created_at")[:10]
     disposals = AssetDisposal.objects.select_related("asset").order_by("-disposal_date", "-created_at")[:10]
 
     active_assets = [asset for asset in assets if asset.status == "ACTIVE"]

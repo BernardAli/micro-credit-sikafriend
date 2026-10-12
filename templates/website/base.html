@@ -162,22 +162,29 @@
     .card:hover .card-media img{transform:scale(1.04)}
     .badge{display:inline-flex;padding:6px 10px;border-radius:8px;background:var(--soft);color:var(--primary);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:0}
     .copy{color:var(--muted);font-size:15px;line-height:1.75}
-    .management-card{transition:transform .2s,box-shadow .2s}
-    .management-card:hover,.management-card:focus-within,.management-card:focus{transform:translateY(-2px);box-shadow:var(--shadow)}
-    .management-card:focus{outline:2px solid var(--primary);outline-offset:3px}
-    .management-bio{
+    .management-card{align-self:start;transition:box-shadow .2s,border-color .2s}
+    .management-card:focus-within{box-shadow:var(--shadow);border-color:var(--primary)}
+    @media(hover:hover) and (pointer:fine){
+      .management-card:hover{box-shadow:var(--shadow);border-color:var(--primary)}
+    }
+    .management-bio-preview{
       display:-webkit-box;
       -webkit-box-orient:vertical;
       -webkit-line-clamp:3;
       overflow:hidden;
       margin-bottom:0;
     }
-    .management-card:hover .management-bio,
-    .management-card:focus-within .management-bio,
-    .management-card:focus .management-bio{
-      display:block;
-      overflow:visible;
-    }
+    .management-bio{margin-top:14px}
+    .management-bio summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;cursor:pointer;list-style:none;color:var(--primary);font-size:13px;font-weight:800}
+    .management-bio summary::-webkit-details-marker{display:none}
+    .management-bio summary::after{content:"+";font-size:20px;line-height:1}
+    .management-bio[open] summary::after{content:"−"}
+    .management-bio summary:focus-visible{outline:2px solid var(--primary);outline-offset:4px;border-radius:4px}
+    .management-bio .bio-hide,.management-bio[open] .bio-read{display:none}
+    .management-bio[open] .bio-hide{display:inline}
+    .management-card:has(.management-bio[open]) .management-bio-preview{display:none}
+    .management-bio .copy{margin:8px 0 0;overflow-wrap:anywhere;white-space:pre-line}
+    @media(prefers-reduced-motion:reduce){.management-card,.management-card .card-media img{transition:none}.management-card:hover .card-media img{transform:none}}
     .list{display:grid;gap:12px;margin-top:18px}
     .list li{display:flex;gap:10px;color:var(--text);font-weight:700;line-height:1.55}
     .list li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);flex:0 0 auto;margin-top:9px}

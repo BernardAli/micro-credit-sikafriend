@@ -85,14 +85,7 @@
     </div>
     <div class="grid-3">
       {% for member in profile.management_team %}
-      <article class="card management-card" tabindex="0">
-        <div class="card-media"><img src="{% if member.image %}{{ member.image }}{% else %}{% static 'website/images/microcredit-team-service.webp' %}{% endif %}" alt="{{ member.name }}"></div>
-        <div class="card-body">
-          <h3 class="title-md">{{ member.name }}</h3>
-          <span class="badge">{{ member.title }}</span>
-          {% if member.bio %}<p class="copy management-bio">{{ member.bio }}</p>{% endif %}
-        </div>
-      </article>
+      {% include "website/includes/management_card.html" %}
       {% endfor %}
     </div>
   </div>

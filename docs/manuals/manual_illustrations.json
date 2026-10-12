@@ -1,0 +1,753 @@
+{
+  "date": "2026-10-12",
+  "source": "Isolated fictional SQLite documentation environment; current project templates",
+  "illustrations": [
+    {
+      "chapter": "overview",
+      "id": "public-home",
+      "title": "Public homepage",
+      "caption": "Company identity, products and approved calls to action on the signed-out homepage.",
+      "image": "images/public-home.jpg",
+      "route": "/",
+      "sample_data": true
+    },
+    {
+      "chapter": "roles",
+      "id": "login",
+      "title": "Unified login",
+      "caption": "Administrators, officers and borrowers use the same login; linked permissions determine the workspace.",
+      "image": "images/login.jpg",
+      "route": "/login/",
+      "sample_data": true
+    },
+    {
+      "chapter": "navigation",
+      "id": "dashboard",
+      "title": "Administrator dashboard",
+      "caption": "Review the current book and operational indicators before opening pending requests.",
+      "image": "images/dashboard.jpg",
+      "route": "/dashboard/",
+      "sample_data": true
+    },
+    {
+      "chapter": "navigation",
+      "id": "dashboard-dark",
+      "title": "Dark appearance",
+      "caption": "The appearance control changes workspace contrast while retaining the company accent colors.",
+      "image": "images/dashboard-dark.jpg",
+      "route": "/dashboard/",
+      "sample_data": true
+    },
+    {
+      "chapter": "company",
+      "id": "company-settings",
+      "title": "Company identity settings",
+      "caption": "Edit legal identity, contacts and locale before entering live business records.",
+      "image": "images/company-settings.jpg",
+      "route": "/settings/",
+      "sample_data": true
+    },
+    {
+      "chapter": "company",
+      "id": "operations-settings",
+      "title": "Operations and payroll policy",
+      "caption": "Review configured lending defaults and statutory inputs before generating a run.",
+      "image": "images/operations-settings.jpg",
+      "route": "/settings/",
+      "sample_data": true
+    },
+    {
+      "chapter": "company",
+      "id": "website-settings",
+      "title": "Website and brand settings",
+      "caption": "Publish approved website content and match brand colors to the company identity.",
+      "image": "images/website-settings.jpg",
+      "route": "/settings/",
+      "sample_data": true
+    },
+    {
+      "chapter": "borrowers",
+      "id": "borrower-directory",
+      "title": "Borrower directory",
+      "caption": "Search existing references and contacts before creating a duplicate customer.",
+      "image": "images/borrower-directory.jpg",
+      "route": "/borrowers/",
+      "sample_data": true
+    },
+    {
+      "chapter": "borrowers",
+      "id": "borrower-create",
+      "title": "Borrower onboarding form",
+      "caption": "Choose an active portfolio and complete customer identity and contact fields.",
+      "image": "images/borrower-create.jpg",
+      "route": "/borrowers/new/",
+      "sample_data": true
+    },
+    {
+      "chapter": "borrowers",
+      "id": "borrower-profile",
+      "title": "Borrower profile",
+      "caption": "Inspect customer identity, current ownership, loan history and available statement actions.",
+      "image": "images/borrower-profile.jpg",
+      "route": "/borrowers/1/",
+      "sample_data": true
+    },
+    {
+      "chapter": "portfolios",
+      "id": "portfolio-overview",
+      "title": "Portfolio comparison",
+      "caption": "Compare current balances and the selected period activity across visible portfolios.",
+      "image": "images/portfolio-overview.jpg",
+      "route": "/portfolios/",
+      "sample_data": true
+    },
+    {
+      "chapter": "portfolios",
+      "id": "portfolio-detail",
+      "title": "Portfolio book overview",
+      "caption": "Review whole-portfolio figures before inspecting an individual register.",
+      "image": "images/portfolio-detail.jpg",
+      "route": "/portfolios/1/",
+      "sample_data": true
+    },
+    {
+      "chapter": "portfolios",
+      "id": "portfolio-officers",
+      "title": "Portfolio officer management",
+      "caption": "Selected active field officers gain current access; assignment history remains available.",
+      "image": "images/portfolio-officers.jpg",
+      "route": "/portfolios/1/edit/",
+      "sample_data": true
+    },
+    {
+      "chapter": "portfolios",
+      "id": "portfolio-ids",
+      "title": "Permanent ID register",
+      "caption": "Issued customer numbers remain reserved and are not reused.",
+      "image": "images/portfolio-ids.jpg",
+      "route": "/portfolios/1/?tab=ids",
+      "sample_data": true
+    },
+    {
+      "chapter": "loans",
+      "id": "loan-application",
+      "title": "Loan application form",
+      "caption": "Review principal, frequency, duration and installment before submitting a loan request.",
+      "image": "images/loan-application.jpg",
+      "route": "/loans/new/",
+      "sample_data": true
+    },
+    {
+      "chapter": "loans",
+      "id": "loan-requests",
+      "title": "Loan request queue",
+      "caption": "A submitted application remains pending until an eligible reviewer executes it.",
+      "image": "images/loan-requests.jpg",
+      "route": "/loan-requests/",
+      "sample_data": true
+    },
+    {
+      "chapter": "loans",
+      "id": "loan-detail",
+      "title": "Loan account overview",
+      "caption": "Check agreed terms and remaining balance before recording or correcting a receipt.",
+      "image": "images/loan-detail.jpg",
+      "route": "/loans/1/",
+      "sample_data": true
+    },
+    {
+      "chapter": "loans",
+      "id": "loan-terms",
+      "title": "Loan terms and borrower context",
+      "caption": "The terms panel retains agreed schedule and borrower application details.",
+      "image": "images/loan-terms.jpg",
+      "route": "/loans/1/",
+      "sample_data": true
+    },
+    {
+      "chapter": "deposits",
+      "id": "deposit-account",
+      "title": "Security deposit account",
+      "caption": "Required security, funds held and approval-controlled deposit actions are separate from ordinary repayments.",
+      "image": "images/deposit-account.jpg",
+      "route": "/loans/1/security-deposit/",
+      "sample_data": true
+    },
+    {
+      "chapter": "payments",
+      "id": "record-payment",
+      "title": "Record repayment form",
+      "caption": "Enter the real received amount, date, method and reference for this loan.",
+      "image": "images/record-payment.jpg",
+      "route": "/loans/1/payments/new/",
+      "sample_data": true
+    },
+    {
+      "chapter": "payments",
+      "id": "loan-receipts",
+      "title": "Loan payment history",
+      "caption": "Original reversed receipts remain visible alongside current active and pending rows.",
+      "image": "images/loan-receipts.jpg",
+      "route": "/loans/1/",
+      "sample_data": true
+    },
+    {
+      "chapter": "payments",
+      "id": "pending-payments",
+      "title": "Pending receipt verification",
+      "caption": "Confirm only after independent cash or bank evidence agrees with the submitted entry.",
+      "image": "images/pending-payments.jpg",
+      "route": "/payments/pending/",
+      "sample_data": true
+    },
+    {
+      "chapter": "collections",
+      "id": "collection-reconciliation",
+      "title": "Collection reconciliation queue",
+      "caption": "A payment request and a verified receipt are different records; reconcile references and actual funds.",
+      "image": "images/collection-reconciliation.jpg",
+      "route": "/payments/reconciliation/",
+      "sample_data": true
+    },
+    {
+      "chapter": "statements",
+      "id": "loan-statement",
+      "title": "Loan statement preview",
+      "caption": "The branded print preview provides agreed terms, balances and a full transaction ledger.",
+      "image": "images/loan-statement.jpg",
+      "route": "/loans/1/statement/",
+      "sample_data": true
+    },
+    {
+      "chapter": "statements",
+      "id": "statement-reversal",
+      "title": "Reversal on the statement",
+      "caption": "The original receipt and approval-dated negative movement preserve the correction chronology.",
+      "image": "images/statement-reversal.jpg",
+      "route": "/loans/1/statement/",
+      "sample_data": true
+    },
+    {
+      "chapter": "statements",
+      "id": "borrower-statement",
+      "title": "Borrower statement preview",
+      "caption": "The consolidated account statement includes all permitted loans and related security history.",
+      "image": "images/borrower-statement.jpg",
+      "route": "/borrowers/1/statement/",
+      "sample_data": true
+    },
+    {
+      "chapter": "statements",
+      "id": "agent-statement",
+      "title": "Agent statement preview",
+      "caption": "An officer statement combines current portfolio coverage, recorded collections and payroll context.",
+      "image": "images/agent-statement.jpg",
+      "route": "/agents/agents/1/statement/",
+      "sample_data": true
+    },
+    {
+      "chapter": "reversals",
+      "id": "reversal-register",
+      "title": "Transaction reversal register",
+      "caption": "Select the source type and locate an eligible original transaction; prior cases remain reviewable.",
+      "image": "images/reversal-register.jpg",
+      "route": "/reversals/",
+      "sample_data": true
+    },
+    {
+      "chapter": "reversals",
+      "id": "reversal-preview",
+      "title": "Reversal source preview",
+      "caption": "Read the original components and impact before entering a clear reason and evidence reference.",
+      "image": "images/reversal-preview.jpg",
+      "route": "/reversals/request/PAYMENT/2/",
+      "sample_data": true
+    },
+    {
+      "chapter": "reversals",
+      "id": "reversal-pending",
+      "title": "Independent review case",
+      "caption": "A different active administrator reviews the source snapshot, proposed offsets and reason.",
+      "image": "images/reversal-pending.jpg",
+      "route": "/reversals/requests/2/",
+      "sample_data": true
+    },
+    {
+      "chapter": "reversals",
+      "id": "reversal-completed",
+      "title": "Executed reversal evidence",
+      "caption": "An executed case retains the permanent reference, source evidence and approval timeline.",
+      "image": "images/reversal-completed.jpg",
+      "route": "/reversals/requests/1/",
+      "sample_data": true
+    },
+    {
+      "chapter": "governance",
+      "id": "approval-hub",
+      "title": "Non-loan approval hub",
+      "caption": "Use the appropriate approval queue; reversal items link to their complete case.",
+      "image": "images/approval-hub.jpg",
+      "route": "/approvals/",
+      "sample_data": true
+    },
+    {
+      "chapter": "governance",
+      "id": "audit-trail",
+      "title": "Audit history",
+      "caption": "Trace actors, actions and affected objects when investigating an approval or financial correction.",
+      "image": "images/audit-trail.jpg",
+      "route": "/audit/",
+      "sample_data": true
+    },
+    {
+      "chapter": "reports",
+      "id": "report-center",
+      "title": "Comprehensive report center",
+      "caption": "Choose a report and date period, then verify scope before exporting.",
+      "image": "images/report-center.jpg",
+      "route": "/reports/",
+      "sample_data": true
+    },
+    {
+      "chapter": "reports",
+      "id": "aging-report",
+      "title": "Portfolio aging report",
+      "caption": "Aging and PAR measures support follow-up and principal-risk review.",
+      "image": "images/aging-report.jpg",
+      "route": "/reports/?report=loan_aging",
+      "sample_data": true
+    },
+    {
+      "chapter": "reports",
+      "id": "collections-report",
+      "title": "Collections report",
+      "caption": "Compare recorded collection activity to verified cash and the applicable cutoff.",
+      "image": "images/collections-report.jpg",
+      "route": "/reports/?report=collections",
+      "sample_data": true
+    },
+    {
+      "chapter": "workforce",
+      "id": "workforce-directory",
+      "title": "Workforce directory",
+      "caption": "Review employment state, compensation context and officer coverage.",
+      "image": "images/workforce-directory.jpg",
+      "route": "/agents/",
+      "sample_data": true
+    },
+    {
+      "chapter": "workforce",
+      "id": "workforce-create",
+      "title": "Workforce registration",
+      "caption": "Complete profile, compliance, payroll and access details in the relevant tabs.",
+      "image": "images/workforce-create.jpg",
+      "route": "/agents/agents/new/",
+      "sample_data": true
+    },
+    {
+      "chapter": "workforce",
+      "id": "agent-profile",
+      "title": "Officer profile",
+      "caption": "Overview, payroll and portfolio tabs provide the employee operating context.",
+      "image": "images/agent-profile.jpg",
+      "route": "/agents/agents/1/",
+      "sample_data": true
+    },
+    {
+      "chapter": "workforce",
+      "id": "employee-payroll",
+      "title": "Employee payroll history",
+      "caption": "Payroll history remains tied to the employee, separate from current portfolio ownership.",
+      "image": "images/employee-payroll.jpg",
+      "route": "/agents/agents/1/",
+      "sample_data": true
+    },
+    {
+      "chapter": "payroll",
+      "id": "payroll-center",
+      "title": "Payroll overview",
+      "caption": "Review run totals and status before preparing or paying payroll.",
+      "image": "images/payroll-center.jpg",
+      "route": "/agents/payroll/",
+      "sample_data": true
+    },
+    {
+      "chapter": "payroll",
+      "id": "payroll-setup",
+      "title": "Payroll run and adjustment setup",
+      "caption": "Set period and inclusion choices; enter dated earnings or deductions.",
+      "image": "images/payroll-setup.jpg",
+      "route": "/agents/payroll/",
+      "sample_data": true
+    },
+    {
+      "chapter": "payroll",
+      "id": "payroll-run",
+      "title": "Draft payroll lines",
+      "caption": "Review each employee calculation and the run total before requesting approval.",
+      "image": "images/payroll-run.jpg",
+      "route": "/agents/payroll/1/",
+      "sample_data": true
+    },
+    {
+      "chapter": "accounting",
+      "id": "accounting-overview",
+      "title": "Accounting overview",
+      "caption": "Review posted ledger activity and synchronization results.",
+      "image": "images/accounting-overview.jpg",
+      "route": "/accounting/",
+      "sample_data": true
+    },
+    {
+      "chapter": "accounting",
+      "id": "chart-cashbook",
+      "title": "Chart and cashbook",
+      "caption": "Select the correct ledger and bank relationships before posting money movements.",
+      "image": "images/chart-cashbook.jpg",
+      "route": "/accounting/?tab=chart",
+      "sample_data": true
+    },
+    {
+      "chapter": "accounting",
+      "id": "accounting-journals",
+      "title": "Manual journal form",
+      "caption": "Review active accounts and positive, balanced debit/credit lines.",
+      "image": "images/accounting-journals.jpg",
+      "route": "/accounting/?tab=journals",
+      "sample_data": true
+    },
+    {
+      "chapter": "accounting",
+      "id": "journal-detail",
+      "title": "Posted journal evidence",
+      "caption": "Inspect the posted entry and source relationship; operational journals use source reversals.",
+      "image": "images/journal-detail.jpg",
+      "route": "/accounting/journals/29/",
+      "sample_data": true
+    },
+    {
+      "chapter": "accounting",
+      "id": "receivables-payables",
+      "title": "Receivables and payables",
+      "caption": "Outstanding documents, due dates and aging need finance reconciliation.",
+      "image": "images/receivables-payables.jpg",
+      "route": "/accounting/?tab=receivables",
+      "sample_data": true
+    },
+    {
+      "chapter": "accounting",
+      "id": "controls-budgets",
+      "title": "Accounting periods and budgets",
+      "caption": "Current open periods allow posting; budgets provide a review baseline.",
+      "image": "images/controls-budgets.jpg",
+      "route": "/accounting/?tab=controls",
+      "sample_data": true
+    },
+    {
+      "chapter": "accounting",
+      "id": "accounting-reports",
+      "title": "Ledger report controls",
+      "caption": "Verify period movement and closing-position definitions before sharing financial outputs.",
+      "image": "images/accounting-reports.jpg",
+      "route": "/accounting/?tab=reports",
+      "sample_data": true
+    },
+    {
+      "chapter": "assets",
+      "id": "asset-overview",
+      "title": "Fixed asset overview",
+      "caption": "Review acquisition value, carrying value and posted depreciation.",
+      "image": "images/asset-overview.jpg",
+      "route": "/assets/",
+      "sample_data": true
+    },
+    {
+      "chapter": "assets",
+      "id": "asset-register",
+      "title": "Asset registration",
+      "caption": "Record category, cost, useful life, custody and ledger accounts.",
+      "image": "images/asset-register.jpg",
+      "route": "/assets/?tab=register",
+      "sample_data": true
+    },
+    {
+      "chapter": "assets",
+      "id": "asset-care",
+      "title": "Custody and maintenance",
+      "caption": "Record custodian, dates, location and maintenance evidence.",
+      "image": "images/asset-care.jpg",
+      "route": "/assets/?tab=care",
+      "sample_data": true
+    },
+    {
+      "chapter": "assets",
+      "id": "asset-depreciation",
+      "title": "Depreciation and disposal",
+      "caption": "Inspect runs and approvals before changing an asset financial state.",
+      "image": "images/asset-depreciation.jpg",
+      "route": "/assets/?tab=depreciation",
+      "sample_data": true
+    },
+    {
+      "chapter": "assets",
+      "id": "asset-detail",
+      "title": "Asset detail history",
+      "caption": "The individual record retains acquisition, assignment, maintenance and depreciation context.",
+      "image": "images/asset-detail.jpg",
+      "route": "/assets/1/",
+      "sample_data": true
+    },
+    {
+      "chapter": "communications",
+      "id": "sms-center",
+      "title": "Management message center",
+      "caption": "Preview the recipient audience before using the explicit Send action.",
+      "image": "images/sms-center.jpg",
+      "route": "/communication/management/messages/",
+      "sample_data": true
+    },
+    {
+      "chapter": "communications",
+      "id": "marketing-campaigns",
+      "title": "Marketing campaigns",
+      "caption": "Review channel, audience and content before launching a campaign.",
+      "image": "images/marketing-campaigns.jpg",
+      "route": "/communication/management/marketing/",
+      "sample_data": true
+    },
+    {
+      "chapter": "communications",
+      "id": "marketing-templates",
+      "title": "Reusable message templates",
+      "caption": "Templates standardize approved message content.",
+      "image": "images/marketing-templates.jpg",
+      "route": "/communication/management/marketing/",
+      "sample_data": true
+    },
+    {
+      "chapter": "communications",
+      "id": "marketing-leads",
+      "title": "Website leads and popups",
+      "caption": "Follow up on enquiries and publish only approved popup content.",
+      "image": "images/marketing-leads.jpg",
+      "route": "/communication/management/marketing/",
+      "sample_data": true
+    },
+    {
+      "chapter": "communications",
+      "id": "notifications",
+      "title": "In-app notifications",
+      "caption": "Notifications highlight events; the actual request or transaction determines the business outcome.",
+      "image": "images/notifications.jpg",
+      "route": "/notifications/inbox/",
+      "sample_data": true
+    },
+    {
+      "chapter": "portal",
+      "id": "portal-home",
+      "title": "Borrower account overview",
+      "caption": "The signed-in borrower sees their own loan list and account context.",
+      "image": "images/portal-home.jpg",
+      "route": "/my-account/",
+      "sample_data": true
+    },
+    {
+      "chapter": "portal",
+      "id": "portal-loan",
+      "title": "Borrower loan details",
+      "caption": "Customers can inspect agreed terms, receipts, remaining balance and reversal information.",
+      "image": "images/portal-loan.jpg",
+      "route": "/my-account/loan/1/",
+      "sample_data": true
+    },
+    {
+      "chapter": "portal",
+      "id": "portal-payment",
+      "title": "Borrower payment request",
+      "caption": "This release creates a request awaiting verification; it does not initiate a live charge.",
+      "image": "images/portal-payment.jpg",
+      "route": "/my-account/loan/1/pay/",
+      "sample_data": true
+    },
+    {
+      "chapter": "website",
+      "id": "website-services",
+      "title": "Public service information",
+      "caption": "Approved product descriptions help customers understand eligibility and repayment expectations.",
+      "image": "images/website-services.jpg",
+      "route": "/services/",
+      "sample_data": true
+    },
+    {
+      "chapter": "website",
+      "id": "website-team",
+      "title": "Public management cards",
+      "caption": "Hover highlights the card; Read Biography explicitly opens full text.",
+      "image": "images/website-team.jpg",
+      "route": "/team/",
+      "sample_data": true
+    },
+    {
+      "chapter": "website",
+      "id": "team-expanded",
+      "title": "Expanded biography",
+      "caption": "Opening one biography preserves neighboring card heights.",
+      "image": "images/team-expanded.jpg",
+      "route": "/team/",
+      "sample_data": true
+    },
+    {
+      "chapter": "website",
+      "id": "website-impact",
+      "title": "Our Impact page",
+      "caption": "Publish company-supported initiative narratives and dated outcomes.",
+      "image": "images/website-impact.jpg",
+      "route": "/our-impact/",
+      "sample_data": true
+    },
+    {
+      "chapter": "website",
+      "id": "website-contact",
+      "title": "Public enquiry form",
+      "caption": "A submitted enquiry becomes a lead for authorized follow-up.",
+      "image": "images/website-contact.jpg",
+      "route": "/contact/",
+      "sample_data": true
+    },
+    {
+      "chapter": "imports",
+      "id": "borrower-import",
+      "title": "Bulk import guidance",
+      "caption": "Download the current sample, choose the correct mode and review every row result.",
+      "image": "images/borrower-import.jpg",
+      "route": "/borrowers/import/",
+      "sample_data": true
+    },
+    {
+      "chapter": "imports",
+      "id": "asset-import",
+      "title": "Asset import guidance",
+      "caption": "Related categories and accounts must exist; use the current sample-column instructions.",
+      "image": "images/asset-import.jpg",
+      "route": "/assets/import/",
+      "sample_data": true
+    },
+    {
+      "chapter": "recovery",
+      "id": "backup-screen",
+      "title": "Database export workspace",
+      "caption": "Review the scope and choose an export format; separately protect uploaded files.",
+      "image": "images/backup-screen.jpg",
+      "route": "/settings/database-backup/",
+      "sample_data": true
+    },
+    {
+      "chapter": "credit",
+      "id": "held-credit-statement",
+      "title": "Historical customer credit example",
+      "caption": "The fictional account is settled and GHS 60 excess remains held for the customer, separate from income.",
+      "image": "images/held-credit-statement.jpg",
+      "route": "/loans/12/statement/",
+      "sample_data": true
+    },
+    {
+      "chapter": "reversals",
+      "id": "reversal-decision",
+      "title": "Administrator decision form",
+      "caption": "A different administrator enters a review note before approving or rejecting; the requester cannot self-review.",
+      "image": "images/reversal-decision.jpg",
+      "route": "/reversals/requests/2/",
+      "sample_data": true
+    },
+    {
+      "chapter": "reversals",
+      "id": "reversal-offsets",
+      "title": "Posted reversal journal links",
+      "caption": "An executed case links the posted offset entries and retains the original snapshot.",
+      "image": "images/reversal-offsets.jpg",
+      "route": "/reversals/requests/1/",
+      "sample_data": true
+    },
+    {
+      "chapter": "payments",
+      "id": "payment-save",
+      "title": "Payment entry and save action",
+      "caption": "Save once after checking the actual collection reference and method.",
+      "image": "images/payment-save.jpg",
+      "route": "/loans/1/payments/new/",
+      "sample_data": true
+    },
+    {
+      "chapter": "portal",
+      "id": "portal-receipts",
+      "title": "Customer payment and reversal history",
+      "caption": "The customer sees original receipt amounts, pending verification and recorded reversal information.",
+      "image": "images/portal-receipts.jpg",
+      "route": "/my-account/loan/1/",
+      "sample_data": true
+    },
+    {
+      "chapter": "portal",
+      "id": "portal-password",
+      "title": "Customer password change",
+      "caption": "Customers can change their own password from the portal.",
+      "image": "images/portal-password.jpg",
+      "route": "/my-account/change-password/",
+      "sample_data": true
+    },
+    {
+      "chapter": "portal",
+      "id": "mobile-portal",
+      "title": "Borrower portal on a phone",
+      "caption": "The responsive borrower workspace presents the same private account on a narrow screen.",
+      "image": "images/mobile-portal.jpg",
+      "route": "/my-account/",
+      "sample_data": true
+    },
+    {
+      "chapter": "website",
+      "id": "mobile-team",
+      "title": "Management biography on a phone",
+      "caption": "Read Biography is an explicit touch control on mobile.",
+      "image": "images/mobile-team.jpg",
+      "route": "/team/",
+      "sample_data": true
+    },
+    {
+      "chapter": "navigation",
+      "id": "dashboard-portfolios",
+      "title": "Reports and portfolio navigation",
+      "caption": "The portfolio section follows Comprehensive Management Reports on the dashboard.",
+      "image": "images/dashboard-portfolios.jpg",
+      "route": "/dashboard/",
+      "sample_data": true
+    },
+    {
+      "chapter": "portfolios",
+      "id": "portfolio-customers",
+      "title": "Portfolio customer register",
+      "caption": "Current customer ownership and permanent references appear in the customer register.",
+      "image": "images/portfolio-customers.jpg",
+      "route": "/portfolios/1/?tab=customers",
+      "sample_data": true
+    },
+    {
+      "chapter": "portfolios",
+      "id": "portfolio-payments",
+      "title": "Portfolio receipt register",
+      "caption": "Receipt rows show cash and allocated components; exports include all matching rows.",
+      "image": "images/portfolio-payments.jpg",
+      "route": "/portfolios/1/?tab=payments",
+      "sample_data": true
+    },
+    {
+      "chapter": "portfolios",
+      "id": "portfolio-risk",
+      "title": "Portfolio aging and risk",
+      "caption": "Read aging and concentration measures together with their principal-exposure definitions.",
+      "image": "images/portfolio-risk.jpg",
+      "route": "/portfolios/1/?tab=risk",
+      "sample_data": true
+    }
+  ]
+}

@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.db.models import Sum
 from django.utils.html import format_html
+from django.urls import reverse
+from apps.core.financial_admin import FinancialEvidenceAdmin, FinancialEvidenceInline
 
 from .models import Borrower, Loan, Payment, RepaymentCollection, SecurityDeposit, SecurityDepositTransaction, Portfolio, PortfolioAssignment, CustomerIdentity
 
@@ -41,7 +43,7 @@ class CustomerIdentityAdmin(admin.ModelAdmin):
         return False
 
 
-class PaymentInline(admin.TabularInline):
+class PaymentInline(FinancialEvidenceInline):
     model = Payment
     extra = 0
     fields = (
@@ -437,7 +439,7 @@ class LoanAdmin(admin.ModelAdmin):
 
 
 @admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
+class PaymentAdmin(FinancialEvidenceAdmin):
     list_display = (
         "id",
         "loan_link",
@@ -475,6 +477,7 @@ class PaymentAdmin(admin.ModelAdmin):
         "roic_paid",
         "created_at",
         "payment_summary",
+        "reversal_control",
     )
     fieldsets = (
         ("Payment Information", {
@@ -493,7 +496,7 @@ class PaymentAdmin(admin.ModelAdmin):
             )
         }),
         ("Summary", {
-            "fields": ("payment_summary",)
+            "fields": ("payment_summary", "reversal_control")
         }),
     )
     autocomplete_fields = ("loan",)
@@ -526,46 +529,34 @@ class PaymentAdmin(admin.ModelAdmin):
             "<strong>Agent:</strong> {}<br>"
             "<strong>Loan Category:</strong> {}<br>"
             "<strong>Loan Status:</strong> {}<br>"
-            "<strong>Payment Amount:</strong> GHS {:,.2f}<br>"
-            "<strong>Principal Allocation:</strong> GHS {:,.2f}<br>"
-            "<strong>ROIC Allocation:</strong> GHS {:,.2f}<br>"
-            "<strong>Loan Balance After Payment:</strong> GHS {:,.2f}"
+            "<strong>Payment Amount:</strong> GHS {}<br>"
+            "<strong>Principal Allocation:</strong> GHS {}<br>"
+            "<strong>ROIC Allocation:</strong> GHS {}<br>"
+            "<strong>Current Loan Balance:</strong> GHS {}"
             "</div>",
             loan.borrower.full_name,
             loan.agent_name.name if loan.agent_name_id else "-",
             loan.get_loan_category_display(),
             loan.get_status_display(),
-            obj.amount,
-            obj.principal_paid,
-            obj.roic_paid,
-            loan.balance_amount,
+            f"{obj.amount:,.2f}",
+            f"{obj.principal_paid:,.2f}",
+            f"{obj.roic_paid:,.2f}",
+            f"{loan.balance_amount:,.2f}",
         )
 
-    actions = ["mark_selected_as_void", "mark_selected_as_active"]
+    actions = None
 
-    @admin.action(description="Mark selected payments as void")
-    def mark_selected_as_void(self, request, queryset):
-        count = 0
-        for payment in queryset:
-            if not payment.is_void:
-                payment.is_void = True
-                payment.save()
-                count += 1
-        self.message_user(request, f"{count} payment(s) marked as void.")
-
-    @admin.action(description="Mark selected payments as not void")
-    def mark_selected_as_active(self, request, queryset):
-        count = 0
-        for payment in queryset:
-            if payment.is_void:
-                payment.is_void = False
-                payment.save()
-                count += 1
-        self.message_user(request, f"{count} payment(s) restored.")
+    @admin.display(description="Reversal control")
+    def reversal_control(self, obj):
+        if obj.reversal_id:
+            return format_html('<a href="{}">View approved reversal</a>', reverse("core:reversal_detail", args=[obj.reversal.approval_id]))
+        if obj.is_void or obj.is_pending:
+            return "Only settled receipts can be reversed."
+        return format_html('<a href="{}">Request administrator-approved reversal</a>', reverse("core:reversal_request", args=["PAYMENT", obj.pk]))
 
 
 @admin.register(RepaymentCollection)
-class RepaymentCollectionAdmin(admin.ModelAdmin):
+class RepaymentCollectionAdmin(FinancialEvidenceAdmin):
     list_display = (
         "client_reference",
         "loan_id",
@@ -601,14 +592,14 @@ class RepaymentCollectionAdmin(admin.ModelAdmin):
         return qs.select_related("loan", "borrower", "payment", "submitted_by")
 
 
-class SecurityDepositTransactionInline(admin.TabularInline):
+class SecurityDepositTransactionInline(FinancialEvidenceInline):
     model = SecurityDepositTransaction
     extra = 0
     readonly_fields = ("approved_by", "approval_request", "accounting_entry", "created_at")
 
 
 @admin.register(SecurityDeposit)
-class SecurityDepositAdmin(admin.ModelAdmin):
+class SecurityDepositAdmin(FinancialEvidenceAdmin):
     list_display = ("loan", "borrower", "required_amount", "held_amount", "amount_due", "status")
     list_filter = ("status",)
     search_fields = ("loan__id", "borrower__full_name", "borrower__borrower_id")

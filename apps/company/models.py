@@ -823,28 +823,10 @@ class CompanyProfile(models.Model):
 
     @property
     def dashboard_css_overrides(self):
-        """CSS variable overrides for the internal dashboard (templates/base.html naming)."""
-        rules = []
-        if self.site_primary_color:
-            p = self.site_primary_color
-            rules.append(f"--primary:{p};")
-            rules.append(f"--primary-2:{self._hex_adjust(p, 0.78)};")
-            rules.append(f"--primary-3:{self._hex_adjust(p, 1.28)};")
-            rules.append(f"--primary-glow:color-mix(in srgb,{p} 16%,transparent);")
-            rules.append(f"--body-bg-a:color-mix(in srgb,{p} 10%,transparent);")
-            rules.append(f"--border-accent:color-mix(in srgb,{p} 20%,transparent);")
-        if self.site_secondary_color:
-            s = self.site_secondary_color
-            rules.append(f"--gold:{s};")
-            rules.append(f"--gold-2:{self._hex_adjust(s, 0.82)};")
-            rules.append(f"--gold-pale:color-mix(in srgb,{s} 10%,transparent);")
-            rules.append(f"--gold-glow:color-mix(in srgb,{s} 16%,transparent);")
-            rules.append(f"--body-bg-b:color-mix(in srgb,{s} 7%,transparent);")
-        if self.site_bg_color:
-            rules.append(f"--bg:{self.site_bg_color};")
-        if self.site_text_color:
-            rules.append(f"--text:{self.site_text_color};")
-        return " ".join(rules)
+        """Brand accents for the workspace; public page colors stay on the website."""
+        from .theme import dashboard_brand_css
+
+        return dashboard_brand_css(self.site_primary_color, self.site_secondary_color)
 
     def __str__(self):
         return self.company_name

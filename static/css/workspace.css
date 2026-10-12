@@ -1,0 +1,228 @@
+/* Shared components for every page that extends the workspace base template. */
+html[data-theme] .workspace-app {
+  --control-radius: 10px;
+  --button-radius: 10px;
+  --card-radius: 20px;
+  --nested-radius: 14px;
+  --hero-radius: 24px;
+  --card-padding: 22px;
+  --hero-padding: 28px;
+  --section-gap: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+html[data-theme] .workspace-app .content { display: grid; gap: var(--section-gap); align-content: start; }
+html[data-theme] .workspace-app .content > *, html[data-theme] .workspace-app .content [class$="-shell"] { min-width: 0; max-width: 100%; }
+html[data-theme] .workspace-app .content [class$="-shell"] { gap: var(--section-gap); }
+html[data-theme] .workspace-app .main { align-content: start; }
+html[data-theme] .workspace-app .page-intro { box-shadow: none; background: transparent; border: 0; }
+html[data-theme] .workspace-app .page-intro-inner { padding: 4px 2px 12px; }
+html[data-theme] .workspace-app .page-intro::before, html[data-theme] .workspace-app .page-intro > .gold-line { display: none; }
+html[data-theme] .workspace-app .page-kicker { letter-spacing: .14em; font-size: 10px; }
+html[data-theme] .workspace-app .page-title { font-size: 24px; line-height: 1.25; }
+html[data-theme] .workspace-app .sidebar-kicker, html[data-theme] .workspace-app .nav-section-label { letter-spacing: .16em; }
+html[data-theme] .workspace-app .nav-link { line-height: 1.4; }
+html[data-theme] .workspace-app .nav-link-inner { min-width: 0; }
+html[data-theme] .workspace-app .nav-link[aria-current="page"] { background: var(--accent-soft); color: var(--primary); border-color: var(--border-accent); }
+
+/* Page headers share one surface, title scale, and action treatment. */
+html[data-theme] .workspace-app :is(.hero-card, .hero, .pf-hero, .payment-hero, .setup-hero,
+  .backup-hero, .rq-hero, .welcome-hero, .pay-loan-card, .detail-hero) {
+  position: relative; overflow: hidden;
+  border: 1px solid rgba(255,255,255,.14); border-radius: var(--hero-radius);
+  background: linear-gradient(125deg, var(--hero-start), var(--hero-end));
+  color: #fff; box-shadow: var(--shadow-sm);
+}
+html[data-theme] .workspace-app .hero-card::before {
+  content: ""; position: absolute; top: -80px; right: -60px;
+  width: 280px; height: 280px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(240,206,149,.08), transparent 70%);
+  pointer-events: none;
+}
+html[data-theme] .workspace-app .hero-card::after { content: none; }
+html[data-theme] .workspace-app :is(.hero-inner, .backup-hero-inner, .payment-hero__inner) { position: relative; z-index: 1; padding: var(--hero-padding); }
+html[data-theme] .workspace-app :is(.pf-hero, .setup-hero, .rq-hero, .welcome-hero, .pay-loan-card, .detail-hero) { padding: var(--hero-padding); }
+html[data-theme] .workspace-app :is(.hero-title, .backup-title, .rq-title, .payment-title,
+  .pf-hero h1, .setup-hero h1, .welcome-title, .pay-title, .wh-name, .plc-title, .dh-title) {
+  font-family: var(--font-serif); font-size: 30px; font-weight: 400;
+  line-height: 1.2; letter-spacing: -.02em; margin: 0;
+  color: inherit; overflow-wrap: anywhere;
+}
+html[data-theme] .workspace-app :is(.hero-kicker, .backup-kicker, .rq-kicker, .payment-kicker,
+  .pf-kicker, .setup-hero-kicker, .welcome-kicker, .pay-kicker, .wh-kicker, .plc-kicker, .dh-kicker) {
+  color: #f0ce95; font-size: 10px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; margin-bottom: 8px; opacity: 1;
+}
+html[data-theme] .workspace-app :is(.hero-sub, .hero-desc, .backup-sub, .rq-sub, .pf-hero p,
+  .setup-hero p, .welcome-sub, .pay-sub) { font-size: 14px; line-height: 1.75; opacity: .92; }
+html[data-theme] .workspace-app :is(.hero-wrap, .hero-top, .hero-actions, .pf-head) { gap: 16px; }
+
+/* Panel geometry is shared; each template keeps its own grids and visibility. */
+html[data-theme] .workspace-app :is(.card, .section-card, .form-card, .panel, .journal-card, .cp-card,
+  .tabs-card, .pay-form-card, .schedule-card, .progress-card, .deposit-card, .pf-panel, .rq-card, .report-section, .reports-header,
+  .filter-panel, .activity-panel, .approval-card) {
+  min-width: 0; border: 1px solid var(--border); border-radius: var(--card-radius);
+  background: var(--panel); box-shadow: var(--shadow-xs);
+}
+html[data-theme] .workspace-app .card { margin: 0; padding: var(--card-padding); }
+html[data-theme] .workspace-app :is(.section-head, .section-header, .form-head, .panel-head, .cp-head, .tabs-head, .pay-form-head, .schedule-head) {
+  padding: 18px var(--card-padding) 14px;
+}
+html[data-theme] .workspace-app :is(.section-body, .form-body, .panel-body, .cp-body, .pay-form-body) { padding: var(--card-padding); }
+html[data-theme] .workspace-app :is(.pf-panel, .deposit-card, .report-section, .filter-panel, .activity-panel, .approval-card) { padding: var(--card-padding); }
+html[data-theme] .workspace-app :is(.section-title, .card-title, .form-title, .panel-title, .cp-title, .tabs-title, .pay-form-title, .schedule-title,
+  .report-section > h2, .format-title, .pf-panel > h2, .deposit-card > h2) {
+  color: var(--text); font-family: var(--font-serif); font-size: 21px;
+  font-weight: 400; line-height: 1.3; letter-spacing: -.015em;
+}
+html[data-theme] .workspace-app .reports-title { font-family: var(--font-serif); font-size: 30px; font-weight: 400; color: var(--text); line-height: 1.2; }
+html[data-theme] .workspace-app :is(.section-sub, .section-desc, .form-sub, .panel-sub, .cp-sub, .tabs-sub,
+  .stat-sub, .summary-sub, .sum-sub, .pay-form-sub, .metric-help, .pf-muted, .pf-note, .help-text, .helptext) {
+  color: var(--muted); font-size: 12px; line-height: 1.75;
+}
+html[data-theme] .workspace-app :is(.stat-card, .summary-card, .sum-card, .metric-card, .pf-stat, .deposit-metric, .meta-box, .summary-box, .audit-stat) {
+  padding: 18px; min-width: 0; border-radius: var(--nested-radius);
+  border: 1px solid var(--border); background: var(--panel); box-shadow: var(--shadow-xs);
+}
+html[data-theme] .workspace-app .hero-card .metric-card {
+  background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.18); box-shadow: none;
+}
+html[data-theme] .workspace-app :is(.stat-label, .summary-label, .sum-lbl, .metric-label, .meta-label, .deposit-label, .audit-stat span, .pf-stat small) {
+  color: var(--muted); font-size: 11px; font-weight: 650;
+  text-transform: uppercase; letter-spacing: .055em;
+}
+html[data-theme] .workspace-app :is(.stat-value, .summary-value, .sum-val, .metric-value, .deposit-value, .audit-stat strong, .pf-stat strong) {
+  color: var(--text); font-size: 25px; font-weight: 750; line-height: 1.2;
+  letter-spacing: -.025em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+html[data-theme] .workspace-app :is(.hero-card, .backup-hero, .welcome-hero) :is(.metric-label, .metric-value, .metric-sub) { color: #fff; }
+html[data-theme] .workspace-app :is(.borrower-card, .loan-item, .message-item, .format-card, .field-card, .pf-card) {
+  min-width: 0; border-radius: var(--nested-radius); border-color: var(--border); box-shadow: var(--shadow-xs);
+}
+html[data-theme] .workspace-app .format-top { flex-wrap: wrap; }
+html[data-theme] .workspace-app .format-ext { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+
+/* Every control has the same typography, shape, focus, and disabled treatment. */
+html[data-theme] .workspace-app :is(.btn, .btn-soft, .btn-list, .btn-report, .btn-mini, .btn-hero,
+  .pf-button, .rq-btn, .rq-action, .action-button) {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 40px; padding: 9px 15px; border-radius: var(--button-radius);
+  font-family: var(--font-body); font-size: 12px; font-weight: 700; line-height: 1.5;
+  cursor: pointer; text-align: center; text-decoration: none;
+  white-space: normal; max-width: 100%; box-shadow: var(--shadow-xs);
+}
+html[data-theme] .workspace-app :is(.btn, .btn-soft, .btn-list, .btn-report, .btn-mini, .pf-button) {
+  border: 1px solid var(--border); background: var(--panel); color: var(--text-2);
+}
+html[data-theme] .workspace-app :is(.btn-primary, .btn-soft-primary, .btn-list-primary, .btn-report-primary,
+  .pf-button.primary, .rq-action--success) { background: var(--action); border-color: var(--action); color: #fff; }
+html[data-theme] .workspace-app :is(.btn-primary, .btn-soft-primary, .btn-list-primary, .btn-report-primary,
+  .pf-button.primary, .rq-action--success):hover { background: var(--action-hover); border-color: var(--action-hover); color: #fff; }
+html[data-theme] .workspace-app :is(.btn-danger, .btn-soft-danger) { color: #fff; background: var(--danger-action); border-color: var(--danger-action); }
+html[data-theme] .workspace-app :is(.hero-card, .hero, .pf-hero, .backup-hero, .rq-hero, .setup-hero, .payment-hero, .welcome-hero, .pay-loan-card)
+  :is(.btn, .btn-soft, .btn-hero, .pf-button, .rq-btn) { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.28); box-shadow: none; }
+html[data-theme] .workspace-app :is(.hero-card, .hero, .pf-hero, .backup-hero, .rq-hero, .setup-hero, .payment-hero, .welcome-hero, .pay-loan-card)
+  :is(.btn, .btn-soft, .btn-hero, .pf-button, .rq-btn):hover { background: rgba(255,255,255,.14); color: #fff; }
+html[data-theme] .workspace-app :is(button, input, select, textarea):disabled,
+html[data-theme] .workspace-app [aria-disabled="true"] { opacity: .6; cursor: not-allowed; transform: none; }
+html[data-theme] .workspace-app :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), select, textarea) {
+  border: 1px solid var(--border); border-radius: var(--control-radius);
+  background: var(--input-bg); color: var(--text); font-size: 13px;
+  padding: 10px 12px; max-width: 100%; min-width: 0;
+}
+html[data-theme] .workspace-app :where(input:not([type="checkbox"]):not([type="radio"]), select) { min-height: 42px; }
+html[data-theme] .workspace-app :is(input, select, textarea):focus {
+  border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow);
+}
+html[data-theme] .workspace-app :is(.field label, .field-label, .field-wrap label, .payment-field label, .pf-field label, form > p > label) {
+  color: var(--text-2); font-size: 12px; font-weight: 650;
+  text-transform: none; letter-spacing: 0; line-height: 1.5;
+}
+html[data-theme] .workspace-app form > p { margin: 0 0 18px; }
+html[data-theme] .workspace-app :is(.field-help, .field .help, .field-wrap .help, .payment-help) { color: var(--muted); font-size: 12px; line-height: 1.65; }
+html[data-theme] .workspace-app :is(.field-error, .field-errors, .field .err, .errorlist, .pf-error) { color: var(--danger); font-size: 12px; }
+html[data-theme] .workspace-app .errorlist { margin: 6px 0; padding-left: 18px; }
+html[data-theme] .workspace-app :is(.field, .field-wrap, .field-card).has-error :is(input, select, textarea) {
+  border-color: var(--danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 12%, transparent);
+}
+html[data-theme] .workspace-app .error-summary { color: var(--danger); background: color-mix(in srgb, var(--danger) 6%, var(--panel)); border-color: color-mix(in srgb, var(--danger) 25%, var(--border)); }
+html[data-theme] .workspace-app .workspace-filter { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+html[data-theme] .workspace-app .workspace-filter > :is(input, select) { flex: 1 1 220px; width: auto; }
+html[data-theme] .workspace-app .workspace-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* Status colors remain semantic, with the same readable treatment everywhere. */
+html[data-theme] .workspace-app :is(.chip, .hero-chip, .backup-chip, .rq-chip, .status, .pf-badge, .table-chip, .table-pill) {
+  font-size: 11px; font-weight: 700; line-height: 1.5; padding: 4px 9px;
+  border-radius: 999px; border: 1px solid var(--border); background: var(--bg-soft); color: var(--muted);
+}
+html[data-theme] .workspace-app :is(.chip-green, .chip.good, .status-EXECUTED, .rq-chip.reconciled) { --status-color: var(--success); }
+html[data-theme] .workspace-app :is(.chip-amber, .chip-gold, .chip.warn, .status-PENDING, .rq-chip.pending, .rq-chip.processing, .rq-chip.succeeded) { --status-color: var(--warning); }
+html[data-theme] .workspace-app :is(.chip-red, .chip.bad, .status-REJECTED, .status-FAILED, .rq-chip.failed, .rq-chip.manual_review, .pf-badge.bad) { --status-color: var(--danger); }
+html[data-theme] .workspace-app :is(.chip-blue) { --status-color: var(--info); }
+html[data-theme] .workspace-app .chip-violet { --status-color: var(--violet); }
+html[data-theme] .workspace-app .chip-cyan { --status-color: var(--cyan); }
+html[data-theme] .workspace-app :is(.chip-forest, .pf-badge, .table-chip) { --status-color: var(--primary); }
+html[data-theme] .workspace-app :is(.chip-green, .chip.good, .status-EXECUTED, .rq-chip.reconciled,
+  .chip-amber, .chip-gold, .chip.warn, .status-PENDING, .rq-chip.pending, .rq-chip.processing, .rq-chip.succeeded,
+  .chip-red, .chip.bad, .status-REJECTED, .status-FAILED, .rq-chip.failed, .rq-chip.manual_review,
+  .chip-blue, .chip-violet, .chip-cyan, .chip-forest, .pf-badge, .table-chip) {
+  color: var(--status-color); background: color-mix(in srgb, var(--status-color) 6%, var(--panel));
+  border-color: color-mix(in srgb, var(--status-color) 22%, var(--border));
+}
+html[data-theme] .workspace-app :is(.hero-card, .hero, .pf-hero, .backup-hero, .setup-hero, .welcome-hero, .pay-loan-card)
+  :is(.chip, .hero-chip, .backup-chip) { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.22); color: #fff; }
+html[data-theme] .workspace-app :is(.warning-title, .warning-box strong) { color: var(--danger); }
+html[data-theme] .workspace-app .warning-box { background: color-mix(in srgb, var(--danger) 6%, var(--panel)); border-color: color-mix(in srgb, var(--danger) 25%, var(--border)); }
+html[data-theme] .workspace-app .loan-summary { background: linear-gradient(125deg, var(--hero-start), var(--hero-end)); color: #fff; }
+html[data-theme] .workspace-app .modal-card { border-radius: var(--card-radius); background: var(--panel); border-color: var(--border); box-shadow: var(--shadow-lg); }
+html[data-theme] .workspace-app :is(.agent-avatar, .mini-avatar, .profile-logo):not(:has(img)) { background: var(--action); color: #fff; }
+
+/* Tabs and pagination have one selected state, separate from action buttons. */
+html[data-theme] .workspace-app :is(.tab-btn, .detail-tab, .pf-tab, .page-link, .page-gap) {
+  border-radius: var(--button-radius); font-size: 12px; font-weight: 700;
+  line-height: 1.5; padding: 9px 14px; text-transform: none; letter-spacing: 0;
+}
+html[data-theme] .workspace-app :is(.tab-btn, .detail-tab, .pf-tab) {
+  color: var(--text-2); background: var(--panel); border: 1px solid var(--border);
+}
+html[data-theme] .workspace-app :is(.tab-btn, .detail-tab, .pf-tab):hover {
+  color: var(--text); background: var(--bg-soft); border-color: var(--border-accent);
+}
+html[data-theme] .workspace-app :is(.tab-btn.active, .tab-btn.is-active, .detail-tab.active, .pf-tab.active, .page-link.current) {
+  color: var(--primary); border-color: var(--border-accent); background: var(--accent-soft); box-shadow: none;
+}
+html[data-theme] .workspace-app .tab-btn .tab-badge { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, var(--panel)); }
+html[data-theme] .workspace-app :is(.tab-nav, .tabs-nav, .detail-tabs, .pf-tabs) { gap: 8px; }
+html[data-theme] .workspace-app .pagination-shell { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+html[data-theme] .workspace-app .pagination-meta { color: var(--muted); font-size: 12px; }
+html[data-theme] .workspace-app :is(.pagination-shell, .pagination-nav) { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+html[data-theme] .workspace-app .pagination-shell { justify-content: space-between; }
+html[data-theme] .workspace-app .page-link { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; border: 1px solid var(--border); background: var(--panel); color: var(--text-2); }
+html[data-theme] .workspace-app .page-link.current { background: var(--accent-soft); color: var(--primary); border-color: var(--border-accent); }
+html[data-theme] .workspace-app .page-gap { color: var(--muted); }
+
+/* Tables scroll inside their panels and share headers, spacing, and row focus. */
+html[data-theme] .workspace-app :is(.table-wrap, .table-responsive, .pf-table-wrap, .coverage-table-wrap, .column-table-wrap, .audit-table) { min-width: 0; max-width: 100%; overflow-x: auto; border-radius: var(--nested-radius); }
+html[data-theme] .workspace-app table { font-size: 13px; color: var(--text); }
+html[data-theme] .workspace-app thead, html[data-theme] .workspace-app th { background: var(--bg-soft); }
+html[data-theme] .workspace-app th { font-size: 10px; font-weight: 700; letter-spacing: .055em; color: var(--muted); padding: 11px 14px; border-color: var(--border); }
+html[data-theme] .workspace-app td { padding: 12px 14px; color: var(--text); border-color: var(--border-soft); line-height: 1.6; }
+html[data-theme] .workspace-app td :is(a:not(.btn):not(.btn-soft), small) { color: var(--primary); }
+html[data-theme] .workspace-app td small { color: var(--muted); }
+html[data-theme] .workspace-app :is(td.money, td.right, .money) { font-variant-numeric: tabular-nums; }
+html[data-theme] .workspace-app :is(.empty, .pf-empty, .rq-empty, .empty-state) { padding: 28px 18px; color: var(--muted); font-size: 13px; line-height: 1.75; text-align: center; }
+
+@media (max-width: 720px) {
+  html[data-theme] .workspace-app { --card-padding: 18px; --hero-padding: 20px; --section-gap: 16px; }
+  html[data-theme] .workspace-app :is(.hero-title, .backup-title, .rq-title, .payment-title, .pf-hero h1, .setup-hero h1, .welcome-title, .pay-title, .wh-name, .plc-title, .dh-title) { font-size: 25px; }
+  html[data-theme] .workspace-app .page-title { font-size: 22px; }
+  html[data-theme] .workspace-app :is(.filter-grid, .field-grid, .field-grid-2, .field-grid-3, .grid, .grid-2, .grid-3, .grid-4, .two-col, .meta-grid, .deposit-grid) { grid-template-columns: minmax(0, 1fr); }
+  html[data-theme] .workspace-app :is(.field-span-2, .field-span-3) { grid-column: 1 / -1; }
+  html[data-theme] .workspace-app .workspace-filter > :is(input, select) { flex-basis: 100%; width: 100%; }
+  html[data-theme] .workspace-app :is(.stat-value, .summary-value, .sum-val, .metric-value, .deposit-value, .audit-stat strong, .pf-stat strong) { font-size: 23px; }
+  html[data-theme] .workspace-app :is(.section-title, .form-title, .panel-title, .cp-title, .tabs-title) { font-size: 20px; }
+  html[data-theme] .workspace-app :is(.filter-grid, .field-grid, .two-col) > * { min-width: 0; }
+  html[data-theme] .workspace-app :is(.chooser-form, .chooser-form .field) { width: 100%; }
+  html[data-theme] .workspace-app .chooser-form select { min-width: 0; }
+  html[data-theme] .workspace-app .modal-card { border-radius: 0; }
+}

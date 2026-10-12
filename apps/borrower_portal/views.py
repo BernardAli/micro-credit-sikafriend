@@ -1,4 +1,8 @@
 from decimal import Decimal
+
+from django import forms
+from django.core.exceptions import ValidationError
+from django.db.models import Q
 from functools import wraps
 
 from django.contrib import messages
@@ -70,8 +74,8 @@ def portal_home(request):
     # 5 most recent payments across all loans
     recent_payments = (
         Payment.objects
-        .filter(loan__borrower=borrower, is_void=False)
-        .select_related("loan", "loan__agent_name")
+        .filter(Q(is_void=False) | Q(reversal__isnull=False), loan__borrower=borrower)
+        .select_related("loan", "loan__agent_name", "reversal")
         .order_by("-payment_date", "-created_at")[:8]
     )
 
@@ -85,6 +89,7 @@ def portal_home(request):
         "total_disbursed":     total_disbursed.quantize(Decimal("0.01")),
         "total_expected":      total_expected.quantize(Decimal("0.01")),
         "total_paid":          total_paid.quantize(Decimal("0.01")),
+        "customer_credit":     sum((l.total_customer_credit for l in loans), Decimal("0.00")),
         "total_outstanding":   total_outstanding.quantize(Decimal("0.01")),
         "total_principal_paid":total_principal_paid.quantize(Decimal("0.01")),
         "total_roic_paid":     total_roic_paid.quantize(Decimal("0.01")),
@@ -105,7 +110,8 @@ def portal_loan_detail(request, loan_id):
 
     payments = (
         loan.payments
-        .filter(is_void=False)
+        .filter(Q(is_void=False) | Q(reversal__isnull=False))
+        .select_related("reversal")
         .order_by("payment_date", "id")
     )
 
@@ -172,6 +178,10 @@ def portal_make_payment(request, loan_id):
         messages.error(request, "This loan is already closed.")
         return redirect("borrower:loan_detail", loan_id=loan.pk)
 
+    if not loan.is_ready_for_disbursement:
+        messages.error(request, "Repayments are available after the required security deposit is approved.")
+        return redirect("borrower:loan_detail", loan_id=loan.pk)
+
     error = None
     if request.method == "POST":
         raw_amount = request.POST.get("amount", "").strip()
@@ -182,10 +192,8 @@ def portal_make_payment(request, loan_id):
         payer_name  = request.POST.get("payer_name", "").strip()
 
         try:
-            amount = Decimal(raw_amount)
-            if amount <= 0:
-                raise ValueError
-        except (ValueError, Exception):
+            amount = forms.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01")).clean(raw_amount)
+        except ValidationError:
             error = "Please enter a valid payment amount."
         else:
             if amount > loan.balance_amount:
@@ -209,22 +217,25 @@ def portal_make_payment(request, loan_id):
                 )
                 messages.success(
                     request,
-                    "Payment request started successfully. "
-                    f"Collection reference: {collection.client_reference}. "
-                    "It will post automatically once the provider confirms it.",
+                    f"Payment details submitted. Reference: {collection.client_reference}. "
+                    "Our team will verify receipt of the funds before crediting your loan.",
                 )
                 return redirect("borrower:make_payment", loan_id=loan.pk)
 
             if not error:
-                Payment.objects.create(
-                    loan=loan,
-                    amount=amount,
-                    payment_method=method,
-                    reference=reference,
-                    note=note,
-                    is_pending=True,
-                    submitted_by=request.user,
-                )
+                try:
+                    Payment.objects.create(
+                        loan=loan,
+                        amount=amount,
+                        payment_method=method,
+                        reference=reference,
+                        note=note,
+                        is_pending=True,
+                        submitted_by=request.user,
+                    )
+                except ValidationError as exc:
+                    messages.error(request, "; ".join(exc.messages))
+                    return redirect("borrower:make_payment", loan_id=loan.pk)
 
                 # Notify all staff
                 try:
@@ -265,39 +276,3 @@ def portal_make_payment(request, loan_id):
         "payment_methods":  Payment.PAYMENT_METHOD_CHOICES,
         "auto_collection_methods": AUTO_COLLECTION_METHODS,
     })
-
-
-@borrower_required
-def portal_collection_simulate(request, collection_id, outcome):
-    """Local development helper to simulate a provider callback."""
-    if request.method != "POST":
-        return redirect("borrower:portal")
-
-    from django.shortcuts import get_object_or_404
-    from apps.loans.models import RepaymentCollection
-
-    collection = get_object_or_404(
-        RepaymentCollection.objects.select_related("loan", "borrower"),
-        pk=collection_id,
-        borrower=get_borrower_for_user(request.user),
-    )
-
-    if collection.status == "RECONCILED":
-        messages.info(request, "This collection has already been reconciled.")
-        return redirect("borrower:make_payment", loan_id=collection.loan_id)
-
-    provider_status = "success" if outcome == "success" else "failed"
-    payload = {
-        "client_reference": collection.client_reference,
-        "provider_reference": collection.provider_reference,
-        "status": provider_status,
-        "message": "Local gateway simulation",
-        "reason": "Local gateway simulation failed" if provider_status == "failed" else "",
-    }
-    process_collection_callback(collection, provider_status=provider_status, payload=payload)
-
-    if provider_status == "success":
-        messages.success(request, "Gateway confirmation simulated successfully.")
-    else:
-        messages.error(request, "Gateway failure simulated for this collection.")
-    return redirect("borrower:make_payment", loan_id=collection.loan_id)

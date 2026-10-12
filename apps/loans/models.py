@@ -9,6 +9,8 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from apps.accounts.models import Agent
+from apps.core.private_media import private_upload_storage
+from apps.core.models import ReversibleTransaction
 
 
 class Portfolio(models.Model):
@@ -136,9 +138,9 @@ class Borrower(models.Model):
     residence_status = models.CharField(max_length=20, choices=RESIDENCE_STATUS_CHOICES, blank=True)
     residence_status_other = models.CharField(max_length=80, blank=True)
 
-    photo = models.ImageField(upload_to="borrowers/photos/")
-    ghana_card_front = models.ImageField(upload_to="borrowers/ghana_cards/front/")
-    ghana_card_back = models.ImageField(upload_to="borrowers/ghana_cards/back/")
+    photo = models.ImageField(upload_to="borrowers/photos/", storage=private_upload_storage)
+    ghana_card_front = models.ImageField(upload_to="borrowers/ghana_cards/front/", storage=private_upload_storage)
+    ghana_card_back = models.ImageField(upload_to="borrowers/ghana_cards/back/", storage=private_upload_storage)
 
     ghana_card_number = models.CharField(max_length=30, unique=True)
     group_name = models.CharField(max_length=150)
@@ -162,7 +164,7 @@ class Borrower(models.Model):
                 raise ValidationError({"borrower_id": "This customer's permanent ID cannot be changed."})
             if identity and not self.portfolio_id:
                 raise ValidationError({"portfolio": "A customer must belong to a portfolio."})
-            if not original and not self.portfolio_id:
+            if not original and not self.portfolio_id and not getattr(self, "_legacy_import", False):
                 raise ValidationError({"portfolio": "Select a portfolio before registering a customer."})
             issuing = self.portfolio_id and not identity
             if issuing:
@@ -239,6 +241,10 @@ class Borrower(models.Model):
 
     def __str__(self):
         return f"{self.full_name} ({self.borrower_id})"
+
+    @property
+    def customer_credit_balance(self):
+        return Payment.objects.filter(loan__borrower=self, is_void=False, is_pending=False).aggregate(total=Sum("customer_credit"))["total"] or Decimal("0.00")
 
 
 class Loan(models.Model):
@@ -365,6 +371,8 @@ class Loan(models.Model):
 
     @property
     def actual_payments_count(self) -> int:
+        if hasattr(self, "_settled_payment_count"):
+            return self._settled_payment_count
         cached = self._cached_settled_payments()
         if cached is not None:
             return len(cached)
@@ -382,6 +390,9 @@ class Loan(models.Model):
         ]
 
     def _settled_payment_total(self, field: str) -> Decimal:
+        total_attribute = f"_settled_total_{field}"
+        if hasattr(self, total_attribute):
+            return Decimal(getattr(self, total_attribute)).quantize(Decimal("0.01"))
         cached = self._cached_settled_payments()
         if cached is not None:
             return sum(
@@ -392,8 +403,14 @@ class Loan(models.Model):
         return Decimal(agg).quantize(Decimal("0.01"))
 
     @property
+    def paid_installments_count(self) -> int:
+        if self.weekly_payment <= 0:
+            return 0
+        return min(self.expected_payments_count, int((self.total_paid_amount + self.security_deposit_applied_amount) // self.weekly_payment))
+
+    @property
     def outstanding_payments_count(self) -> int:
-        remaining = self.expected_payments_count - self.actual_payments_count
+        remaining = self.expected_payments_count - self.paid_installments_count
         return max(0, int(remaining))
 
     @property
@@ -432,7 +449,15 @@ class Loan(models.Model):
 
     @property
     def total_paid_amount(self) -> Decimal:
+        return self.total_cash_received - self.total_customer_credit
+
+    @property
+    def total_cash_received(self) -> Decimal:
         return self._settled_payment_total("amount")
+
+    @property
+    def total_customer_credit(self) -> Decimal:
+        return self._settled_payment_total("customer_credit")
 
     @property
     def total_principal_paid(self) -> Decimal:
@@ -477,6 +502,8 @@ class Loan(models.Model):
         """
         Repayments expected by now, capped at total duration.
         """
+        if not self.is_ready_for_disbursement:
+            return 0
         if self.repayment_frequency == "DAILY":
             today = timezone.localdate()
             elapsed = max(0, (today - self.start_date).days) if self.start_date else 0
@@ -488,7 +515,7 @@ class Loan(models.Model):
         """
         Number of weekly payments borrower is behind.
         """
-        overdue = self.expected_payments_due_by_now - self.actual_payments_count
+        overdue = self.expected_payments_due_by_now - self.paid_installments_count
         return max(0, overdue)
 
     @property
@@ -526,24 +553,38 @@ class Loan(models.Model):
     @property
     def is_ready_for_disbursement(self) -> bool:
         """Legacy loans remain operational; new loans require a fully secured deposit."""
+        if hasattr(self, "_disbursement_ready"):
+            return self._disbursement_ready
         try:
-            return self.security_deposit.is_secured
+            deposit = self.security_deposit
+            return bool(self.disbursed_at or not deposit.enforce_before_disbursement or deposit.is_secured)
         except SecurityDeposit.DoesNotExist:
             return True
 
     def save(self, *args, **kwargs):
         if not self.pk:
-            if not self.borrower.portfolio_id:
+            if not self.borrower.portfolio_id and not getattr(self, "_legacy_import", False):
                 raise ValidationError("Assign the customer to a portfolio before issuing a loan.")
             self.portfolio_id = self.borrower.portfolio_id
+        terms = ("amount", "duration_months", "duration_weeks", "weekly_payment", "repayment_frequency")
+        original = type(self).objects.filter(pk=self.pk).values(*terms).first() if self.pk else None
+        if not getattr(self, "_legacy_import", False) and (original is None or any(original[field] != getattr(self, field) for field in terms)):
+            self.clean()
         self.loan_category = self.get_loan_category()
         super().save(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        if self.amount is None or self.weekly_payment is None:
+            return
+        if Decimal(self.amount) <= 0 or Decimal(self.weekly_payment) <= 0 or self.total_expected_amount < self.principal_amount:
+            raise ValidationError("A loan needs positive principal and installments, with an agreed repayment schedule covering its principal.")
 
     def __str__(self):
         return f"Loan #{self.id} - {self.borrower.full_name} - GHS {self.amount} ({self.loan_category})"
 
 
-class Payment(models.Model):
+class Payment(ReversibleTransaction):
     PAYMENT_METHOD_CHOICES = [
         ("CASH",         "Cash"),
         ("MOBILE_MONEY", "Mobile Money (MoMo)"),
@@ -553,12 +594,13 @@ class Payment(models.Model):
         ("OTHER",        "Other"),
     ]
 
-    loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name="payments")
+    loan = models.ForeignKey(Loan, on_delete=models.PROTECT, related_name="payments")
     payment_date = models.DateField(default=timezone.localdate)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
 
     principal_paid = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     roic_paid = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    customer_credit = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"), editable=False)
 
     payment_method = models.CharField(
         max_length=20, choices=PAYMENT_METHOD_CHOICES, default="CASH",
@@ -581,89 +623,78 @@ class Payment(models.Model):
     class Meta:
         ordering = ["payment_date", "id"]
 
+    @property
+    def loan_applied_amount(self):
+        return self.amount - self.customer_credit
+
     def allocate_components(self):
-        """
-        Allocation rule:
-        Split every payment proportionally between principal and ROIC
-        based on the original loan structure.
-        """
+        from .payment_allocations import allocate_receipt
         zero = Decimal("0.00")
-        q = Decimal("0.01")
-
-        if not self.loan_id or self.is_void:
-            self.principal_paid = zero
-            self.roic_paid = zero
+        self.customer_credit = zero
+        if not self.loan_id or self.is_void or self.is_pending:
+            self.principal_paid = self.roic_paid = zero
             return
-
-        payment_amount = Decimal(self.amount or zero).quantize(q)
-
-        existing_principal_paid = (
-            self.loan.payments.filter(is_void=False, is_pending=False)
-            .exclude(pk=self.pk)
-            .aggregate(s=Sum("principal_paid"))["s"] or zero
-        )
-        existing_roic_paid = (
-            self.loan.payments.filter(is_void=False, is_pending=False)
-            .exclude(pk=self.pk)
-            .aggregate(s=Sum("roic_paid"))["s"] or zero
-        )
-
-        existing_principal_paid = Decimal(existing_principal_paid).quantize(q)
-        existing_roic_paid = Decimal(existing_roic_paid).quantize(q)
-
-        principal_remaining = max(self.loan.principal_amount - existing_principal_paid, zero)
-        roic_remaining = max(self.loan.roic_amount - existing_roic_paid, zero)
-        total_remaining = principal_remaining + roic_remaining
-
-        if total_remaining <= zero or payment_amount <= zero:
-            self.principal_paid = zero
-            self.roic_paid = zero
-            return
-
-        if self.loan.total_expected_amount <= zero:
-            self.principal_paid = zero
-            self.roic_paid = zero
-            return
-
-        principal_ratio = self.loan.principal_amount / self.loan.total_expected_amount
-        roic_ratio = self.loan.roic_amount / self.loan.total_expected_amount
-
-        principal_part = (payment_amount * principal_ratio).quantize(q, rounding=ROUND_HALF_UP)
-        roic_part = (payment_amount * roic_ratio).quantize(q, rounding=ROUND_HALF_UP)
-
-        diff = payment_amount - (principal_part + roic_part)
-        principal_part += diff
-
-        if principal_part > principal_remaining:
-            excess = principal_part - principal_remaining
-            principal_part = principal_remaining
-            roic_part += excess
-
-        if roic_part > roic_remaining:
-            excess = roic_part - roic_remaining
-            roic_part = roic_remaining
-            principal_part += excess
-
-        principal_part = min(principal_part, principal_remaining)
-        roic_part = min(roic_part, roic_remaining)
-
-        self.principal_paid = Decimal(principal_part).quantize(q)
-        self.roic_paid = Decimal(roic_part).quantize(q)
+        totals = self.loan.payments.filter(is_void=False, is_pending=False).exclude(pk=self.pk).aggregate(
+            principal=Sum("principal_paid"), roic=Sum("roic_paid"))
+        principal_remaining = max(self.loan.principal_amount - self.loan.security_deposit_applied_amount - (totals["principal"] or zero), zero)
+        roic_remaining = max(self.loan.roic_amount - (totals["roic"] or zero), zero)
+        if self.loan.total_expected_amount <= zero or self.loan.total_expected_amount < self.loan.principal_amount:
+            raise ValidationError("The loan repayment schedule must cover its principal before allocating receipts.")
+        self.principal_paid, self.roic_paid, self.customer_credit = allocate_receipt(
+            Decimal(self.amount), principal=self.loan.principal_amount, expected=self.loan.total_expected_amount,
+            principal_remaining=principal_remaining, roic_remaining=roic_remaining)
 
     def save(self, *args, **kwargs):
-        if not self.pk and not self.collected_by_id and self.submitted_by_id:
-            self.collected_by = Agent.objects.filter(user_id=self.submitted_by_id).first()
-        self.allocate_components()
-        super().save(*args, **kwargs)
-
-        loan = Loan.objects.select_related("borrower").get(pk=self.loan_id)
-        loan.refresh_status(save=True)
-
-        if loan.borrower_id:
+        using = kwargs.get("using") or router.db_for_write(type(self), instance=self)
+        with transaction.atomic(using=using):
+            # All repayment paths lock the loan before reading its available balance.
+            loan = Loan.objects.using(using).select_for_update().get(pk=self.loan_id)
+            original = type(self).objects.using(using).select_for_update().filter(pk=self.pk).first() if self.pk else None
+            if original and original.loan_id != self.loan_id:
+                raise ValidationError({"loan": "A recorded repayment cannot be moved to another loan."})
+            if original and original.reversal_id:
+                raise ValidationError("An approved reversal is permanent. Record a new receipt for any correction.")
+            if original and not original.is_void and not original.is_pending and self.is_void:
+                raise ValidationError("Settled repayments require an approved transaction reversal.")
+            if original and not original.is_void and not original.is_pending and not getattr(self, "_legacy_import", False):
+                if self.is_pending or any(getattr(self, name) != getattr(original, name) for name in ("amount", "payment_date", "payment_method")):
+                    raise ValidationError("Settled receipt amounts, dates, methods and status require an approved reversal before correction.")
+            self.loan = loan
+            amount = Decimal(self.amount or "0")
+            if not amount.is_finite() or amount <= 0 or amount >= Decimal("10000000000") or amount != amount.quantize(Decimal("0.01")):
+                raise ValidationError({"amount": "Enter a positive amount with at most two decimal places and ten whole digits."})
+            if not self.is_void:
+                totals = loan.payments.filter(is_void=False, is_pending=False).exclude(pk=self.pk).aggregate(total=Sum("amount"), credit=Sum("customer_credit"))
+                existing_paid = (totals["total"] or Decimal("0.00")) - (totals["credit"] or Decimal("0.00"))
+                available = max(loan.total_expected_amount - existing_paid - loan.security_deposit_applied_amount, Decimal("0.00"))
+                unchanged_credit_receipt = original and original.customer_credit > 0 and not original.is_void and not original.is_pending and not self.is_pending and amount == original.amount and self.payment_date == original.payment_date
+                if amount > available and not getattr(self, "_legacy_import", False) and not unchanged_credit_receipt:
+                    raise ValidationError({"amount": f"Payment cannot exceed the outstanding balance of {available:,.2f}."})
+                if not loan.is_ready_for_disbursement:
+                    raise ValidationError("Collect and approve the security deposit before accepting repayments.")
+            if not self.pk and not self.collected_by_id and self.submitted_by_id:
+                self.collected_by = Agent.objects.filter(user_id=self.submitted_by_id).first()
+            if original and original.customer_credit > 0 and not self.is_void and (amount != original.amount or self.payment_date != original.payment_date):
+                raise ValidationError("A receipt holding customer credit needs reconciliation before changing its amount or date.")
+            if not self.is_void and not self.is_pending and original and not original.is_void and not original.is_pending and amount == original.amount and self.payment_date == original.payment_date:
+                self.principal_paid, self.roic_paid, self.customer_credit = original.principal_paid, original.roic_paid, original.customer_credit
+            else:
+                self.allocate_components()
+            if self.customer_credit > 0 and not getattr(self, "_legacy_import", False) and not (original and original.customer_credit > 0):
+                raise ValidationError("Review this loan's historical allocations before accepting further repayments.")
+            if not self.is_void and not self.is_pending and self.principal_paid + self.roic_paid + self.customer_credit != amount:
+                raise ValidationError("Repayment components do not match the received amount. Review this loan's existing allocations.")
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = set(kwargs["update_fields"]) | {"principal_paid", "roic_paid", "customer_credit"}
+            super().save(*args, **kwargs)
+            loan.refresh_status(save=True)
             loan.borrower.refresh_status(save=True)
 
     def __str__(self):
         return f"Payment #{self.id or 'new'} - Loan #{self.loan_id} - GHS {self.amount}"
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Receipt evidence cannot be deleted. Request an approved reversal for a settled payment.")
 
 
 class RepaymentCollection(models.Model):
@@ -742,6 +773,16 @@ class RepaymentCollection(models.Model):
         return f"Collection {self.client_reference} - Loan #{self.loan_id} - GHS {self.amount}"
 
 
+class RepaymentReceipt(models.Model):
+    """Reserve each provider receipt once, even across concurrent loans."""
+    collection = models.OneToOneField(RepaymentCollection, on_delete=models.PROTECT, related_name="receipt")
+    provider = models.CharField(max_length=20)
+    provider_reference = models.CharField(max_length=120)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["provider", "provider_reference"], name="unique_provider_repayment_receipt")]
+
+
 class SecurityDeposit(models.Model):
     """Customer funds held separately as security for one approved loan."""
 
@@ -755,6 +796,7 @@ class SecurityDeposit(models.Model):
     borrower = models.ForeignKey(Borrower, on_delete=models.PROTECT, related_name="security_deposits")
     loan = models.OneToOneField(Loan, on_delete=models.PROTECT, related_name="security_deposit")
     required_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    enforce_before_disbursement = models.BooleanField(default=True, help_text="Disabled for deposits recorded against loans already issued before this workflow.")
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="REQUIRED")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -764,23 +806,33 @@ class SecurityDeposit(models.Model):
 
     @property
     def collected_amount(self):
-        return self.transactions.filter(action="COLLECTION").aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        if not self.pk:
+            return Decimal("0.00")
+        return self.transactions.filter(action="COLLECTION", reversal__isnull=True).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
 
     @property
     def refunded_amount(self):
-        return self.transactions.filter(action="REFUND").aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        if not self.pk:
+            return Decimal("0.00")
+        return self.transactions.filter(action="REFUND", reversal__isnull=True).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
 
     @property
     def applied_amount(self):
-        return self.transactions.filter(action="DEFAULT_APPLICATION").aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        if not self.pk:
+            return Decimal("0.00")
+        return self.transactions.filter(action="DEFAULT_APPLICATION", reversal__isnull=True).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
 
     @property
     def transferred_in_amount(self):
-        return self.incoming_transfers.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        if not self.pk:
+            return Decimal("0.00")
+        return self.incoming_transfers.filter(reversal__isnull=True).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
 
     @property
     def transferred_out_amount(self):
-        return self.outgoing_transfers.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        if not self.pk:
+            return Decimal("0.00")
+        return self.outgoing_transfers.filter(reversal__isnull=True).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
 
     @property
     def held_amount(self):
@@ -813,7 +865,7 @@ class SecurityDeposit(models.Model):
         return f"Security deposit — Loan #{self.loan_id}"
 
 
-class SecurityDepositTransaction(models.Model):
+class SecurityDepositTransaction(ReversibleTransaction):
     ACTION_CHOICES = [
         ("COLLECTION", "Deposit Collection"),
         ("REFUND", "Deposit Refund"),
@@ -840,7 +892,7 @@ class SecurityDepositTransaction(models.Model):
         return f"{self.get_action_display()} — Loan #{self.deposit.loan_id}"
 
 
-class SecurityDepositTransfer(models.Model):
+class SecurityDepositTransfer(ReversibleTransaction):
     """An approved, customer-authorised deposit carry-forward between loan cycles."""
 
     source = models.ForeignKey(SecurityDeposit, on_delete=models.PROTECT, related_name="outgoing_transfers")

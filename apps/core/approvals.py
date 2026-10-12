@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db import transaction
 from django.utils import timezone
 
@@ -71,17 +71,25 @@ def can_self_review_approval(user) -> bool:
 
 
 def _validate_self_review(approval, reviewer):
+    if not reviewer or not reviewer.is_active or not (reviewer.is_staff or reviewer.is_superuser):
+        raise PermissionDenied("Only active management accounts may review approvals.")
     if approval.submitted_by_id and reviewer and approval.submitted_by_id == reviewer.pk:
+        if approval.workflow_type == "TRANSACTION_REVERSAL":
+            raise ValueError("A different administrator must review a transaction reversal, including management and superuser requests.")
         if not can_self_review_approval(reviewer):
             raise ValueError(
                 "Only management or a superuser can approve or reject their own request."
             )
 
 
+@transaction.atomic
 def reject_approval_request(approval, reviewer, *, note="", request=None):
+    approval = ApprovalRequest.objects.select_for_update().get(pk=approval.pk)
     if approval.status != "PENDING":
         raise ValueError("Only pending requests can be rejected.")
     _validate_self_review(approval, reviewer)
+    if approval.workflow_type == "TRANSACTION_REVERSAL" and len((note or "").strip()) < 10:
+        raise ValueError("Enter an administrator review note of at least 10 characters.")
 
     approval.status = "REJECTED"
     approval.reviewed_by = reviewer
@@ -105,87 +113,61 @@ def reject_approval_request(approval, reviewer, *, note="", request=None):
 
 
 def approve_and_execute_request(approval, reviewer, *, note="", request=None):
-    if approval.status != "PENDING":
-        raise ValueError("Only pending requests can be approved.")
-    _validate_self_review(approval, reviewer)
-
-    if approval.workflow_type == "LOAN_CREATION":
-        from apps.loans.cross_company import get_cross_company_debt_check
-        from apps.loans.models import Borrower
-
-        borrower = Borrower.objects.filter(pk=approval.payload.get("borrower_id")).first()
-        if borrower is not None:
-            latest_check = get_cross_company_debt_check(borrower=borrower)
-            if latest_check["requires_review"] and not (note or "").strip():
-                raise ValueError(
-                    "Add an approval note after reviewing the customer's external debt exposure with other onboarded companies."
-                )
-
-    handler = {
-        "LOAN_CREATION": _execute_loan_creation,
-        "PAYROLL_RUN_APPROVAL": _execute_payroll_run_approval,
-        "ACCOUNTING_JOURNAL": _execute_accounting_journal,
-        "ASSET_DISPOSAL": _execute_asset_disposal,
-        "SECURITY_DEPOSIT": _execute_security_deposit,
-    }.get(approval.workflow_type)
-
-    if handler is None:
-        raise ValueError("No handler is configured for this approval workflow.")
-
+    failure = None
+    result = None
     with transaction.atomic():
+        approval = ApprovalRequest.objects.select_for_update().get(pk=approval.pk)
+        if approval.status != "PENDING":
+            raise ValueError("Only pending requests can be approved.")
+        _validate_self_review(approval, reviewer)
+        if approval.workflow_type == "TRANSACTION_REVERSAL" and len((note or "").strip()) < 10:
+            raise ValueError("Enter an administrator review note of at least 10 characters.")
+        if approval.workflow_type == "LOAN_CREATION":
+            from apps.loans.cross_company import get_cross_company_debt_check
+            from apps.loans.models import Borrower
+            borrower = Borrower.objects.filter(pk=approval.payload.get("borrower_id")).first()
+            if borrower and get_cross_company_debt_check(borrower=borrower)["requires_review"] and not (note or "").strip():
+                raise ValueError("Add an approval note after reviewing the customer's external debt exposure.")
+        handler = {
+            "LOAN_CREATION": _execute_loan_creation,
+            "PAYROLL_RUN_APPROVAL": _execute_payroll_run_approval,
+            "ACCOUNTING_JOURNAL": _execute_accounting_journal,
+            "ASSET_DISPOSAL": _execute_asset_disposal,
+            "SECURITY_DEPOSIT": _execute_security_deposit,
+            "TRANSACTION_REVERSAL": _execute_transaction_reversal,
+        }.get(approval.workflow_type)
+        if handler is None:
+            raise ValueError("No handler is configured for this approval workflow.")
         try:
-            result = handler(approval, reviewer, note=note)
+            # Roll back the handler's partial writes before persisting its failure.
+            with transaction.atomic():
+                result = handler(approval, reviewer, note=note)
         except Exception as exc:
-            approval.status = "FAILED"
-            approval.reviewed_by = reviewer
-            approval.reviewed_at = timezone.now()
-            approval.review_note = (note or "").strip()
-            approval.result_message = str(exc)
-            approval.save(update_fields=["status", "reviewed_by", "reviewed_at", "review_note", "result_message", "updated_at"])
-            log_activity(
-                category="APPROVAL",
-                action="failed",
-                actor=reviewer,
-                object_type="ApprovalRequest",
-                object_id=approval.pk,
-                object_label=approval.title,
-                message=f"Approval execution failed for {approval.title}.",
-                metadata={"workflow_type": approval.workflow_type, "error": str(exc)},
-                request=request,
-            )
-            raise
-
-        approval.status = "EXECUTED"
+            failure = exc
+        approval.status = "FAILED" if failure else "EXECUTED"
         approval.reviewed_by = reviewer
         approval.reviewed_at = timezone.now()
         approval.review_note = (note or "").strip()
-        approval.result_message = result.get("message", "Request approved and executed.")
-        if result.get("target_reference"):
+        approval.result_message = str(failure) if failure else result.get("message", "Request approved and executed.")
+        if result and result.get("target_reference"):
             approval.target_reference = result["target_reference"]
-        approval.save(
-            update_fields=[
-                "status",
-                "reviewed_by",
-                "reviewed_at",
-                "review_note",
-                "result_message",
-                "target_reference",
-                "updated_at",
-            ]
+        approval.save(update_fields=["status", "reviewed_by", "reviewed_at", "review_note", "result_message", "target_reference", "updated_at"])
+        log_activity(
+            category="APPROVAL", action="failed" if failure else "approved",
+            actor=reviewer, object_type="ApprovalRequest", object_id=approval.pk,
+            object_label=approval.title,
+            message=f"Approval request {approval.status.lower()}: {approval.title}.",
+            metadata={"workflow_type": approval.workflow_type, "error": str(failure)} if failure else {"workflow_type": approval.workflow_type, "result": result},
+            request=request,
         )
-
-    log_activity(
-        category="APPROVAL",
-        action="approved",
-        actor=reviewer,
-        object_type="ApprovalRequest",
-        object_id=approval.pk,
-        object_label=approval.title,
-        message=f"Approval request executed: {approval.title}.",
-        metadata={"workflow_type": approval.workflow_type, "result": result},
-        request=request,
-    )
+    if failure:
+        raise failure
     return approval, result
+
+
+def _execute_transaction_reversal(approval, reviewer, *, note=""):
+    from .reversals import execute_reversal
+    return execute_reversal(approval, reviewer, note=note)
 
 
 def _execute_loan_creation(approval, reviewer, *, note=""):
@@ -251,13 +233,14 @@ def _execute_loan_creation(approval, reviewer, *, note=""):
         approval_manager_signature_name=payload.get("approval_manager_signature_name") or "",
         approval_date=optional_date("approval_date"),
     )
-    loan.borrower.refresh_status(save=True)
     approved_amount = loan.approved_amount or loan.amount
     deposit = SecurityDeposit.objects.create(
         borrower=borrower,
         loan=loan,
         required_amount=(Decimal(approved_amount) * Decimal("0.10")).quantize(Decimal("0.01")),
     )
+    loan.refresh_status(save=True)
+    loan.borrower.refresh_status(save=True)
 
     from apps.loans.views import _build_new_loan_sms_messages
 
@@ -265,12 +248,12 @@ def _execute_loan_creation(approval, reviewer, *, note=""):
     agent_phone = loan.agent_name.phone if loan.agent_name else None
     borrower_msg, agent_msg = _build_new_loan_sms_messages(loan)
     if borrower_phone:
-        safe_send_sms(borrower_phone, borrower_msg)
+        transaction.on_commit(lambda: safe_send_sms(borrower_phone, borrower_msg))
     if agent_phone:
-        safe_send_sms(agent_phone, agent_msg)
+        transaction.on_commit(lambda: safe_send_sms(agent_phone, agent_msg))
 
     statement = build_loan_statement(loan)
-    notify_user(reviewer, "STATEMENT", f"Loan Statement: Loan #{loan.id}", statement, send_email=True)
+    transaction.on_commit(lambda: notify_user(reviewer, "STATEMENT", f"Loan Statement: Loan #{loan.id}", statement, send_email=True))
 
     log_activity(
         category="LOAN",
@@ -290,21 +273,33 @@ def _execute_loan_creation(approval, reviewer, *, note=""):
 
 def _execute_security_deposit(approval, reviewer, *, note=""):
     from apps.accounting.models import create_journal_entry, ensure_default_accounting_period, ensure_default_ledger_accounts, get_ledger_account
-    from apps.loans.models import SecurityDeposit, SecurityDepositTransaction, SecurityDepositTransfer
+    from apps.loans.models import Loan, SecurityDeposit, SecurityDepositTransaction, SecurityDepositTransfer
 
     payload = approval.payload
-    deposit = SecurityDeposit.objects.select_related("loan", "borrower").get(pk=payload["deposit_id"])
+    deposit_ids = {payload["deposit_id"]}
+    if payload.get("source_deposit_id"):
+        deposit_ids.add(payload["source_deposit_id"])
+    loan_ids = SecurityDeposit.objects.filter(pk__in=deposit_ids).values_list("loan_id", flat=True)
+    loans = {loan.pk: loan for loan in Loan.objects.select_for_update().filter(pk__in=loan_ids).order_by("pk")}
+    deposits = {deposit.pk: deposit for deposit in SecurityDeposit.objects.select_for_update().filter(pk__in=deposit_ids).order_by("pk")}
+    deposit = deposits[payload["deposit_id"]]
+    deposit.loan = loans[deposit.loan_id]
+    deposit.loan.refresh_status(save=True)
     action = payload["action"]
     amount = Decimal(str(payload["amount"])).quantize(Decimal("0.01"))
+    if not amount.is_finite() or amount <= 0 or action not in {"COLLECTION", "REFUND", "DEFAULT_APPLICATION", "CARRY_FORWARD"}:
+        raise ValueError("Select a valid deposit action and positive amount.")
     if action == "COLLECTION" and amount > deposit.amount_due:
         raise ValueError("Deposit collection exceeds the amount due.")
     if action == "REFUND" and (deposit.loan.status != "CLOSED" or amount > deposit.held_amount):
         raise ValueError("This deposit cannot be refunded in the requested amount.")
-    if action == "DEFAULT_APPLICATION" and (deposit.loan.status != "DEFAULT" or amount > min(deposit.held_amount, deposit.loan.balance_amount)):
+    if action == "DEFAULT_APPLICATION" and (deposit.loan.status != "DEFAULT" or amount > min(deposit.held_amount, deposit.loan.principal_outstanding)):
         raise ValueError("This deposit cannot be applied against the loan in the requested amount.")
 
     if action == "CARRY_FORWARD":
-        source = SecurityDeposit.objects.select_related("loan").get(pk=payload["source_deposit_id"])
+        source = deposits[payload["source_deposit_id"]]
+        source.loan = loans[source.loan_id]
+        source.loan.refresh_status(save=True)
         if source.borrower_id != deposit.borrower_id or source.loan.status != "CLOSED":
             raise ValueError("Only a completed loan's deposit for this borrower can be carried forward.")
         if amount > source.held_amount or amount > deposit.amount_due:
@@ -364,7 +359,7 @@ def _execute_security_deposit(approval, reviewer, *, note=""):
 def _execute_payroll_run_approval(approval, reviewer, *, note=""):
     from apps.accounts.models import PayrollRun
 
-    run = PayrollRun.objects.get(pk=approval.payload["run_id"])
+    run = PayrollRun.objects.select_for_update().get(pk=approval.payload["run_id"])
     if run.status != "DRAFT":
         raise ValueError("Only draft payroll runs can be approved.")
     run.status = "APPROVED"
@@ -414,7 +409,9 @@ def _execute_accounting_journal(approval, reviewer, *, note=""):
         created_by=reviewer,
     )
     if payload.get("period_id"):
-        entry.period = AccountingPeriod.objects.get(pk=payload["period_id"])
+        entry.period = AccountingPeriod.objects.select_for_update().get(pk=payload["period_id"])
+        if not entry.period.is_open or not entry.period.contains(entry.entry_date):
+            raise ValueError("Select an open accounting period containing the journal date.")
         entry.save(update_fields=["period"])
 
     log_activity(

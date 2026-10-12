@@ -1,80 +1,22 @@
 {% extends "base.html" %}
+{% load chart_data %}
 {% load currency %}
 {% block content %}
 
 <style>
   .analytics-shell{display:grid;gap:16px}
-  .hero-card{
-    position:relative;
-    overflow:hidden;
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:30px;
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
-      var(--primary-2) 36%,
-      var(--primary) 72%,
-      var(--gold-2) 100%
-    );
-    color:#fff;
-    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
-  }
-
-  [data-theme="dark"] .hero-card{
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
-      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
-      color-mix(in srgb,var(--primary) 60%,#000) 72%,
-      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
-    );
-    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
-  }
-
-  .hero-card::before{
-    content:"";
-    position:absolute;
-    top:-70px;
-    right:-60px;
-    width:300px;
-    height:300px;
-    border-radius:50%;
-    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
-    pointer-events:none;
-  }
-
-  .hero-card::after{
-    content:"";
-    position:absolute;
-    left:28%;
-    bottom:-60px;
-    width:380px;
-    height:220px;
-    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
-    pointer-events:none;
-  }
-  .hero-inner{position:relative;z-index:1;padding:28px}
   .hero-wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start}
-  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
-  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
   .hero-sub{margin-top:8px;opacity:.86;max-width:900px}
-  .btn-soft{
-    display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;
-    font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text)
-  }
-  .btn-soft-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
   .btn-soft-primary:hover,.btn-soft:hover{color:inherit}
   .metrics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
   .metrics-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
   .section-card{
-    border:1px solid var(--border);border-radius:24px;background:var(--panel-strong);box-shadow:0 20px 50px rgba(26,31,20,.05);overflow:hidden
+    overflow:hidden
   }
   .section-head{padding:18px 20px 0}
-  .section-title{margin:0;font-size:18px;font-weight:900;color:var(--text)}
+  .section-title{margin:0;}
   .section-sub{color:var(--muted);font-size:13px;margin-top:4px}
   .section-body{padding:18px 20px 20px}
-  .stat-card{
-    border:1px solid var(--border);border-radius:22px;background:var(--panel-strong);
-    padding:18px;box-shadow:0 18px 45px rgba(26,31,20,.05)
-  }
   .stat-label{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
   .stat-value{font-size:24px;font-weight:900;line-height:1.08;margin-top:8px;color:var(--text)}
   .stat-sub{font-size:12px;color:var(--muted);margin-top:6px}
@@ -93,9 +35,8 @@
     text-align:left;background:var(--bg-soft);color:var(--text-2);font-weight:900;position:sticky;top:0
   }
   .chip{
-    display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);
-    background:var(--panel-strong);font-size:12px;font-weight:800;color:var(--text-2)
-  }
+    display:inline-flex;align-items:center;gap:6px;
+    }
   .chip-green{background:rgba(22,163,74,.08);color:var(--success);border-color:rgba(22,163,74,.14)}
   .chip-amber{background:rgba(245,158,11,.10);color:var(--warning);border-color:rgba(245,158,11,.16)}
   .chip-red{background:rgba(220,38,38,.08);color:var(--danger);border-color:rgba(220,38,38,.14)}
@@ -107,7 +48,6 @@
   }
   @media (max-width:640px){
     .metrics-grid{grid-template-columns:1fr}
-    .hero-title{font-size:24px}
   }
 </style>
 
@@ -363,7 +303,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <script>
-  const statusMixChart = echarts.init(document.getElementById('statusMixChart'));
+  const statusMixChart = SikaCharts.init(document.getElementById('statusMixChart'));
   statusMixChart.setOption({
     tooltip: { trigger: 'item' },
     legend: { bottom: 0 },
@@ -378,82 +318,82 @@
     }]
   });
 
-  const statusCollectionsChart = echarts.init(document.getElementById('statusCollectionsChart'));
+  const statusCollectionsChart = SikaCharts.init(document.getElementById('statusCollectionsChart'));
   statusCollectionsChart.setOption({
     tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: {{ chart_status_labels|safe }} },
+    xAxis: { type: 'category', data: {{ chart_status_labels|json_js }} },
     yAxis: { type: 'value' },
     series: [
-      { name: 'Collected', type: 'bar', data: {{ chart_collection_status_values|safe }} }
+      { name: 'Collected', type: 'bar', data: {{ chart_collection_status_values|json_js }} }
     ]
   });
 
-  const statusOutstandingChart = echarts.init(document.getElementById('statusOutstandingChart'));
+  const statusOutstandingChart = SikaCharts.init(document.getElementById('statusOutstandingChart'));
   statusOutstandingChart.setOption({
     tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: {{ chart_status_labels|safe }} },
+    xAxis: { type: 'category', data: {{ chart_status_labels|json_js }} },
     yAxis: { type: 'value' },
     series: [
-      { name: 'Outstanding', type: 'bar', data: {{ chart_outstanding_status_values|safe }} }
+      { name: 'Outstanding', type: 'bar', data: {{ chart_outstanding_status_values|json_js }} }
     ]
   });
 
-  const locationStatusChart = echarts.init(document.getElementById('locationStatusChart'));
+  const locationStatusChart = SikaCharts.init(document.getElementById('locationStatusChart'));
   locationStatusChart.setOption({
     tooltip: { trigger: 'axis' },
     legend: { bottom: 0 },
-    xAxis: { type: 'category', data: {{ chart_location_labels|safe }}, axisLabel: { rotate: 25 } },
+    xAxis: { type: 'category', data: {{ chart_location_labels|json_js }}, axisLabel: { rotate: 25 } },
     yAxis: { type: 'value' },
     series: [
-      { name: 'ACTIVE', type: 'bar', stack: 'status', data: {{ chart_location_active|safe }} },
-      { name: 'CLOSED', type: 'bar', stack: 'status', data: {{ chart_location_closed|safe }} },
-      { name: 'BAD', type: 'bar', stack: 'status', data: {{ chart_location_bad|safe }} }
+      { name: 'ACTIVE', type: 'bar', stack: 'status', data: {{ chart_location_active|json_js }} },
+      { name: 'CLOSED', type: 'bar', stack: 'status', data: {{ chart_location_closed|json_js }} },
+      { name: 'BAD', type: 'bar', stack: 'status', data: {{ chart_location_bad|json_js }} }
     ]
   });
 
-  const groupStatusChart = echarts.init(document.getElementById('groupStatusChart'));
+  const groupStatusChart = SikaCharts.init(document.getElementById('groupStatusChart'));
   groupStatusChart.setOption({
     tooltip: { trigger: 'axis' },
     legend: { bottom: 0 },
-    xAxis: { type: 'category', data: {{ chart_group_labels|safe }}, axisLabel: { rotate: 25 } },
+    xAxis: { type: 'category', data: {{ chart_group_labels|json_js }}, axisLabel: { rotate: 25 } },
     yAxis: { type: 'value' },
     series: [
-      { name: 'ACTIVE', type: 'bar', stack: 'status', data: {{ chart_group_active|safe }} },
-      { name: 'CLOSED', type: 'bar', stack: 'status', data: {{ chart_group_closed|safe }} },
-      { name: 'BAD', type: 'bar', stack: 'status', data: {{ chart_group_bad|safe }} }
+      { name: 'ACTIVE', type: 'bar', stack: 'status', data: {{ chart_group_active|json_js }} },
+      { name: 'CLOSED', type: 'bar', stack: 'status', data: {{ chart_group_closed|json_js }} },
+      { name: 'BAD', type: 'bar', stack: 'status', data: {{ chart_group_bad|json_js }} }
     ]
   });
 
-  const languageStatusChart = echarts.init(document.getElementById('languageStatusChart'));
+  const languageStatusChart = SikaCharts.init(document.getElementById('languageStatusChart'));
   languageStatusChart.setOption({
     tooltip: { trigger: 'axis' },
     legend: { bottom: 0 },
-    xAxis: { type: 'category', data: {{ chart_language_labels|safe }}, axisLabel: { rotate: 25 } },
+    xAxis: { type: 'category', data: {{ chart_language_labels|json_js }}, axisLabel: { rotate: 25 } },
     yAxis: { type: 'value' },
     series: [
-      { name: 'ACTIVE', type: 'bar', stack: 'lang', data: {{ chart_language_active|safe }} },
-      { name: 'CLOSED', type: 'bar', stack: 'lang', data: {{ chart_language_closed|safe }} },
-      { name: 'BAD', type: 'bar', stack: 'lang', data: {{ chart_language_bad|safe }} }
+      { name: 'ACTIVE', type: 'bar', stack: 'lang', data: {{ chart_language_active|json_js }} },
+      { name: 'CLOSED', type: 'bar', stack: 'lang', data: {{ chart_language_closed|json_js }} },
+      { name: 'BAD', type: 'bar', stack: 'lang', data: {{ chart_language_bad|json_js }} }
     ]
   });
 
-  const badBorrowersChart = echarts.init(document.getElementById('badBorrowersChart'));
+  const badBorrowersChart = SikaCharts.init(document.getElementById('badBorrowersChart'));
   badBorrowersChart.setOption({
     tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: {{ chart_bad_labels|safe }}, axisLabel: { rotate: 25 } },
+    xAxis: { type: 'category', data: {{ chart_bad_labels|json_js }}, axisLabel: { rotate: 25 } },
     yAxis: { type: 'value' },
     series: [
-      { name: 'Bad Outstanding', type: 'bar', data: {{ chart_bad_outstanding|safe }} }
+      { name: 'Bad Outstanding', type: 'bar', data: {{ chart_bad_outstanding|json_js }} }
     ]
   });
 
-  const activeExposureChart = echarts.init(document.getElementById('activeExposureChart'));
+  const activeExposureChart = SikaCharts.init(document.getElementById('activeExposureChart'));
   activeExposureChart.setOption({
     tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: {{ chart_active_labels|safe }}, axisLabel: { rotate: 25 } },
+    xAxis: { type: 'category', data: {{ chart_active_labels|json_js }}, axisLabel: { rotate: 25 } },
     yAxis: { type: 'value' },
     series: [
-      { name: 'Active Outstanding', type: 'bar', data: {{ chart_active_outstanding|safe }} }
+      { name: 'Active Outstanding', type: 'bar', data: {{ chart_active_outstanding|json_js }} }
     ]
   });
 

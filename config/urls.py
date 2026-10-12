@@ -12,8 +12,11 @@ from apps.accounts.auth_views import (
     TenantLoginPageView,
 )
 from apps.core.roles import role_redirect_view
+from apps.core.private_media import media_file
 
 urlpatterns = [
+    path("private-media/<path:path>", media_file, name="private_media"),
+    path("media/<path:path>", media_file, {"public": True}, name="legacy_media"),
     path("admin/", admin.site.urls),
 
     # Authentication
@@ -36,8 +39,6 @@ urlpatterns = [
     path("communication/", include("apps.communication.urls")),
     path("", include("apps.borrower_portal.urls")),
 ]
-
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
     import debug_toolbar

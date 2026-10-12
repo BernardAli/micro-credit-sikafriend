@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from apps.accounts.models import Agent
 from apps.accounting.models import Counterparty, JournalEntry, LedgerAccount
+from apps.core.models import ReversibleTransaction
 
 
 ASSET_STATUS_CHOICES = [
@@ -352,7 +353,7 @@ class AssetMaintenance(models.Model):
         return f"{self.asset.asset_code} maintenance"
 
 
-class DepreciationRun(models.Model):
+class DepreciationRun(ReversibleTransaction):
     title = models.CharField(max_length=160)
     period_start = models.DateField()
     period_end = models.DateField()
@@ -389,7 +390,7 @@ class DepreciationRun(models.Model):
 
 class DepreciationLine(models.Model):
     run = models.ForeignKey(DepreciationRun, on_delete=models.CASCADE, related_name="lines")
-    asset = models.ForeignKey(AssetItem, on_delete=models.CASCADE, related_name="depreciation_lines")
+    asset = models.ForeignKey(AssetItem, on_delete=models.PROTECT, related_name="depreciation_lines")
     opening_cost = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
     opening_accumulated_depreciation = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
     depreciation_amount = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))

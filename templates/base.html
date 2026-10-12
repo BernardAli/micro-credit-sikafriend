@@ -1,225 +1,17 @@
 {% load static %}
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="light" data-company-theme="{{ company_theme|default:'forest' }}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="{% static 'js/theme.js' %}"></script>
+  <script src="{% static 'js/charts-theme.js' %}"></script>
   <title>{{ title|default:company_name }} | {{ company_name }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
 
   <style>
-    /* ─── LIGHT THEME TOKENS ─── */
-    :root, [data-theme="light"] {
-      --bg:             #f3f2ec;
-      --bg-soft:        #eceae0;
-      --panel:          rgba(255,255,255,.97);
-      --panel-strong:   #ffffff;
-      --text:           #1a1f14;
-      --text-2:         #2c3422;
-      --muted:          #58624a;
-      --muted-2:        #8a9478;
-      --border:         rgba(26,31,20,.10);
-      --border-soft:    rgba(26,31,20,.06);
-      --border-accent:  rgba(58,90,30,.20);
-
-      --primary:        #3a5a1e;
-      --primary-2:      #2d4718;
-      --primary-3:      #517a28;
-      --primary-glow:   rgba(58,90,30,.16);
-      --gold:           #b88620;
-      --gold-2:         #9a7018;
-      --gold-pale:      rgba(196,146,42,.10);
-      --gold-glow:      rgba(184,134,32,.16);
-
-      --success:        #2d6b3e;
-      --warning:        #b88620;
-      --danger:         #b83232;
-      --info:           #2e5c8a;
-
-      --shadow-xs:      0 2px 8px rgba(26,31,20,.05);
-      --shadow-sm:      0 6px 20px rgba(26,31,20,.07);
-      --shadow-md:      0 16px 45px rgba(26,31,20,.09);
-      --shadow-lg:      0 28px 70px rgba(26,31,20,.12);
-
-      --radius-sm:      8px;
-      --radius:         14px;
-      --radius-lg:      20px;
-      --radius-xl:      26px;
-
-      --sidebar-w:      268px;
-      --topbar-h:       70px;
-
-      --topbar-bg:      rgba(243,242,236,.84);
-      --topbar-border:  rgba(26,31,20,.08);
-      --body-bg-a:      rgba(58,90,30,.10);
-      --body-bg-b:      rgba(184,134,32,.07);
-
-      --font-body:  'DM Sans', ui-sans-serif, system-ui, sans-serif;
-      --font-serif: 'DM Serif Display', serif;
-    }
-
-    /* ─── DARK THEME TOKENS ─── */
-    [data-theme="dark"] {
-      --bg:             #0f1409;
-      --bg-soft:        #161c0f;
-      --panel:          rgba(26,36,16,.98);
-      --panel-strong:   #1c2814;
-      --text:           #dde8c4;
-      --text-2:         #b8c898;
-      --muted:          #7a8c62;
-      --muted-2:        #546040;
-      --border:         rgba(160,190,110,.09);
-      --border-soft:    rgba(160,190,110,.05);
-      --border-accent:  rgba(120,175,70,.18);
-
-      --primary:        #80b840;
-      --primary-2:      #90cc50;
-      --primary-3:      #60a030;
-      --primary-glow:   rgba(128,184,64,.18);
-      --gold:           #d0a030;
-      --gold-2:         #e8b840;
-      --gold-pale:      rgba(208,160,48,.10);
-      --gold-glow:      rgba(208,160,48,.18);
-
-      --success:        #58b870;
-      --warning:        #d0a030;
-      --danger:         #e05050;
-      --info:           #5898d8;
-
-      --shadow-xs:      0 2px 8px rgba(0,0,0,.22);
-      --shadow-sm:      0 6px 20px rgba(0,0,0,.30);
-      --shadow-md:      0 16px 45px rgba(0,0,0,.38);
-      --shadow-lg:      0 28px 70px rgba(0,0,0,.46);
-
-      --topbar-bg:      rgba(12,17,8,.90);
-      --topbar-border:  rgba(160,190,110,.07);
-      --body-bg-a:      rgba(128,184,64,.07);
-      --body-bg-b:      rgba(208,160,48,.05);
-    }
-
-
-    /* ─── COMPANY THEME: ocean ─── */
-    [data-company-theme="ocean"] {
-      --primary:        #1a5a8a;
-      --primary-2:      #134a78;
-      --primary-3:      #2878b8;
-      --primary-glow:   rgba(26,90,138,.16);
-      --gold:           #607888;
-      --gold-2:         #4a6070;
-      --gold-pale:      rgba(96,120,136,.10);
-      --gold-glow:      rgba(96,120,136,.14);
-      --body-bg-a:      rgba(26,90,138,.10);
-      --body-bg-b:      rgba(96,120,136,.06);
-      --border-accent:  rgba(26,90,138,.20);
-    }
-    [data-theme="dark"][data-company-theme="ocean"] {
-      --primary:        #5aa0d8;
-      --primary-2:      #70b8f0;
-      --primary-3:      #3888c8;
-      --primary-glow:   rgba(90,160,216,.18);
-      --gold:           #90a8c0;
-      --gold-pale:      rgba(144,168,192,.10);
-      --gold-glow:      rgba(144,168,192,.16);
-    }
-
-    /* ─── COMPANY THEME: royal ─── */
-    [data-company-theme="royal"] {
-      --primary:        #5a1a8a;
-      --primary-2:      #481270;
-      --primary-3:      #7830b8;
-      --primary-glow:   rgba(90,26,138,.16);
-      --gold:           #c08820;
-      --gold-2:         #a07018;
-      --gold-pale:      rgba(192,136,32,.10);
-      --gold-glow:      rgba(192,136,32,.16);
-      --body-bg-a:      rgba(90,26,138,.09);
-      --body-bg-b:      rgba(192,136,32,.06);
-      --border-accent:  rgba(90,26,138,.20);
-    }
-    [data-theme="dark"][data-company-theme="royal"] {
-      --primary:        #a060e0;
-      --primary-2:      #b878f8;
-      --primary-3:      #8040c8;
-      --primary-glow:   rgba(160,96,224,.18);
-      --gold:           #d8a840;
-      --gold-pale:      rgba(216,168,64,.10);
-      --gold-glow:      rgba(216,168,64,.18);
-    }
-
-    /* ─── COMPANY THEME: ember ─── */
-    [data-company-theme="ember"] {
-      --primary:        #7a2010;
-      --primary-2:      #621808;
-      --primary-3:      #a03820;
-      --primary-glow:   rgba(122,32,16,.16);
-      --gold:           #b07040;
-      --gold-2:         #905830;
-      --gold-pale:      rgba(176,112,64,.10);
-      --gold-glow:      rgba(176,112,64,.16);
-      --body-bg-a:      rgba(122,32,16,.09);
-      --body-bg-b:      rgba(176,112,64,.06);
-      --border-accent:  rgba(122,32,16,.20);
-    }
-    [data-theme="dark"][data-company-theme="ember"] {
-      --primary:        #e06040;
-      --primary-2:      #f07850;
-      --primary-3:      #c04828;
-      --primary-glow:   rgba(224,96,64,.18);
-      --gold:           #d09060;
-      --gold-pale:      rgba(208,144,96,.10);
-      --gold-glow:      rgba(208,144,96,.18);
-    }
-
-    /* ─── COMPANY THEME: slate ─── */
-    [data-company-theme="slate"] {
-      --primary:        #2a3a4a;
-      --primary-2:      #1e2c3a;
-      --primary-3:      #3a5060;
-      --primary-glow:   rgba(42,58,74,.16);
-      --gold:           #2aa8a0;
-      --gold-2:         #1e9090;
-      --gold-pale:      rgba(42,168,160,.10);
-      --gold-glow:      rgba(42,168,160,.14);
-      --body-bg-a:      rgba(42,58,74,.09);
-      --body-bg-b:      rgba(42,168,160,.06);
-      --border-accent:  rgba(42,58,74,.20);
-    }
-    [data-theme="dark"][data-company-theme="slate"] {
-      --primary:        #60a8b8;
-      --primary-2:      #78c0d0;
-      --primary-3:      #4890a0;
-      --primary-glow:   rgba(96,168,184,.18);
-      --gold:           #40c8c0;
-      --gold-pale:      rgba(64,200,192,.10);
-      --gold-glow:      rgba(64,200,192,.16);
-    }
-
-    /* ─── COMPANY THEME: midnight ─── */
-    [data-company-theme="midnight"] {
-      --primary:        #1a1a1a;
-      --primary-2:      #0a0a0a;
-      --primary-3:      #303030;
-      --primary-glow:   rgba(26,26,26,.20);
-      --gold:           #c8a830;
-      --gold-2:         #a88820;
-      --gold-pale:      rgba(200,168,48,.10);
-      --gold-glow:      rgba(200,168,48,.18);
-      --body-bg-a:      rgba(26,26,26,.10);
-      --body-bg-b:      rgba(200,168,48,.06);
-      --border-accent:  rgba(200,168,48,.24);
-    }
-    [data-theme="dark"][data-company-theme="midnight"] {
-      --primary:        #888888;
-      --primary-2:      #aaaaaa;
-      --primary-3:      #606060;
-      --primary-glow:   rgba(136,136,136,.16);
-      --gold:           #e8c840;
-      --gold-pale:      rgba(232,200,64,.10);
-      --gold-glow:      rgba(232,200,64,.20);
-    }
-
     /* ─── BASE ─── */
     *, *::before, *::after { box-sizing: border-box; }
     html, body { height: 100%; }
@@ -730,7 +522,7 @@
   <style>
     /* ─── COMPANY BRAND: colours & typography from Website Settings ─── */
     /* Selector covers both default (:root) and preset-theme (attr) cases   */
-    :root, [data-company-theme] {
+    html:root[data-company-theme] {
       {{ company.dashboard_css_overrides }}{% if company.site_font %}
       --font-body:  {{ company.font_body_family|safe }}, ui-sans-serif, system-ui, sans-serif;
       --font-serif: {{ company.font_serif_family|safe }}, Georgia, serif;{% endif %}
@@ -739,23 +531,16 @@
   {% if company.site_font %}<link href="{{ company.font_urls|safe }}" rel="stylesheet">{% endif %}
   {% endif %}
   {% block extra_head %}{% endblock %}
+  <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+  <link rel="stylesheet" href="{% static 'css/workspace.css' %}">
 </head>
 
-<body>
-  {% if company_theme and company_theme != "forest" %}
-  <script>
-    // Apply company colour theme before paint
-    (function(){
-      var t = "{{ company_theme }}";
-      document.documentElement.setAttribute("data-company-theme", t);
-    })();
-  </script>
-  {% endif %}
+<body class="workspace-app">
   <div class="app">
 
     <header class="topbar" id="topbar">
       <div class="topbar-inner">
-        <a class="brand" href="/dashboard/">
+        <a class="brand" href="{% if request.user.is_authenticated %}{% url 'role_redirect' %}{% else %}/{% endif %}">
           {% if company and company.logo %}
             <span class="brand-mark">
               <img src="{{ company.logo.url }}" alt="{{ company_name }}" style="width:100%;height:100%;object-fit:contain;position:relative;z-index:1;">
@@ -776,12 +561,12 @@
             <span class="top-pill">
               <span class="dot" aria-hidden="true"></span>
               {% if user_role == "admin" %}
-          <a href="{% url 'loans:portfolio_list' %}" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">📁</span><span>Loan Portfolios</span></span></a>Admin Portal
+                Admin Portal
               {% elif user_role == "agent" %}Agent Portal
               {% elif user_role == "borrower" %}My Account
               {% else %}Credit Operations{% endif %}
             </span>
-            <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle theme">🌿</button>
+            <button class="theme-toggle" id="themeToggle" type="button" data-theme-toggle aria-label="Switch to dark theme">◐</button>
             <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="mobilePanel">
               <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor">
                 <rect width="16" height="2" rx="1"/><rect y="5" width="12" height="2" rx="1"/><rect y="10" width="8" height="2" rx="1"/>
@@ -790,7 +575,7 @@
           </div>
         {% else %}
           <div class="top-actions">
-            <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle theme">🌿</button>
+            <button class="theme-toggle" id="themeToggle" type="button" data-theme-toggle aria-label="Switch to dark theme">◐</button>
             <a href="{% url 'login' %}" class="btn btn-primary">Sign In</a>
           </div>
         {% endif %}
@@ -808,163 +593,7 @@
         </div>
 
         <nav class="sidebar-nav" id="sidebarNav">
-
-          {% if user_role == "admin" %}
-            {# ── ADMIN: full platform access ── #}
-            <div class="nav-section-label">Overview</div>
-            <a href="/dashboard/" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">📊</span><span>Dashboard</span></span>
-              <span class="badge">01</span>
-            </a>
-
-            <div class="nav-section-label">Loan Operations</div>
-            <a href="/loans/list/" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">📋</span><span>All Loans</span></span>
-              <span class="badge">02</span>
-            </a>
-            <a href="{% url 'loans:pending_payments' %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">⏳</span><span>Pending Payments</span></span>
-            </a>
-            <a href="/loans/new/" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">➕</span><span>New Loan</span></span>
-              <span class="badge">+</span>
-            </a>
-            <a href="/borrowers/" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">👥</span><span>Borrowers</span></span>
-              <span class="badge">03</span>
-            </a>
-            <a href="{% url 'core:loan_requests' %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">LR</span><span>Loan Requests</span></span>
-            </a>
-            <a href="/agents/" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">🤝</span><span>Workforce</span></span>
-              <span class="badge">04</span>
-            </a>
-            <a href="{% url 'payroll_hub' %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">💵</span><span>Payroll</span></span>
-              <span class="badge">04A</span>
-            </a>
-            <a href="{% url 'accounting:hub' %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">📚</span><span>Accounting</span></span>
-              <span class="badge">04B</span>
-            </a>
-            <a href="{% url 'assets:hub' %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">🧰</span><span>Assets</span></span>
-              <span class="badge">04C</span>
-            </a>
-
-            <div class="nav-section-label">Insights</div>
-            <a href="{% url 'loans:reports_center' %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">📑</span><span>Reports Center</span></span>
-              <span class="badge">R</span>
-            </a>
-            <a href="/loans/analytics/" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">📈</span><span>Loan Analytics</span></span>
-              <span class="badge">05</span>
-            </a>
-            <a href="/borrowers/analytics/" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">🔍</span><span>Borrower Analytics</span></span>
-              <span class="badge">06</span>
-            </a>
-
-            <div class="nav-section-label">Communications</div>
-            <a href="{% url 'communications:marketing_hub' %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">📣</span><span>Marketing</span></span>
-              <span class="badge">07</span>
-            </a>
-            <a href="{% url 'communications:management_message_center' %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">💬</span><span>Messages</span></span>
-              <span class="badge">08</span>
-            </a>
-            <a href="/notifications/inbox/" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">🔔</span><span>Notifications</span></span>
-              <span class="badge">09</span>
-            </a>
-
-            <div class="nav-section-label">System</div>
-            <a href="{% url 'core:approvals' %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">OK</span><span>Approvals</span></span>
-            </a>
-            <a href="{% url 'core:audit_trail' %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">AT</span><span>Audit Trail</span></span>
-            </a>
-            <a href="{% url 'company:edit' %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">🏢</span><span>Company Settings</span></span>
-            </a>
-            <a href="{% url 'company:edit' %}#ws-impact" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">🌍</span><span>Our Impact</span></span>
-            </a>
-            <a href="{% url 'company:backup' %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">🗄️</span><span>Database Backup</span></span>
-            </a>
-            <a href="/admin/" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">⚙️</span><span>Admin Panel</span></span>
-            </a>
-
-          {% elif user_role == "agent" and agent_profile %}
-            {# ── AGENT: own portfolio only ── #}
-            <div class="nav-section-label">My Portfolio</div>
-            <a href="{% url 'agent_detail' agent_profile.pk %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">📊</span><span>My Dashboard</span></span>
-            </a>
-            <a href="{% url 'agent_comprehensive_analysis' agent_profile.pk %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">📈</span><span>Analysis</span></span>
-            </a>
-            <a href="{% url 'agent_monthly_range_analysis' agent_profile.pk %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">📅</span><span>Monthly Range</span></span>
-            </a>
-
-            <div class="nav-section-label">My Borrowers</div>
-            <a href="/borrowers/?agent={{ agent_profile.pk }}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">👥</span><span>My Borrowers</span></span>
-            </a>
-            <a href="/borrowers/new/" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">➕</span><span>Add Borrower</span></span>
-            </a>
-            <a href="/loans/active/?agent={{ agent_profile.pk }}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">📋</span><span>Active Loans</span></span>
-            </a>
-            <a href="/loans/new/" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">💳</span><span>New Loan</span></span>
-            </a>
-            <a href="{% url 'loans:pending_payments' %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">⏳</span><span>Pending Payments</span></span>
-            </a>
-
-            <div class="nav-section-label">Communications</div>
-            <a href="/notifications/inbox/" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">🔔</span><span>Notifications</span></span>
-            </a>
-
-          {% elif user_role == "borrower" and borrower_profile %}
-            {# ── BORROWER: own records only ── #}
-            <div class="nav-section-label">My Account</div>
-            <a href="{% url 'borrower:portal' %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">🏠</span><span>My Overview</span></span>
-            </a>
-            <a href="{% url 'borrower:change_password' %}" class="nav-link" data-nav>
-              <span class="nav-link-inner"><span class="nav-link-icon">🔑</span><span>Change Password</span></span>
-            </a>
-
-            <div class="nav-section-label">My Loans</div>
-            {% for loan in borrower_profile.loans.all %}
-              <a href="{% url 'borrower:loan_detail' loan.pk %}" class="nav-link" data-nav>
-                <span class="nav-link-inner">
-                  <span class="nav-link-icon">📄</span>
-                  <span>Loan #{{ loan.id }}</span>
-                </span>
-                <span class="badge {% if loan.status == 'ACTIVE' %}chip-gold{% elif loan.status == 'DEFAULT' %}chip-red{% else %}chip-green{% endif %}" style="border:none;">
-                  {{ loan.status }}
-                </span>
-              </a>
-              {% if loan.status == "ACTIVE" or loan.status == "DEFAULT" %}
-              <a href="{% url 'borrower:make_payment' loan.pk %}" class="nav-link" data-nav style="padding-left:28px;">
-                <span class="nav-link-inner"><span class="nav-link-icon">💳</span><span>Pay Loan #{{ loan.id }}</span></span>
-              </a>
-              {% endif %}
-            {% endfor %}
-          {% endif %}
-
+          {% include "includes/workspace_navigation.html" %}
         </nav>
 
         <div class="sidebar-foot">
@@ -983,13 +612,9 @@
         {% if request.user.is_authenticated %}
         <section class="page-intro">
           <div class="page-intro-inner">
-            <div class="page-kicker"><span>✦</span> Operations Workspace</div>
-            <h1 class="page-title">{{ title|default:company_name }}</h1>
-            <div class="page-sub">
-              {% if user_role == "borrower" %}Your personal loan account — view your balances, payment history, and repayment progress.
-              {% elif user_role == "agent" %}Your agent portfolio — loans, collections, and borrower performance for your assigned accounts.
-              {% else %}Premium operations environment for portfolio monitoring, borrower management, recovery tracking, and field execution.{% endif %}
-            </div>
+            <div class="page-kicker"><span aria-hidden="true">✦</span> {% if user_role == "borrower" %}My account{% elif user_role == "agent" %}Officer workspace{% else %}Management workspace{% endif %}</div>
+            <h1 class="page-title">{% block workspace_title %}{{ title|default:company_name }}{% endblock %}</h1>
+
           </div>
           <div class="gold-line"></div>
         </section>
@@ -1025,24 +650,7 @@
           <button class="mobile-close" id="mobileClose" type="button" aria-label="Close">✕</button>
         </div>
         <nav class="mobile-nav">
-          <a href="/dashboard/" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">📊</span> Dashboard</span></a>
-          <a href="/loans/list/" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">📋</span> All Loans</span></a>
-          <a href="/loans/new/" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">➕</span> New Loan</span></a>
-          <a href="{% url 'core:loan_requests' %}" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">LR</span> Loan Requests</span></a>
-          <a href="{% url 'core:approvals' %}" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">OK</span> Approvals</span></a>
-          <a href="/borrowers/" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">👥</span> Borrowers</span></a>
-          <a href="/agents/" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">🤝</span> Workforce</span></a>
-          <a href="{% url 'payroll_hub' %}" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">💵</span> Payroll</span></a>
-          <a href="{% url 'accounting:hub' %}" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">📚</span> Accounting</span></a>
-          <a href="{% url 'assets:hub' %}" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">🧰</span> Assets</span></a>
-          <a href="{% url 'loans:reports_center' %}" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">📑</span> Reports Center</span></a>
-          <a href="/loans/analytics/" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">📈</span> Loan Analytics</span></a>
-          <a href="/borrowers/analytics/" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">🔍</span> Borrower Analytics</span></a>
-          <a href="{% url 'communications:marketing_hub' %}" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">📣</span> Marketing</span></a>
-          <a href="{% url 'communications:management_message_center' %}" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">💬</span> Messages</span></a>
-          <a href="/notifications/inbox/" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">🔔</span> Notifications</span></a>
-          <a href="{% url 'company:backup' %}" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">🗄️</span> Database Backup</span></a>
-          <a href="/admin/" class="nav-link" data-nav><span class="nav-link-inner"><span class="nav-link-icon">⚙️</span> Admin Panel</span></a>
+          {% include "includes/workspace_navigation.html" %}
         </nav>
         <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
@@ -1056,32 +664,6 @@
 
   <script>
     (function () {
-      const html = document.documentElement;
-      const toggle = document.getElementById('themeToggle');
-
-      /* Apply stored or system theme immediately */
-      const stored = localStorage.getItem('sf-theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      let theme = stored || (prefersDark ? 'dark' : 'light');
-
-      /* Apply company colour theme from server */
-      const companyTheme = "{{ company_theme|default:'forest' }}";
-      if (companyTheme && companyTheme !== 'forest') {
-        html.setAttribute('data-company-theme', companyTheme);
-      } else {
-        html.removeAttribute('data-company-theme');
-      }
-
-      function applyTheme(t) {
-        html.setAttribute('data-theme', t);
-        if (toggle) toggle.textContent = t === 'dark' ? '☀️' : '🌿';
-        localStorage.setItem('sf-theme', t);
-        theme = t;
-      }
-      applyTheme(theme);
-
-      toggle?.addEventListener('click', () => applyTheme(theme === 'dark' ? 'light' : 'dark'));
-
       /* Topbar scroll */
       const topbar = document.getElementById('topbar');
       const onScroll = () => topbar?.classList.toggle('scrolled', window.scrollY > 6);
@@ -1114,12 +696,29 @@
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMobile(); });
 
       /* Active nav */
-      const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
-      document.querySelectorAll('a[data-nav]').forEach((a) => {
-        const href = (a.getAttribute('href') || '').replace(/\/+$/, '') || '/';
-        if (href === currentPath || (href !== '/' && currentPath.startsWith(href))) a.classList.add('active');
-        a.addEventListener('click', closeMobile);
-      });
+      function updateActiveNav() {
+        const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+        document.querySelectorAll('#sidebarNav, .mobile-nav').forEach((nav) => {
+          const links = Array.from(nav.querySelectorAll('a[data-nav]'));
+          const matches = links.map((link) => {
+            const url = new URL(link.href, window.location.href);
+            const path = url.pathname.replace(/\/+$/, '') || '/';
+            const matchesPath = path === currentPath || (path !== '/' && currentPath.startsWith(path + '/'));
+            const matchesHash = !url.hash || url.hash === window.location.hash;
+            return { link, score: url.origin === window.location.origin && matchesPath && matchesHash ? path.length + (url.hash ? 1000 : 0) : -1 };
+          });
+          const highest = Math.max(-1, ...matches.map((item) => item.score));
+          matches.forEach(({ link, score }) => {
+            const active = score >= 0 && score === highest;
+            link.classList.toggle('active', active);
+            if (active) link.setAttribute('aria-current', 'page');
+            else link.removeAttribute('aria-current');
+          });
+        });
+      }
+      updateActiveNav();
+      window.addEventListener('hashchange', updateActiveNav);
+      document.querySelectorAll('a[data-nav]').forEach((link) => link.addEventListener('click', closeMobile));
 
       /* Flash messages */
       const flashWrap = document.getElementById('flashWrap');

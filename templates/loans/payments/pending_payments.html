@@ -21,43 +21,7 @@
     color:#fff;
     box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
   }
-
-  [data-theme="dark"] .hero-card{
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
-      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
-      color-mix(in srgb,var(--primary) 60%,#000) 72%,
-      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
-    );
-    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
-  }
-
-  .hero-card::before{
-    content:"";
-    position:absolute;
-    top:-70px;
-    right:-60px;
-    width:300px;
-    height:300px;
-    border-radius:50%;
-    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
-    pointer-events:none;
-  }
-
-  .hero-card::after{
-    content:"";
-    position:absolute;
-    left:28%;
-    bottom:-60px;
-    width:380px;
-    height:220px;
-    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
-    pointer-events:none;
-  }
-  .hero-inner{position:relative;z-index:1;padding:28px}
   .hero-wrap  { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:flex-start; }
-  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
-  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
   .hero-sub    { margin-top:8px; opacity:.90; max-width:850px; line-height:1.65; }
   .hero-chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
   .hero-chip {
@@ -67,25 +31,12 @@
     font-size:12px; font-weight:800; color:#fff; backdrop-filter:blur(8px);
   }
   .hero-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start; }
-
-  .btn-soft {
-    display:inline-flex; align-items:center; justify-content:center;
-    padding:10px 16px; border-radius:999px; font-weight:800; text-decoration:none;
-    border:1px solid var(--border); background:var(--panel-strong); color:var(--text);
-    box-shadow:0 10px 24px rgba(26,31,20,.08); transition:all .16s ease;
-  }
   .btn-soft:hover { color:var(--text); transform:translateY(-1px); }
-  .btn-soft-primary { background:var(--primary); color:#fff; border-color:var(--primary); }
-  .btn-soft-primary:hover { color:#fff; }
-  .btn-soft-danger { background:rgba(220,38,38,.10); color:var(--danger); border-color:rgba(220,38,38,.20); }
-  .btn-soft-danger:hover { background:rgba(220,38,38,.16); color:var(--danger); }
 
   /* ── STAT CARDS ── */
   .metrics-grid-3 { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; }
   .stat-card {
-    border:1px solid var(--border); border-radius:24px;
-    background:var(--panel); padding:18px;
-    box-shadow:0 18px 45px rgba(26,31,20,.05);
+
     transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
   }
   .stat-card:hover { transform:translateY(-2px); box-shadow:0 22px 55px rgba(26,31,20,.08); border-color:rgba(58,90,30,.18); }
@@ -100,7 +51,7 @@
     box-shadow:0 20px 50px rgba(26,31,20,.05); overflow:hidden;
   }
   .section-head { padding:20px 22px 0; }
-  .section-title { margin:0; font-size:18px; font-weight:900; color:var(--text); }
+  .section-title { margin:0;    }
   .section-sub   { color:var(--muted); font-size:13px; margin-top:4px; }
   .section-body  { padding:20px 22px 22px; }
 
@@ -130,9 +81,7 @@
   .chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
   .chip {
     display:inline-flex; align-items:center; gap:6px;
-    padding:6px 10px; border-radius:999px;
-    border:1px solid var(--border); background:var(--panel-strong);
-    font-size:12px; font-weight:800; color:var(--text-2);
+
   }
   .chip-amber { background:rgba(245,158,11,.10); color:var(--warning); border-color:rgba(245,158,11,.16); }
   .chip-blue  { background:rgba(46,92,138,.08);  color:var(--info); border-color:rgba(46,92,138,.18); }
@@ -156,7 +105,7 @@
   .empty-sub   { font-size:14px; color:var(--muted); }
 
   @media(max-width:900px) { .metrics-grid-3 { grid-template-columns:1fr; } }
-  @media(max-width:640px) { .hero-title { font-size:24px; } .pay-actions { justify-content:flex-start; } }
+  @media(max-width:640px) { .pay-actions { justify-content:flex-start; } }
 </style>
 
 <div class="pp-shell">

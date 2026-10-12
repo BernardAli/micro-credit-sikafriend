@@ -1,8 +1,14 @@
 # Micro Credit ERP
 
+The client handover guide is [SikaFriend Client User Manual (PDF)](docs/manuals/SikaFriend_Client_User_Manual.pdf): 120 pages with 82 screenshots covering everyday operations, approvals/reversals, statements, reporting and end-user help. Use this edition for client distribution.
+
+The internal [Complete Project Manual (PDF)](docs/manuals/SikaFriend_Complete_Project_Manual.pdf) retains installation, deployment, recovery and implementation references for maintainers. The [documentation index](docs/manuals/README.md) includes both editions, editable sources and rebuild instructions.
+
 For the complete operating, development, deployment, security, workflow, and troubleshooting handbook, see [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md).
 
 For PythonAnywhere deployment with MySQL, see [deployment/PYTHONANYWHERE.md](deployment/PYTHONANYWHERE.md).
+
+For the current security and financial integrity release, including private uploads, credential rotation, required migrations, and data auditing, see [deployment/SECURITY_UPDATE.md](deployment/SECURITY_UPDATE.md).
 
 For the portfolio and permanent SikaFriend Customer ID update, including management review of existing customers and deployment to an existing PythonAnywhere database, see [deployment/PORTFOLIO_UPDATE.md](deployment/PORTFOLIO_UPDATE.md).
 

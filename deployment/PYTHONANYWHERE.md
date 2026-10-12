@@ -135,7 +135,9 @@ On the Web tab, add:
 | URL | Directory |
 | --- | --- |
 | `/static/` | `/home/YOUR_USERNAME/micro-credit-standalone/staticfiles` |
-| `/media/` | `/home/YOUR_USERNAME/micro-credit-standalone/media` |
+| `/media/company/` | `/home/YOUR_USERNAME/micro-credit-standalone/media/company` |
+
+Customer/workforce images use authenticated `/private-media/` URLs and are stored in `private-media/`. Do not map `/media/`, `/private-media/`, `/media/borrowers/`, or `/media/agents/` directly to disk. Preview moving existing uploads with `python manage.py secure_private_uploads`, then run it with `--apply`. Include `private-media/` in secure backups. See [the security update instructions](SECURITY_UPDATE.md) for credential rotation and historical data checks.
 
 Run `collectstatic` again whenever static assets change.
 

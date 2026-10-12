@@ -81,13 +81,11 @@
     align-items: center;
     justify-content: center;
     gap: 7px;
-    padding: 10px 16px;
-    border-radius: 13px;
+
     border: none;
     background: transparent;
     color: var(--muted);
-    font-size: 13px;
-    font-weight: 700;
+
     cursor: pointer;
     transition: background .18s, color .18s, box-shadow .18s;
     white-space: nowrap;
@@ -95,11 +93,6 @@
   .tab-btn:hover {
     background: var(--bg-soft);
     color: var(--text);
-  }
-  .tab-btn.active {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-3) 60%, var(--gold) 100%);
-    color: #fff;
-    box-shadow: 0 4px 12px var(--primary-glow);
   }
   .tab-btn .tab-badge {
     background: rgba(255,255,255,.25);
@@ -150,8 +143,8 @@
   .field > *,
   .toggle-row > div { min-width:0; }
   .section-title {
-    font-family:var(--font-serif);
-    font-size:17px; font-weight:400; color:var(--text); margin:0;
+
+       margin:0;
   }
   .section-desc { font-size:12px; color:var(--muted); margin-top:2px; }
   .section-body { padding:22px; display:grid; gap:18px; }
@@ -164,8 +157,8 @@
   .field { display:grid; gap:6px; }
 
   .field label {
-    font-size:11px; font-weight:700; color:var(--muted);
-    text-transform:uppercase; letter-spacing:.06em; margin:0;
+
+      margin:0;
   }
 
   .field .help {
@@ -383,7 +376,6 @@
     .field-grid-2, .field-grid-3, .tier-editor { grid-template-columns:1fr; }
     .field-span-2 { grid-column:span 1; }
     .theme-grid { grid-template-columns:1fr 1fr; }
-    .tab-btn { font-size:12px; padding:9px 10px; }
   }
 </style>
 
@@ -1080,7 +1072,7 @@
       padding:3px 8px;border-radius:99px;border:1px solid var(--border);
     }
     .font-preview-card.fp-active .fp-tag{background:var(--primary);color:#fff;border-color:var(--primary)}
-    </style>
+</style>
 
     <div class="ws-layout">
 

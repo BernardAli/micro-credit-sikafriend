@@ -2,7 +2,7 @@
 {% load currency %}
 {% load humanize %}
 {% block content %}
-<div class="card p-3 mb-3"><strong>Customer ID: {{ borrower_profile.borrower_id }}</strong><span>Portfolio: {{ borrower_profile.portfolio|default:"Pending assignment" }}</span></div>
+<div class="card workspace-actions"><strong>Customer ID: {{ borrower_profile.borrower_id }}</strong><span>Portfolio: {{ borrower_profile.portfolio|default:"Pending assignment" }}</span></div>
 
 <style>
   .portal-shell { display:grid; gap:20px; }
@@ -172,6 +172,10 @@
           <div class="lbl">Amount Paid</div>
           <div class="val">{{ total_paid|ghs }}</div>
         </div>
+        {% if customer_credit %}<div class="wh-metric">
+          <div class="lbl">Customer Credit Held</div>
+          <div class="val">{{ customer_credit|ghs }}</div>
+        </div>{% endif %}
         <div class="wh-metric">
           <div class="lbl">Outstanding</div>
           <div class="val">{{ total_outstanding|ghs }}</div>
@@ -181,6 +185,7 @@
   </section>
 
   <!-- Security CTA -->
+  <div><a href="{% url 'loans:borrower_statement' borrower.pk %}" class="btn btn-ghost" target="_blank" rel="noopener">Print My Account Statement</a></div>
   <div style="border:1px solid var(--border-accent);border-radius:18px;background:var(--gold-pale);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
     <div style="display:flex;align-items:center;gap:10px;">
       <span style="font-size:20px;">🔑</span>
@@ -242,7 +247,7 @@
         <div class="loan-progress-wrap">
           <div class="progress-label">
             <span>Repayment Progress</span>
-            <span>{{ loan.actual_payments_count }}/{{ loan.expected_payments_count }} payments</span>
+            <span>{{ loan.paid_installments_count }}/{{ loan.expected_payments_count }} payments</span>
           </div>
           <div class="progress-bar-bg">
             <div class="progress-bar-fill" style="width:{% if loan.total_expected_amount > 0 %}{% widthratio loan.total_paid_amount loan.total_expected_amount 100 %}%{% else %}0%{% endif %};"></div>
@@ -273,12 +278,13 @@
           <div class="payment-ref">
             Loan #{{ p.loan.id }}
             {% if p.reference %} · Ref: {{ p.reference }}{% endif %}
+            {% if p.reversal_id %}<br>Reversed · {{ p.reversal.reference }} · {{ p.reversal.effective_date|date:'d M Y' }}{% elif p.is_pending %} · Pending verification{% endif %}
           </div>
         </div>
         <div style="text-align:right;">
           <div class="payment-amount">{{ p.amount|ghs }}</div>
           <div style="font-size:11px;color:var(--muted);">
-            Principal: {{ p.principal_paid|ghs }} · ROIC: {{ p.roic_paid|ghs }}
+            {% if p.reversal_id %}Original allocations · {% endif %}Principal: {{ p.principal_paid|ghs }} · ROIC: {{ p.roic_paid|ghs }}{% if p.customer_credit %} · Credit allocation: {{ p.customer_credit|ghs }}{% endif %}
           </div>
         </div>
       </div>

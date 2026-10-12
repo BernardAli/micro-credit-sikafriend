@@ -1,0 +1,17 @@
+{% load static %}
+<article class="card management-card" aria-labelledby="management-name-{{ forloop.counter }}">
+  <div class="card-media">
+    <img src="{% if member.image %}{{ member.image }}{% else %}{% static 'website/images/microcredit-team-service.webp' %}{% endif %}" alt="{{ member.name }}">
+  </div>
+  <div class="card-body">
+    <h3 class="title-md" id="management-name-{{ forloop.counter }}">{{ member.name }}</h3>
+    {% if member.title %}<span class="badge">{{ member.title }}</span>{% endif %}
+    {% if member.bio %}
+      <p class="copy management-bio-preview" aria-hidden="true">{{ member.bio }}</p>
+      <details class="management-bio">
+        <summary><span><span class="bio-read">Read biography</span><span class="bio-hide">Hide biography</span><span class="sr-only"> for {{ member.name }}</span></span></summary>
+        <p class="copy">{{ member.bio }}</p>
+      </details>
+    {% endif %}
+  </div>
+</article>

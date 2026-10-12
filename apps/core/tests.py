@@ -109,6 +109,7 @@ class ApprovalSelfReviewTests(TestCase):
             phone="0200000000",
             location="Accra",
             workforce_role="MANAGEMENT",
+            has_admin_access=True,
         )
         approval = ApprovalRequest.objects.create(
             workflow_type="ASSET_DISPOSAL",

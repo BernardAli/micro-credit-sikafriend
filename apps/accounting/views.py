@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
+from django.db import transaction
 from django.db.models import Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -40,6 +41,7 @@ from .models import (
     JournalLine,
     LedgerAccount,
     create_journal_entry,
+    reverse_journal_entry,
     ensure_default_accounting_period,
     ensure_default_ledger_accounts,
     get_ledger_account,
@@ -198,6 +200,7 @@ def _post_bill(bill, user):
     return entry
 
 
+@transaction.atomic
 def _sync_operational_entries(user):
     created_entries = 0
     company_profile = CompanyProfile.get_solo()
@@ -219,7 +222,11 @@ def _sync_operational_entries(user):
     employer_statutory_expense = get_ledger_account(company_profile.employer_statutory_expense_account_code) or salary_expense
     other_deduction_clearing = get_ledger_account("2060")
 
-    for loan in Loan.objects.select_related("borrower", "agent_name").order_by("created_at"):
+    # Lock source rows before any accounting periods, matching reversal execution.
+    locked_loans = list(Loan.objects.select_for_update().order_by("pk"))
+    locked_payments = list(Payment.objects.select_for_update().select_related("loan__borrower").order_by("pk"))
+    locked_payroll = list(PayrollRun.objects.select_for_update().prefetch_related("lines").filter(status="PAID").order_by("pk"))
+    for loan in locked_loans:
         if not loan.is_ready_for_disbursement:
             continue
         source_key = f"loan:{loan.pk}:disbursement"
@@ -242,40 +249,18 @@ def _sync_operational_entries(user):
         )
         created_entries += 1
 
-    method_accounts = {
-        "CASH": cash_on_hand,
-        "MOBILE_MONEY": momo_wallet,
-        "BANK": bank_current,
-        "CHEQUE": bank_current,
-        "OTHER": suspense,
-    }
-    for payment in Payment.objects.select_related("loan", "loan__borrower").filter(is_void=False, is_pending=False).order_by("payment_date", "pk"):
-        source_key = f"payment:{payment.pk}:repayment"
-        if JournalEntry.objects.filter(source_key=source_key, source_type="LOAN_REPAYMENT").exists():
-            continue
-        collection_account = method_accounts.get(payment.payment_method) or suspense
-        if not collection_account or not loan_portfolio or not roic_income:
-            continue
-        lines = [
-            {"account": collection_account, "debit": _money(payment.amount), "credit": Decimal("0.00"), "description": f"Loan #{payment.loan_id} repayment"},
-        ]
-        if _money(payment.principal_paid) > 0:
-            lines.append({"account": loan_portfolio, "debit": Decimal("0.00"), "credit": _money(payment.principal_paid), "description": "Principal collected"})
-        if _money(payment.roic_paid) > 0:
-            lines.append({"account": roic_income, "debit": Decimal("0.00"), "credit": _money(payment.roic_paid), "description": "ROIC collected"})
-        create_journal_entry(
-            entry_date=payment.payment_date,
-            memo=f"Loan repayment from {payment.loan.borrower.full_name}",
-            lines=lines,
-            created_by=user,
-            reference=payment.reference or f"Payment {payment.pk}",
-            source_type="LOAN_REPAYMENT",
-            source_key=source_key,
-            source_label=f"Payment #{payment.pk}",
-        )
-        created_entries += 1
+    from .repayments import sync_repayment_entry
+    for payment in locked_payments:
+        created_entries += sync_repayment_entry(payment, user=user)
 
-    for run in PayrollRun.objects.prefetch_related("lines").filter(status="PAID").order_by("pay_date", "pk"):
+    # Deleted repayment rows also need to be offset in the ledger.
+    for entry in JournalEntry.objects.filter(source_type="LOAN_REPAYMENT", status="POSTED", reversed_by__isnull=True):
+        parts = entry.source_key.split(":")
+        if len(parts) == 3 and parts[0] == "payment" and parts[1].isdigit() and not Payment.objects.filter(pk=int(parts[1])).exists():
+            _reversal, created = reverse_journal_entry(entry, user=user, reason="Repayment deleted")
+            created_entries += int(created)
+
+    for run in locked_payroll:
         source_key = f"payroll:{run.pk}:paid"
         if JournalEntry.objects.filter(source_key=source_key, source_type="PAYROLL").exists():
             continue
@@ -523,6 +508,7 @@ def _operations_summary():
         "total_disbursed": total_disbursed,
         "total_roic_expected": total_roic_expected,
         "total_collected": total_collected,
+        "customer_credit_held": _money(sum((payment.customer_credit for payment in payments), Decimal("0.00"))),
         "total_principal_collected": total_principal_collected,
         "total_roic_collected": total_roic_collected,
         "principal_outstanding": principal_outstanding,
@@ -731,7 +717,7 @@ def accounting_hub(request):
     recent_entries = JournalEntry.objects.prefetch_related("lines__account").order_by("-entry_date", "-created_at")[:12]
     accounts = LedgerAccount.objects.order_by("code")
     bank_accounts = BankAccount.objects.select_related("linked_account").order_by("name")
-    bank_transactions = BankTransaction.objects.select_related("bank_account", "offset_account", "target_bank_account").order_by("-transaction_date", "-created_at")[:12]
+    bank_transactions = BankTransaction.objects.select_related("bank_account", "offset_account", "target_bank_account", "reversal").order_by("-transaction_date", "-created_at")[:12]
     counterparties = Counterparty.objects.order_by("name")[:12]
     invoices = Invoice.objects.select_related("counterparty").order_by("-issue_date", "-created_at")[:12]
     bills = Bill.objects.select_related("counterparty").order_by("-issue_date", "-created_at")[:12]
@@ -794,4 +780,5 @@ def journal_entry_detail(request, entry_id):
     return render(request, "accounting/journal_detail.html", {
         "title": f"Journal Entry {entry.entry_no}",
         "entry": entry,
+        "can_request_reversal": entry.status == "POSTED" and entry.source_type == "GENERAL" and not entry.reversed_by_id and not entry.source_key.startswith("reversal:"),
     })

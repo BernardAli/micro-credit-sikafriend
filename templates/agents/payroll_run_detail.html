@@ -3,72 +3,19 @@
 {% block content %}
 <style>
   .run-shell{display:grid;gap:16px}
-  .hero-card{
-    position:relative;
-    overflow:hidden;
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:30px;
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
-      var(--primary-2) 36%,
-      var(--primary) 72%,
-      var(--gold-2) 100%
-    );
-    color:#fff;
-    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
-  }
-
-  [data-theme="dark"] .hero-card{
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
-      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
-      color-mix(in srgb,var(--primary) 60%,#000) 72%,
-      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
-    );
-    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
-  }
-
-  .hero-card::before{
-    content:"";
-    position:absolute;
-    top:-70px;
-    right:-60px;
-    width:300px;
-    height:300px;
-    border-radius:50%;
-    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
-    pointer-events:none;
-  }
-
-  .hero-card::after{
-    content:"";
-    position:absolute;
-    left:28%;
-    bottom:-60px;
-    width:380px;
-    height:220px;
-    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
-    pointer-events:none;
-  }
-  .hero-inner{position:relative;z-index:1;padding:28px}
   .hero-wrap{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
-  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
-  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
   .hero-sub{margin-top:8px;opacity:.88;line-height:1.65}
   .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
-  .btn-soft{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text)}
-  .btn-soft-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
   .metrics-grid,.panel-grid{display:grid;gap:14px}
   .metrics-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
   .panel-grid{grid-template-columns:1.1fr .9fr}
   .stat-card,.panel,.line-card{border:1px solid var(--border);border-radius:24px;background:var(--panel);box-shadow:0 18px 45px rgba(26,31,20,.05)}
-  .stat-card{padding:18px}
   .stat-label{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
   .stat-value{margin-top:8px;font-size:24px;font-weight:900;color:var(--text)}
   .stat-sub{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.55}
   .panel{overflow:hidden}
   .panel-head{padding:18px 20px 0}
-  .panel-title{margin:0;font-size:18px;font-weight:900;color:var(--text)}
+  .panel-title{margin:0;}
   .panel-sub{margin-top:4px;font-size:13px;color:var(--muted)}
   .panel-body{padding:18px 20px 20px}
   .detail-list,.list{display:grid;gap:10px}
@@ -94,6 +41,7 @@
           <div class="hero-sub">{{ run.period_start }} to {{ run.period_end }} · Pay date {{ run.pay_date }} · {{ run.get_status_display }}</div>
         </div>
         <div class="hero-actions">
+          {% if run.reversal_id %}<a class="btn-soft" href="{% url 'core:reversal_detail' run.reversal.approval_id %}">View {{ run.reversal.reference }}</a>{% elif run.status == 'PAID' %}<a class="btn-soft" href="{% url 'core:reversal_request' 'PAYROLL' run.pk %}">Request payroll reversal</a>{% endif %}
           <form method="post">{% csrf_token %}<input type="hidden" name="action" value="export_csv"><button type="submit" class="btn-soft">Export CSV</button></form>
           <form method="post">{% csrf_token %}<input type="hidden" name="action" value="export_excel"><button type="submit" class="btn-soft">Export Excel</button></form>
           {% if run.status == "DRAFT" %}

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load chart_data %}
 {% block content %}
 
 <style>
@@ -9,57 +10,6 @@
     gap: 18px;
   }
 
-  .hero-card{
-    position:relative;
-    overflow:hidden;
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:30px;
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
-      var(--primary-2) 36%,
-      var(--primary) 72%,
-      var(--gold-2) 100%
-    );
-    color:#fff;
-    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
-  }
-
-  [data-theme="dark"] .hero-card{
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
-      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
-      color-mix(in srgb,var(--primary) 60%,#000) 72%,
-      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
-    );
-    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
-  }
-
-  .hero-card::before{
-    content:"";
-    position:absolute;
-    top:-70px;
-    right:-60px;
-    width:300px;
-    height:300px;
-    border-radius:50%;
-    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
-    pointer-events:none;
-  }
-
-  .hero-card::after{
-    content:"";
-    position:absolute;
-    left:28%;
-    bottom:-60px;
-    width:380px;
-    height:220px;
-    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
-    pointer-events:none;
-  }
-
-
-  .hero-inner{position:relative;z-index:1;padding:28px}
-
   .hero-wrap{
     display:flex;
     justify-content:space-between;
@@ -67,10 +17,6 @@
     gap:18px;
     flex-wrap:wrap;
   }
-
-  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
-
-  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
 
   .hero-sub{
     margin-top:10px;
@@ -101,36 +47,9 @@
     backdrop-filter:blur(8px);
   }
 
-  .btn-soft{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    min-height:44px;
-    padding:10px 16px;
-    border-radius:999px;
-    font-weight:800;
-    text-decoration:none;
-    border:1px solid var(--border);
-    background:var(--panel-strong);
-    color:var(--text);
-    box-shadow:0 10px 24px rgba(26,31,20,.08);
-    transition:all .16s ease;
-  }
-
   .btn-soft:hover{
     color:var(--text);
     transform:translateY(-1px);
-  }
-
-  .btn-soft-primary{
-    background:linear-gradient(135deg,var(--primary),var(--primary-3));
-    color:#fff;
-    border-color:var(--primary);
-    box-shadow:0 18px 36px rgba(58,90,30,.22);
-  }
-
-  .btn-soft-primary:hover{
-    color:#fff;
   }
 
   .layout-grid{
@@ -141,10 +60,7 @@
   }
 
   .section-card{
-    border:1px solid var(--border);
-    border-radius:28px;
-    background:var(--panel);
-    box-shadow:0 22px 60px rgba(26,31,20,.06);
+
     overflow:hidden;
   }
 
@@ -154,9 +70,7 @@
 
   .section-title{
     margin:0;
-    font-size:19px;
-    font-weight:900;
-    color:var(--text);
+
   }
 
   .section-sub{
@@ -236,7 +150,7 @@
   .field-wrap select:focus,
   .field-wrap textarea:focus{
     outline:none;
-    border-color:#60a5fa;
+    border-color:var(--primary);
     box-shadow:0 0 0 4px rgba(58,90,30,.10);
   }
 
@@ -262,7 +176,7 @@
 
   .select-filter input:focus{
     outline:none;
-    border-color:#60a5fa;
+    border-color:var(--primary);
     box-shadow:0 0 0 4px rgba(58,90,30,.10);
   }
 
@@ -317,11 +231,7 @@
   }
 
   .summary-card{
-    border:1px solid var(--border);
-    border-radius:22px;
-    background:var(--panel);
-    padding:16px;
-    box-shadow:0 10px 28px rgba(26,31,20,.04);
+
     transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
   }
 
@@ -520,10 +430,6 @@
   @media (max-width: 760px){
     .form-grid{
       grid-template-columns:1fr;
-    }
-
-    .hero-title{
-      font-size:24px;
     }
 
     .action-row{
@@ -1359,7 +1265,7 @@
     enableSelectFilter("borrower-filter", "id_borrower", "borrower-filter-status", "borrower");
     enableSelectFilter("agent-filter", "id_agent_name", "agent-filter-status", "agent");
     updatePreview();
-    renderCrossCompanyCheck({{ selected_external_debt_check_json|safe }});
+    renderCrossCompanyCheck({{ selected_external_debt_check_json|json_js }});
   })();
 </script>
 

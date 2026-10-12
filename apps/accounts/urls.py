@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from apps.loans import statement_views
 
 urlpatterns = [
     # ── Agent list & management (admin only) ──────────────────
@@ -15,6 +16,8 @@ urlpatterns = [
 
     # ── Individual agent ──────────────────────────────────────
     path("agents/<int:pk>/",             views.agent_detail,                name="agent_detail"),
+    path("agents/<int:pk>/statement/", statement_views.agent_statement, name="agent_statement"),
+    path("agents/<int:pk>/statement/pdf/", statement_views.agent_statement_pdf, name="agent_statement_pdf"),
     path("agents/<int:pk>/delete/",      views.agent_delete,                name="agent_delete"),
     path("agents/<int:pk>/analysis/",    views.agent_comprehensive_analysis, name="agent_comprehensive_analysis"),
     path("agents/<int:pk>/analysis/range/", views.agent_monthly_range_analysis, name="agent_monthly_range_analysis"),

@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import portfolio_views
+from . import statement_views
 
 app_name = "loans"
 
@@ -30,6 +31,8 @@ urlpatterns = [
     path("borrowers/import/", views.borrower_bulk_import, name="borrower_bulk_import"),
     path("borrowers/import/sample/<str:file_type>/", views.borrower_bulk_import_sample, name="borrower_bulk_import_sample"),
     path("borrowers/<int:pk>/", views.borrower_detail, name="borrower_detail"),
+    path("borrowers/<int:pk>/statement/", statement_views.borrower_statement, name="borrower_statement"),
+    path("borrowers/<int:pk>/statement/pdf/", statement_views.borrower_statement_pdf, name="borrower_statement_pdf"),
     path("borrowers/<int:pk>/edit/", views.borrower_update, name="borrower_update"),
     path("borrowers/<int:pk>/delete/", views.borrower_delete, name="borrower_delete"),
     path("loans/<int:loan_id>/payments/new/", views.loan_payment_create,  name="loan_payment_create"),

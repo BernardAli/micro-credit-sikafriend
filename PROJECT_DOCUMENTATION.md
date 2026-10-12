@@ -1,6 +1,6 @@
 # SikaFriend Micro-Credit ERP
 
-Role-specific user manuals and the combined PDF handbook are available in [`docs/manuals/`](docs/manuals/README.md).
+The current comprehensive [PDF handbook](docs/manuals/SikaFriend_Complete_Project_Manual.pdf), editable sources and role guides are available in [`docs/manuals/`](docs/manuals/README.md). The handbook includes the newer statement, customer-credit and independent transaction-reversal controls.
 
 Comprehensive operating, development, and deployment documentation for the standalone SikaFriend Micro-Credit Enterprise platform.
 
@@ -236,6 +236,8 @@ By default, a submitting user cannot review their own request. Self-review is al
 
 This exception applies to approval and rejection.
 
+Transaction reversals have a stronger rule: a different active administrator must approve or reject them, including when the requester is Management or a superuser. A review note of at least ten characters is required.
+
 ### 9.4 Execution
 
 Approval creates the actual loan inside a database transaction. The system then:
@@ -274,12 +276,16 @@ Important routes:
 
 Online collections use a `RepaymentCollection` record to track client reference, provider reference, status, raw callback data, reconciliation, and resulting payment.
 
+The current borrower portal records payment requests for verification; it does not initiate a live provider charge or simulate settlement. New repayments cannot exceed the remaining agreed balance. Reviewed historical excess is held as customer credit, separately from loan income and security deposits. Settled receipt corrections use the independent administrator-approved reversal workflow at `/reversals/`.
+
 Production webhooks must be protected by `PAYMENT_WEBHOOK_SECRET`. Never enable insecure callbacks in production.
 
 ## 11. Statements, Analytics, and Reports
 
 - `/loans/<id>/statement/` statement view
 - `/loans/<id>/statement/pdf/` statement PDF
+- `/borrowers/<id>/statement/` borrower statement and `/statement/pdf/` PDF suffix
+- `/agents/agents/<id>/statement/` agent statement and `/statement/pdf/` PDF suffix
 - `/reports/` reports center
 - `/reports/business-state/pdf/` business state PDF
 - `/loans/analytics/` loan analysis
@@ -351,7 +357,7 @@ Asset disposal approval requests appear at `/approvals/`.
 
 ### Approvals
 
-`/approvals/` contains only payroll, accounting, and asset workflows.
+`/approvals/` contains non-loan workflows, including payroll, accounting, asset/security controls and transaction reversal cases. `/reversals/` provides the source register and independent administrator review pages.
 
 ### Audit Trail
 

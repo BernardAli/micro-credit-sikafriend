@@ -7,6 +7,7 @@ __pycache__/
 .venv/
 venv/
 env/
+ENV/
 
 # Django/local runtime
 .env
@@ -15,14 +16,31 @@ env/
 db.sqlite3
 *.sqlite3
 *.sqlite3-*
+*.sqlite
+*.sqlite-*
 *.db
+*.db-*
+*.pid
+*.pid.lock
 media/
+private-media/
 staticfiles/
 *.log
 logs/
 
+# Local credentials and private keys
+/.aws/
+/.ssh/
+/credentials/
+/secrets/
+*.pem
+*.key
+
 # Local backups and database exports
 backups/
+db.txt
+restore_data.json
+data-export.json
 *.sql
 *.sql.gz
 *.dump
@@ -30,19 +48,32 @@ backups/
 
 # Test/tool caches
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.cache/
 .test-tmp/
 .tox/
 .nox/
+.hypothesis/
 
 # Packaging and generated files
 build/
 dist/
 *.egg-info/
 pip-wheel-metadata/
+.eggs/
+
+# Generated manual exports (retain sources and sample screenshots)
+/docs/manuals/SikaFriend_*.pdf
+/docs/manuals/SikaFriend_*.html
+/docs/manuals/*_manual_build.json
+
+# Client-specific commercial documents
+/docs/quotations/
 
 # Local deployment overrides
 pythonanywhere_wsgi.py
@@ -53,3 +84,7 @@ pythonanywhere_wsgi.py
 .vscode/
 .DS_Store
 Thumbs.db
+Desktop.ini
+*~
+*.swp
+*.swo

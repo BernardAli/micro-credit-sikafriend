@@ -1,7 +1,8 @@
 {% load static %}<!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="light" data-company-theme="{{ company_theme|default:'forest' }}">
 <head>
   <meta charset="UTF-8">
+  <script src="{% static 'js/theme.js' %}"></script>
   <title>{% block page_title %}Account Access{% endblock %} | {{ company_name|default:"MicroCredit" }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -9,76 +10,6 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
   {% if company and company.site_font %}<link href="{{ company.font_urls|safe }}" rel="stylesheet">{% endif %}
   <style>
-    :root, [data-theme="light"] {
-      --bg: #f3f2ec;
-      --panel: rgba(255,255,255,.97);
-      --panel-strong: #ffffff;
-      --text: #1a1f14;
-      --muted: #58624a;
-      --muted-2: #8a9478;
-      --border: rgba(26,31,20,.10);
-      --border-soft: rgba(26,31,20,.06);
-      --primary: #3a5a1e;
-      --primary-2: #6b8f36;
-      --primary-3: #517a28;
-      --primary-glow: rgba(58,90,30,.16);
-      --gold: #b88620;
-      --gold-pale: rgba(196,146,42,.10);
-      --gold-glow: rgba(184,134,32,.16);
-      --success: #2d6b3e;
-      --success-bg: rgba(45,107,62,.08);
-      --danger: #b83232;
-      --danger-bg: rgba(184,50,50,.06);
-      --info-bg: rgba(58,90,30,.07);
-      --shadow-sm: 0 6px 20px rgba(26,31,20,.07);
-      --shadow-md: 0 16px 45px rgba(26,31,20,.09);
-      --shadow-xl: 0 36px 90px rgba(26,31,20,.12);
-      --brand-bg-1: color-mix(in srgb, var(--primary-2) 60%, #000);
-      --brand-bg-2: var(--primary-2);
-      --brand-bg-3: var(--primary);
-      --brand-orb: color-mix(in srgb, var(--gold) 22%, transparent);
-      --brand-text: rgba(255,255,255,.95);
-      --brand-muted: rgba(255,255,255,.68);
-      --brand-border: rgba(255,255,255,.12);
-      --brand-glass: rgba(255,255,255,.08);
-      --font-body:  'DM Sans', ui-sans-serif, system-ui, sans-serif;
-      --font-serif: 'DM Serif Display', serif;
-    }
-
-    [data-theme="dark"] {
-      --bg: #0f1409;
-      --panel: rgba(26,36,16,.98);
-      --panel-strong: #1c2814;
-      --text: #dde8c4;
-      --muted: #7a8c62;
-      --muted-2: #546040;
-      --border: rgba(160,190,110,.09);
-      --border-soft: rgba(160,190,110,.05);
-      --primary: #80b840;
-      --primary-2: #99c85c;
-      --primary-3: #60a030;
-      --primary-glow: rgba(128,184,64,.18);
-      --gold: #d0a030;
-      --gold-pale: rgba(208,160,48,.10);
-      --gold-glow: rgba(208,160,48,.18);
-      --success: #58b870;
-      --success-bg: rgba(88,184,112,.12);
-      --danger: #e05050;
-      --danger-bg: rgba(224,80,80,.12);
-      --info-bg: rgba(128,184,64,.10);
-      --shadow-sm: 0 6px 20px rgba(0,0,0,.30);
-      --shadow-md: 0 16px 45px rgba(0,0,0,.38);
-      --shadow-xl: 0 36px 90px rgba(0,0,0,.50);
-      --brand-bg-1: color-mix(in srgb, var(--primary-2) 20%, #000);
-      --brand-bg-2: color-mix(in srgb, var(--primary-2) 38%, #000);
-      --brand-bg-3: color-mix(in srgb, var(--primary) 48%, #000);
-      --brand-orb: color-mix(in srgb, var(--gold) 18%, transparent);
-      --brand-text: rgba(220,235,195,.96);
-      --brand-muted: rgba(180,200,150,.65);
-      --brand-border: rgba(160,200,100,.12);
-      --brand-glass: rgba(120,180,60,.08);
-    }
-
     *, *::before, *::after { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; }
 
@@ -589,26 +520,15 @@
   </style>
   {% if company %}{% if company.dashboard_css_overrides or company.site_font %}
   <style>
-    :root, [data-company-theme], [data-theme="dark"] [data-company-theme] {
+    html:root[data-company-theme] {
       {{ company.dashboard_css_overrides }}{% if company.site_font %}
       --font-body:  {{ company.font_body_family|safe }}, ui-sans-serif, system-ui, sans-serif;
       --font-serif: {{ company.font_serif_family|safe }}, Georgia, serif;{% endif %}
     }
   </style>{% endif %}{% endif %}
-  <script>
-    (function() {
-      var stored = localStorage.getItem('sf-theme');
-      var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      var theme = stored || (prefersDark ? 'dark' : 'light');
-      document.documentElement.setAttribute('data-theme', theme);
-      var companyTheme = "{{ company_theme|default:'forest' }}";
-      if (companyTheme && companyTheme !== 'forest') {
-        document.documentElement.setAttribute('data-company-theme', companyTheme);
-      }
-    })();
-  </script>
+  <link rel="stylesheet" href="{% static 'css/theme.css' %}">
 </head>
-<body>
+<body class="tenant-auth">
 <div class="page">
   <div class="auth-shell">
     <section class="brand-pane">
@@ -653,7 +573,7 @@
     </section>
 
     <section class="form-pane">
-      <button class="pane-theme-toggle" id="themeToggle" type="button" aria-label="Toggle theme">🌿</button>
+      <button class="pane-theme-toggle theme-toggle" id="themeToggle" type="button" data-theme-toggle aria-label="Switch to dark theme">◐</button>
 
       <div class="form-wrap">
         <div class="form-head">
@@ -678,24 +598,6 @@
     </section>
   </div>
 </div>
-
-<script>
-  const html = document.documentElement;
-  const toggle = document.getElementById('themeToggle');
-  const stored = localStorage.getItem('sf-theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  let theme = stored || (prefersDark ? 'dark' : 'light');
-
-  function applyTheme(nextTheme) {
-    html.setAttribute('data-theme', nextTheme);
-    if (toggle) toggle.textContent = nextTheme === 'dark' ? '☀️' : '🌿';
-    localStorage.setItem('sf-theme', nextTheme);
-    theme = nextTheme;
-  }
-
-  applyTheme(theme);
-  toggle?.addEventListener('click', () => applyTheme(theme === 'dark' ? 'light' : 'dark'));
-</script>
 
 {% block page_scripts %}{% endblock %}
 </body>

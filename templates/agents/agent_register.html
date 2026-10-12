@@ -2,74 +2,22 @@
 {% block content %}
 <style>
   .reg-shell{max-width:1200px;margin:0 auto;display:grid;gap:16px}
-  .hero-card{
-    position:relative;
-    overflow:hidden;
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:30px;
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
-      var(--primary-2) 36%,
-      var(--primary) 72%,
-      var(--gold-2) 100%
-    );
-    color:#fff;
-    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
-  }
-
-  [data-theme="dark"] .hero-card{
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
-      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
-      color-mix(in srgb,var(--primary) 60%,#000) 72%,
-      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
-    );
-    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
-  }
-
-  .hero-card::before{
-    content:"";
-    position:absolute;
-    top:-70px;
-    right:-60px;
-    width:300px;
-    height:300px;
-    border-radius:50%;
-    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
-    pointer-events:none;
-  }
-
-  .hero-card::after{
-    content:"";
-    position:absolute;
-    left:28%;
-    bottom:-60px;
-    width:380px;
-    height:220px;
-    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
-    pointer-events:none;
-  }
-  .hero-inner{position:relative;z-index:1;padding:28px}
-  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
-  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
   .hero-sub{position:relative;z-index:1;margin-top:8px;max-width:860px;opacity:.88;line-height:1.65}
-  .form-card{border:1px solid var(--border);border-radius:28px;background:var(--panel);box-shadow:0 20px 50px rgba(26,31,20,.05);overflow:hidden}
+  .form-card{overflow:hidden}
   .tabs-shell{padding:18px 22px 0;background:var(--bg-soft);border-bottom:1px solid var(--border-soft)}
   .tabs-nav{display:flex;flex-wrap:wrap;gap:10px}
-  .tab-btn{border:none;border-radius:999px;padding:11px 16px;background:rgba(26,31,20,.06);color:var(--muted);font-weight:900;font-size:12px;letter-spacing:.03em;text-transform:uppercase;cursor:pointer;transition:all .2s ease}
+  .tab-btn{border:none;background:rgba(26,31,20,.06);color:var(--muted);cursor:pointer;transition:all .2s ease}
   .tab-btn:hover{background:rgba(26,31,20,.1);color:var(--text)}
-  .tab-btn.active{background:var(--primary);color:#fff;box-shadow:0 12px 28px var(--primary-glow)}
   .tab-panel{display:none}
   .tab-panel.active{display:block}
   .section{padding:20px 22px;border-bottom:1px solid var(--border-soft)}
   .section:last-child{border-bottom:none}
-  .section-title{margin:0 0 6px;font-size:18px;font-weight:900;color:var(--text)}
+  .section-title{margin:0 0 6px;}
   .section-sub{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:14px}
   .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
   .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
   .field{display:grid;gap:6px}
   .field.full{grid-column:1 / -1}
-  .field label{font-size:12px;font-weight:900;color:var(--text);text-transform:uppercase;letter-spacing:.04em}
   .field input,.field select,.field textarea{width:100%;min-height:46px;border:1px solid var(--border);border-radius:14px;padding:10px 12px;background:var(--panel-strong)}
   .field input[type="checkbox"]{width:auto;min-height:auto}
   .help{font-size:12px;color:var(--muted);line-height:1.55}
@@ -77,8 +25,6 @@
   .non-field-errors{margin:18px 22px 0;padding:14px 16px;border-radius:16px;background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.14);color:var(--danger);font-weight:800}
   .check-card{border:1px solid var(--border);border-radius:18px;padding:14px;background:var(--panel-strong);display:flex;align-items:center;gap:10px}
   .actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;padding:18px 22px;background:var(--bg-soft)}
-  .btn-soft{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border-radius:999px;font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text)}
-  .btn-soft-primary{background:var(--primary);border-color:var(--primary);color:#fff}
   @media(max-width:900px){.grid,.grid-3{grid-template-columns:1fr}}
 </style>
 

@@ -8,9 +8,4 @@ urlpatterns = [
     path("my-account/loan/<int:loan_id>/", views.portal_loan_detail, name="loan_detail"),
     path("my-account/change-password/",             views.portal_change_password, name="change_password"),
     path("my-account/loan/<int:loan_id>/pay/",       views.portal_make_payment,    name="make_payment"),
-    path(
-        "my-account/collections/<int:collection_id>/simulate/<str:outcome>/",
-        views.portal_collection_simulate,
-        name="collection_simulate",
-    ),
 ]

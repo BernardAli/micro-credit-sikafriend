@@ -14,9 +14,10 @@ from django.utils import timezone
 from openpyxl import load_workbook
 
 from apps.accounts.models import Agent
-from .models import Borrower, Loan, Payment, Portfolio, RepaymentCollection, SecurityDeposit, SecurityDepositTransaction
+from .models import Borrower, Loan, Payment, Portfolio, PortfolioAssignment, RepaymentCollection, SecurityDeposit, SecurityDepositTransaction, SecurityDepositTransfer
 from .portfolio_analytics import portfolio_snapshot, visible_portfolios, dashboard_portfolios
 from .portfolios import assign_customer, set_portfolio_agents
+from .portfolio_exports import summary_row
 
 
 class PortfolioAnalyticsTests(TestCase):
@@ -198,3 +199,71 @@ class PortfolioAnalyticsTests(TestCase):
         self.assertEqual(metrics["period_collected"], Decimal("60.00"))
         self.assertEqual(metrics["pipeline_amount"], Decimal("90.00"))
         self.assertEqual(metrics["review_collections"], 1)
+
+    def test_summary_matches_full_totals_with_credit_deposits_and_pipeline(self):
+        excess = Payment(loan=self.loan, amount=Decimal('1500'))
+        excess._legacy_import = True
+        excess.save()
+        other_loan = self.new_loan(self.customer)
+        source = SecurityDeposit.objects.create(loan=self.loan, borrower=self.customer, required_amount=Decimal('100'))
+        target = SecurityDeposit.objects.create(loan=other_loan, borrower=self.customer, required_amount=Decimal('100'))
+        for action, amount in [('COLLECTION', '100'), ('COLLECTION', '100'), ('REFUND', '20'), ('DEFAULT_APPLICATION', '10')]:
+            SecurityDepositTransaction.objects.create(deposit=source, action=action, amount=Decimal(amount))
+        SecurityDepositTransfer.objects.create(source=source, target=target, amount=Decimal('100'), reference='SUMMARY-TRANSFER')
+        old_review = RepaymentCollection.objects.create(loan=self.loan, borrower=self.customer, amount='90', client_reference='SUMMARY-OLD-REVIEW', status='MANUAL_REVIEW')
+        old_failed = RepaymentCollection.objects.create(loan=self.loan, borrower=self.customer, amount='20', client_reference='SUMMARY-OLD-FAILED', status='FAILED')
+        RepaymentCollection.objects.filter(pk__in=[old_review.pk, old_failed.pk]).update(initiated_at=timezone.now()-timedelta(days=120))
+        RepaymentCollection.objects.create(loan=self.loan, borrower=self.customer, payment=self.payment, amount='60', client_reference='SUMMARY-RECONCILED', status='RECONCILED')
+        PortfolioAssignment.objects.create(portfolio=self.portfolio, agent=self.agent, ended_at=timezone.now(), assigned_by=self.admin)
+        full = self.snapshot()
+        summary = portfolio_snapshot(Portfolio.objects.filter(pk=self.portfolio.pk), self.start, self.today, summary_only=True)
+        self.assertEqual(summary['totals'], full['totals'])
+        self.assertEqual(summary_row(summary['books'][self.portfolio.pk]), summary_row(full['books'][self.portfolio.pk]))
+        self.assertEqual(full['totals']['customer_credit'], Decimal('360'))
+        self.assertEqual(full['totals']['deposit_held'], Decimal('170'))
+        self.assertEqual(full['totals']['pipeline_amount'], Decimal('90'))
+        self.assertEqual(full['totals']['collection_attempts'], 2)
+        self.assertEqual(full['totals']['current_pending_amount'], Decimal('500'))
+
+    def test_assignment_csv_query_count_stays_constant_for_more_customers(self):
+        url = reverse('loans:portfolio_export')
+        with CaptureQueriesContext(connection) as initial:
+            self.client.get(url)
+        for number in range(15):
+            self.new_customer(f'CSV-Scale-{number}', self.portfolio)
+        with CaptureQueriesContext(connection) as expanded:
+            response = self.client.get(url)
+        self.assertLessEqual(len(expanded), len(initial))
+        self.assertLessEqual(len(expanded), 3)
+        rows = list(csv.DictReader(response.content.decode().splitlines()))
+        self.assertEqual(len(rows), Borrower.objects.count())
+        own_row = next(row for row in rows if row['borrower_pk']==str(self.customer.pk))
+        self.assertEqual(own_row['customer_id'], self.customer.borrower_id)
+        self.assertEqual(own_row['portfolio_number'], self.portfolio.number)
+
+    def test_rendered_portfolio_pages_queries_do_not_grow_per_loan(self):
+        pages = [
+            (reverse('loans:portfolio_list'), {}),
+            (reverse('loans:portfolio_detail', args=[self.portfolio.pk]), {'tab':'payments'}),
+            (reverse('loans:portfolio_detail', args=[self.portfolio.pk]), {'tab':'deposits'}),
+            (reverse('loans:portfolio_detail', args=[self.portfolio.pk]), {'tab':'officers'}),
+            (reverse('loans:portfolio_customers'), {'show':'all'}),
+            (reverse('loans:portfolio_update', args=[self.portfolio.pk]), {}),
+        ]
+        counts = []
+        for url, params in pages:
+            self.client.get(url, params)
+            with CaptureQueriesContext(connection) as queries:
+                self.client.get(url, params)
+            counts.append(len(queries))
+        for number in range(10):
+            loan = self.new_loan(self.new_customer(f'Page-Scale-{number}', self.portfolio))
+            deposit = SecurityDeposit.objects.create(loan=loan, borrower=loan.borrower, required_amount=Decimal('50'))
+            SecurityDepositTransaction.objects.create(deposit=deposit, action='COLLECTION', amount=Decimal('50'))
+            Payment.objects.create(loan=loan, amount=Decimal('120'))
+        for (url, params), before in zip(pages, counts):
+            with self.subTest(page=url, params=params):
+                with CaptureQueriesContext(connection) as queries:
+                    response = self.client.get(url, params)
+                self.assertEqual(response.status_code, 200)
+                self.assertLessEqual(len(queries), before)

@@ -1,0 +1,8 @@
+{% load currency %}
+<section class="section"><div class="section-title"><span class="section-number">01</span><h2>Officer & portfolio coverage</h2></div><table class="details">
+<tr><td class="label">Officer ID</td><td class="value">{{ agent.agent_id }}</td><td class="label">Role / department</td><td class="value">{{ agent.role_label }}{% if agent.department %} · {{ agent.department }}{% endif %}</td></tr>
+<tr><td class="label">Telephone / email</td><td class="value">{{ agent.phone }}{% if agent.email %}<br>{{ agent.email }}{% endif %}</td><td class="label">Location</td><td class="value">{{ agent.location }}</td></tr>
+<tr><td class="label">Employment</td><td class="value">{{ agent.get_employment_status_display }} · {{ agent.get_employment_type_display }}</td><td class="label">Hire date / supervisor</td><td class="value">{{ agent.hire_date|date:'d M Y'|default:'—' }}{% if agent.supervisor %}<br>{{ agent.supervisor.name }}{% endif %}</td></tr>
+<tr><td class="label">Current portfolios</td><td colspan="3" class="value">{% for portfolio in portfolios %}{{ portfolio }}{% if not forloop.last %}<br>{% endif %}{% empty %}No current active portfolio assignments{% endfor %}</td></tr>
+<tr><td class="label">Personally recorded receipts</td><td class="value">{{ recorded_cash|ghs }} · {{ recorded_count }} receipts</td><td class="label">Portfolio loans</td><td class="value">{{ totals.active }} active · {{ totals.closed }} closed · {{ totals.default }} default</td></tr>
+</table></section>

@@ -218,6 +218,14 @@ class JournalEntryHeaderForm(forms.Form):
     reference = forms.CharField(max_length=120, required=False)
     period = forms.ModelChoiceField(queryset=AccountingPeriod.objects.order_by("-start_date"), required=False)
 
+    def clean(self):
+        cleaned = super().clean()
+        period = cleaned.get("period")
+        entry_date = cleaned.get("entry_date")
+        if period and (not period.is_open or (entry_date and not period.contains(entry_date))):
+            self.add_error("period", "Choose an open period containing the journal date.")
+        return cleaned
+
 
 class JournalLineDraftForm(forms.Form):
     account = forms.ModelChoiceField(queryset=LedgerAccount.objects.none(), required=False)
@@ -227,7 +235,7 @@ class JournalLineDraftForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["account"].queryset = LedgerAccount.objects.filter(is_active=True).order_by("code")
+        self.fields["account"].queryset = LedgerAccount.objects.filter(is_active=True, allow_manual_entries=True).order_by("code")
 
     def clean(self):
         cleaned = super().clean()

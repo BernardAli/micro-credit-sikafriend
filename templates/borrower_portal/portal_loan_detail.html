@@ -2,7 +2,7 @@
 {% load currency %}
 {% load humanize %}
 {% block content %}
-<div class="card p-3 mb-3"><strong>Customer ID: {{ borrower_profile.borrower_id }}</strong><span>Portfolio: {{ borrower_profile.portfolio|default:"Pending assignment" }}</span></div>
+<div class="card workspace-actions"><strong>Customer ID: {{ borrower_profile.borrower_id }}</strong><span>Portfolio: {{ borrower_profile.portfolio|default:"Pending assignment" }}</span></div>
 
 <style>
   .detail-shell { display:grid; gap:18px; }
@@ -87,6 +87,7 @@
 
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
     <a href="{% url 'borrower:portal' %}" class="btn btn-ghost">← Back to My Account</a>
+    <a href="{% url 'loans:loan_statement' loan.pk %}" class="btn btn-ghost" target="_blank" rel="noopener">Print Loan Statement</a>
     {% if loan.status == "ACTIVE" or loan.status == "DEFAULT" %}
     <a href="{% url 'borrower:make_payment' loan.pk %}" class="btn btn-primary">💳 Make Payment</a>
     {% endif %}
@@ -117,6 +118,7 @@
       <div class="sum-lbl">Amount Paid</div>
       <div class="sum-val">{{ loan.total_paid_amount|ghs }}</div>
       <div class="sum-sub">Principal: {{ loan.total_principal_paid|ghs }}</div>
+      <div class="sum-sub">Cash received: {{ loan.total_cash_received|ghs }}</div>
     </div>
     <div class="sum-card">
       <div class="sum-lbl">Balance Remaining</div>
@@ -125,12 +127,17 @@
     </div>
     <div class="sum-card">
       <div class="sum-lbl">Payments</div>
-      <div class="sum-val">{{ loan.actual_payments_count }}/{{ loan.expected_payments_count }}</div>
+      <div class="sum-val">{{ loan.paid_installments_count }}/{{ loan.expected_payments_count }}</div>
       <div class="sum-sub">{{ loan.outstanding_payments_count }} remaining</div>
     </div>
   </div>
 
   <!-- Progress bar -->
+  {% if loan.total_customer_credit %}<div class="sum-card">
+    <div class="sum-lbl">Customer Credit Held</div>
+    <div class="sum-val">{{ loan.total_customer_credit|ghs }}</div>
+    <div class="sum-sub">Excess receipts held for you, separately from loan repayments.</div>
+  </div>{% endif %}
   <div class="progress-card">
     <div class="progress-label">
       <span>Repayment Progress</span>
@@ -149,6 +156,7 @@
   <div class="schedule-card">
     <div class="schedule-head">
       <h3 class="schedule-title">Payment History</h3>
+      <p style="color:var(--muted);font-size:12px;">Amounts show original receipt allocations. Reversed receipts and pending submissions are excluded from current repayment and credit totals. Your printable statement includes each dated reversal movement.</p>
     </div>
     <div class="table-wrap">
       <table>
@@ -159,7 +167,9 @@
             <th>Amount</th>
             <th>Principal</th>
             <th>ROIC</th>
+            <th>Credit Allocation</th>
             <th>Reference</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -167,14 +177,16 @@
             <tr>
               <td style="color:var(--muted);font-weight:700;">{{ forloop.counter }}</td>
               <td>{{ p.payment_date|date:"d M Y" }}</td>
-              <td style="font-weight:700;color:var(--success);">{{ p.amount|ghs }}</td>
+              <td style="font-weight:700;">{{ p.amount|ghs }}</td>
               <td>{{ p.principal_paid|ghs }}</td>
               <td>{{ p.roic_paid|ghs }}</td>
+              <td>{{ p.customer_credit|ghs }}</td>
               <td style="color:var(--muted);">{{ p.reference|default:"—" }}</td>
+              <td>{% if p.reversal_id %}<strong>Reversed</strong><br>{{ p.reversal.reference }}<br>{{ p.reversal.effective_date|date:'d M Y' }}{% elif p.is_pending %}Pending verification{% else %}Settled{% endif %}</td>
             </tr>
           {% empty %}
             <tr>
-              <td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">
+              <td colspan="8" style="text-align:center;color:var(--muted);padding:24px;">
                 No payments recorded yet.
               </td>
             </tr>

@@ -1,10 +1,12 @@
 from decimal import Decimal
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
 from django.db.models import Sum
 from django.utils import timezone
+from apps.core.models import ReversibleTransaction
 
 
 ACCOUNT_TYPE_CHOICES = [
@@ -98,6 +100,7 @@ DEFAULT_LEDGER_ACCOUNTS = [
     {"code": "2054", "name": "Welfare Deductions Payable", "account_type": "LIABILITY"},
     {"code": "2060", "name": "Payroll Other Deductions Clearing", "account_type": "LIABILITY"},
     {"code": "2065", "name": "Customer Security Deposits Held", "account_type": "LIABILITY", "is_payable": True},
+    {"code": "2066", "name": "Customer Repayment Credits Held", "account_type": "LIABILITY", "is_payable": True, "allow_manual_entries": False},
     {"code": "2100", "name": "Taxes Payable", "account_type": "LIABILITY"},
     {"code": "2200", "name": "Borrowings / External Funding", "account_type": "LIABILITY"},
     {"code": "3000", "name": "Owner Capital", "account_type": "EQUITY"},
@@ -216,8 +219,10 @@ class Counterparty(models.Model):
 
 
 class JournalEntry(models.Model):
+    reversed_by = models.OneToOneField("self", null=True, blank=True, on_delete=models.PROTECT, related_name="reversal_of", editable=False)
     entry_no = models.CharField(max_length=40, unique=True, blank=True)
     entry_date = models.DateField(default=timezone.localdate)
+    source_date = models.DateField(null=True, blank=True, editable=False)
     memo = models.CharField(max_length=255)
     reference = models.CharField(max_length=120, blank=True)
     period = models.ForeignKey(
@@ -259,6 +264,8 @@ class JournalEntry(models.Model):
         return self.total_debits == self.total_credits
 
     def save(self, *args, **kwargs):
+        original = type(self).objects.filter(pk=self.pk).first() if self.pk else None
+        posting_changed = original is None or any(getattr(original, name) != getattr(self, name) for name in ("entry_date", "period_id", "status"))
         if not self.entry_no:
             stamp = timezone.now().strftime("%Y%m%d%H%M%S%f")
             self.entry_no = f"JE-{stamp}"
@@ -273,6 +280,8 @@ class JournalEntry(models.Model):
             )
         if self.status == "POSTED" and not self.posted_at:
             self.posted_at = timezone.now()
+        if posting_changed and self.period_id and not self.period.is_open:
+            raise ValidationError("Journal entries cannot be posted or changed in a closed accounting period.")
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -315,8 +324,8 @@ class BankAccount(models.Model):
         return self.name
 
 
-class BankTransaction(models.Model):
-    bank_account = models.ForeignKey(BankAccount, on_delete=models.CASCADE, related_name="transactions")
+class BankTransaction(ReversibleTransaction):
+    bank_account = models.ForeignKey(BankAccount, on_delete=models.PROTECT, related_name="transactions")
     transaction_date = models.DateField(default=timezone.localdate)
     transaction_type = models.CharField(max_length=16, choices=BANK_TRANSACTION_TYPE_CHOICES)
     reference = models.CharField(max_length=120, blank=True)
@@ -330,7 +339,7 @@ class BankTransaction(models.Model):
     )
     target_bank_account = models.ForeignKey(
         BankAccount,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="incoming_transfers",
@@ -366,7 +375,7 @@ class BankTransaction(models.Model):
         return f"{self.bank_account.name} - {self.transaction_type} - {self.amount}"
 
 
-class Invoice(models.Model):
+class Invoice(ReversibleTransaction):
     counterparty = models.ForeignKey(Counterparty, on_delete=models.PROTECT, related_name="invoices")
     invoice_number = models.CharField(max_length=60, unique=True)
     issue_date = models.DateField(default=timezone.localdate)
@@ -419,7 +428,7 @@ class Invoice(models.Model):
         return self.invoice_number
 
 
-class Bill(models.Model):
+class Bill(ReversibleTransaction):
     counterparty = models.ForeignKey(Counterparty, on_delete=models.PROTECT, related_name="bills")
     bill_number = models.CharField(max_length=60, unique=True)
     issue_date = models.DateField(default=timezone.localdate)
@@ -554,6 +563,7 @@ def create_journal_entry(
     source_type="GENERAL",
     source_key="",
     source_label="",
+    source_date=None,
     status="POSTED",
 ):
     prepared_lines = []
@@ -566,8 +576,14 @@ def create_journal_entry(
         debit = Decimal(line.get("debit") or Decimal("0.00")).quantize(quant)
         credit = Decimal(line.get("credit") or Decimal("0.00")).quantize(quant)
         description = (line.get("description") or "").strip()
-        if not account or (debit <= 0 and credit <= 0):
+        if debit < 0 or credit < 0 or (debit > 0 and credit > 0):
+            raise ValueError("Journal lines need a nonnegative debit or credit, never both.")
+        if not account or (debit == 0 and credit == 0):
             continue
+        if not account.is_active:
+            raise ValueError("Journal accounts must be active.")
+        if source_type == "GENERAL" and not account.allow_manual_entries:
+            raise ValueError("This account does not permit manual journal entries.")
         prepared_lines.append({
             "account": account,
             "debit": debit,
@@ -585,16 +601,10 @@ def create_journal_entry(
     if total_debit != total_credit:
         raise ValueError("Journal entry lines must balance before posting.")
 
-    period = (
-        AccountingPeriod.objects.filter(
-            start_date__lte=entry_date,
-            end_date__gte=entry_date,
-        )
-        .order_by("-start_date")
-        .first()
-    )
-
     with transaction.atomic():
+        period = AccountingPeriod.objects.select_for_update().filter(start_date__lte=entry_date, end_date__gte=entry_date).order_by("-start_date").first()
+        if period and not period.is_open:
+            raise ValueError("Journal entries cannot be posted in a closed accounting period.")
         entry = JournalEntry.objects.create(
             entry_date=entry_date,
             memo=memo,
@@ -603,6 +613,7 @@ def create_journal_entry(
             source_type=source_type,
             source_key=source_key,
             source_label=source_label,
+            source_date=source_date,
             status=status,
             created_by=created_by,
         )
@@ -615,3 +626,23 @@ def create_journal_entry(
                 credit=line["credit"],
             )
     return entry
+
+
+@transaction.atomic
+def reverse_journal_entry(entry, *, user=None, reason=""):
+    """Retain the original posting and offset it in the current open period."""
+    entry = JournalEntry.objects.select_for_update().get(pk=entry.pk)
+    if entry.reversed_by_id:
+        return entry.reversed_by, False
+    if entry.status != "POSTED":
+        return None, False
+    reversal = create_journal_entry(
+        entry_date=timezone.localdate(), memo=f"Reverse {entry.entry_no}: {reason}"[:255],
+        lines=[{"account": line.account, "debit": line.credit, "credit": line.debit, "description": f"Reversal of {entry.entry_no}"} for line in entry.lines.select_related("account")],
+        created_by=user, source_type="ADJUSTMENT", source_key=f"reversal:{entry.pk}",
+        source_label=entry.source_label, reference=entry.reference,
+        source_date=entry.source_date or entry.entry_date,
+    )
+    entry.reversed_by = reversal
+    entry.save(update_fields=["reversed_by"])
+    return reversal, True

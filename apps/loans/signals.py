@@ -1,5 +1,6 @@
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
+from django.db import transaction
 from django.contrib.auth import get_user_model
 
 from apps.notifications.services import notify_user
@@ -37,11 +38,11 @@ def on_loan_created(sender, instance: Loan, created, raw=False, **kwargs):
     staff_users = User.objects.filter(is_staff=True, is_active=True)
     msg = _build_new_loan_alert(instance)
     for u in staff_users:
-        notify_user(u, "NEW_LOAN", "New Loan Alert!", msg, send_email=True)
+        transaction.on_commit(lambda user=u: notify_user(user, "NEW_LOAN", "New Loan Alert!", msg, send_email=True))
 
 @receiver(post_save, sender=Payment)
 def on_payment_received(sender, instance: Payment, created, raw=False, **kwargs):
-    if raw or not created or instance.is_void or instance.is_pending:
+    if raw or not created or instance.is_void or instance.is_pending or getattr(instance, "_skip_notifications", False):
         return
 
     loan = instance.loan
@@ -56,4 +57,4 @@ def on_payment_received(sender, instance: Payment, created, raw=False, **kwargs)
         f"Outstanding payments: {loan.outstanding_payments_count}\n"
     )
     for u in staff_users:
-        notify_user(u, "PAYMENT", f"Payment: Loan #{loan.id}", msg, send_email=True)
+        transaction.on_commit(lambda user=u: notify_user(user, "PAYMENT", f"Payment: Loan #{loan.id}", msg, send_email=True))

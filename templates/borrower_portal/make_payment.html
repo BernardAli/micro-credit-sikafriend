@@ -142,13 +142,13 @@
     border: 1px solid var(--border); font-size: 11.5px; font-weight: 800;
   }
   .status-pill.pending, .status-pill.processing {
-    background: rgba(245,158,11,.10); color: #b45309; border-color: rgba(245,158,11,.20);
+    background: rgba(245,158,11,.10); color: var(--warning); border-color: rgba(245,158,11,.20);
   }
   .status-pill.succeeded, .status-pill.reconciled {
-    background: rgba(22,163,74,.10); color: #15803d; border-color: rgba(22,163,74,.18);
+    background: rgba(22,163,74,.10); color: var(--success); border-color: rgba(22,163,74,.18);
   }
   .status-pill.manual_review, .status-pill.failed {
-    background: rgba(220,38,38,.10); color: #b91c1c; border-color: rgba(220,38,38,.18);
+    background: rgba(220,38,38,.10); color: var(--danger); border-color: rgba(220,38,38,.18);
   }
   .collection-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
   .collection-actions form { margin: 0; }
@@ -157,7 +157,7 @@
     background: var(--bg-soft); color: var(--text); font-size: 12px; font-weight: 700; cursor: pointer;
   }
   .btn-mini:hover { border-color: var(--primary); color: var(--primary); }
-  .btn-mini-danger:hover { border-color: #dc2626; color: #b91c1c; }
+  .btn-mini-danger:hover { border-color: #dc2626; color: var(--danger); }
 
   .pf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .pf-auto-fields { display: none; }
@@ -198,7 +198,7 @@
         </div>
         <div class="plc-stat">
           <div class="l">Payments Made</div>
-          <div class="v">{{ loan.actual_payments_count }}/{{ loan.expected_payments_count }}</div>
+          <div class="v">{{ loan.paid_installments_count }}/{{ loan.expected_payments_count }}</div>
         </div>
       </div>
     </div>
@@ -247,16 +247,7 @@
         <span class="status-pill {{ collection.status|lower }}">{{ collection.get_status_display }}</span>
       </div>
       <div class="collection-actions">
-        {% if collection.status == "PENDING" or collection.status == "PROCESSING" %}
-        <form method="post" action="{% url 'borrower:collection_simulate' collection.id 'success' %}">
-          {% csrf_token %}
-          <button type="submit" class="btn-mini">Simulate Success</button>
-        </form>
-        <form method="post" action="{% url 'borrower:collection_simulate' collection.id 'failed' %}">
-          {% csrf_token %}
-          <button type="submit" class="btn-mini btn-mini-danger">Simulate Failure</button>
-        </form>
-        {% elif collection.payment_id %}
+        {% if collection.payment_id %}
         <a href="{% url 'borrower:loan_detail' loan.pk %}" class="btn-mini" style="text-decoration:none;">View Loan Activity</a>
         {% endif %}
       </div>
@@ -269,8 +260,8 @@
   <div class="pay-notice">
     <span class="pay-notice-icon">ℹ️</span>
     <div>
-      Mobile money, bank transfer, and card requests now flow through an automated collection record and post to your loan once the provider confirms payment.
-      Cash and cheque submissions still go to our team for manual confirmation. Keep your transaction receipt handy for reference.
+      Pay through your company’s agreed payment channel, then submit your payment details here.
+      Our team will verify receipt of the funds before crediting your loan. This form does not charge your card or mobile money account. Keep your transaction receipt for reference.
     </div>
   </div>
 
@@ -314,28 +305,13 @@
           </div>
         </div>
 
-        <div class="pf-grid-2 pf-auto-fields" id="autoCollectionFields">
-          <div class="pf-field">
-            <div class="pf-label">Payer Phone / Wallet</div>
-            <input type="text" name="payer_phone" value="{{ request.POST.payer_phone }}"
-                   placeholder="e.g. 024 400 0000 or account contact">
-            <div class="pf-hint">Used by the gateway and reconciliation team for mobile money, bank, or card collection tracing.</div>
-          </div>
-          <div class="pf-field">
-            <div class="pf-label">Payer Name</div>
-            <input type="text" name="payer_name" value="{{ request.POST.payer_name }}"
-                   placeholder="Name on the wallet, card, or bank account">
-            <div class="pf-hint">Optional but helpful when the payment arrives under a different account name.</div>
-          </div>
-        </div>
-
         <!-- Reference / Transaction ID -->
         <div class="pf-field">
           <div class="pf-label">Transaction Reference / ID</div>
           <input type="text" name="reference" maxlength="120"
                  placeholder="e.g. GHC3827491 or momo transaction ID"
                  value="{{ request.POST.reference }}">
-          <div class="pf-hint">For automated channels, this becomes your customer-side reference. For cash, you can leave it blank.</div>
+          <div class="pf-hint">Enter the reference from your payment receipt. For cash, you can leave it blank.</div>
         </div>
 
         <!-- Note -->
@@ -348,7 +324,7 @@
 
       <div class="pay-action">
         <a href="{% url 'borrower:loan_detail' loan.pk %}" class="btn btn-ghost">Cancel</a>
-        <button type="submit" class="btn btn-primary">Continue Payment →</button>
+        <button type="submit" class="btn btn-primary">Submit Payment Details →</button>
       </div>
     </form>
   </div>
@@ -360,9 +336,6 @@
   const input   = document.getElementById('payAmount');
   const preview = document.getElementById('amountPreview');
   const currency = '{{ company_currency }}';
-  const autoMethods = new Set(['MOBILE_MONEY', 'BANK', 'CARD']);
-  const autoFields = document.getElementById('autoCollectionFields');
-  const methodInputs = document.querySelectorAll('input[name="payment_method"]');
 
   function updatePreview(){
     const val = parseFloat(input.value);
@@ -374,17 +347,7 @@
     }
   }
 
-  function syncMethodFields(){
-    const checked = document.querySelector('input[name="payment_method"]:checked');
-    const showAutoFields = checked && autoMethods.has(checked.value);
-    if(autoFields){
-      autoFields.classList.toggle('show', !!showAutoFields);
-    }
-  }
-
   if(input){ input.addEventListener('input', updatePreview); updatePreview(); }
-  methodInputs.forEach(function(item){ item.addEventListener('change', syncMethodFields); });
-  syncMethodFields();
 })();
 </script>
 {% endblock %}

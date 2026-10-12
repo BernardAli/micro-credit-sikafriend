@@ -9,7 +9,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from weasyprint import HTML
 
 from django.contrib import messages
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
@@ -22,6 +22,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font
 
@@ -75,7 +76,9 @@ from .reports import (
     resolve_report_period,
 )
 from .portfolio_analytics import dashboard_portfolios
+from .dashboard_queries import dashboard_loans_and_payments
 from .services import build_loan_statement
+from .statement_views import loan_statement, loan_statement_pdf
 from .portfolios import agent_portfolio_ids, agent_can_access, loan_contact_agent
 from .services_sms import safe_send_sms
 from apps.accounts.models import Agent
@@ -95,6 +98,8 @@ def _get_request_role(request):
     """Return (role, agent_or_none) for the logged-in user."""
     from apps.core.roles import get_user_role, get_agent_for_user
     role  = get_user_role(request.user)
+    if role not in {"admin", "agent", "borrower"}:
+        raise PermissionDenied("Your account has no assigned role. Contact management.")
     agent = get_agent_for_user(request.user) if role == "agent" else None
     return role, agent
 
@@ -365,7 +370,7 @@ def _build_payment_create_sms_messages(loan, payment):
     payment_amount = _sms_amount(payment.amount)
     loan_amount = _sms_amount(loan.amount)
     weekly_payment = _sms_amount(loan.weekly_payment)
-    weeks_paid = loan.actual_payments_count
+    weeks_paid = loan.paid_installments_count
     weeks_remaining = loan.outstanding_payments_count
     company_name = _company_name()
 
@@ -402,7 +407,7 @@ def business_state_pdf_report(request):
 
     borrowers_qs = Borrower.objects.prefetch_related("loans")
     agents_qs = Agent.objects.all()
-    payments_qs = Payment.objects.filter(is_void=False).select_related("loan", "loan__borrower", "loan__agent_name")
+    payments_qs = Payment.objects.filter(is_void=False, is_pending=False).select_related("loan", "loan__borrower", "loan__agent_name")
 
     total_loans = loans_qs.count()
     active_loans = active_loans_qs.count()
@@ -425,13 +430,13 @@ def business_state_pdf_report(request):
     total_roic = sum((loan.roic_amount for loan in loans_qs), Decimal("0.00"))
     active_roic = sum((loan.roic_amount for loan in active_loans_qs), Decimal("0.00"))
 
-    total_collected = _q(payments_qs.aggregate(s=Sum("amount"))["s"])
+    total_collected = _q(payments_qs.aggregate(s=Sum(F("amount") - F("customer_credit")))["s"])
     total_principal_collected = _q(payments_qs.aggregate(s=Sum("principal_paid"))["s"])
     total_roic_collected = _q(payments_qs.aggregate(s=Sum("roic_paid"))["s"])
 
-    today_collected = _q(payments_qs.filter(payment_date=today).aggregate(s=Sum("amount"))["s"])
-    week_collected = _q(payments_qs.filter(payment_date__gte=last_7_days, payment_date__lte=today).aggregate(s=Sum("amount"))["s"])
-    month_collected = _q(payments_qs.filter(payment_date__gte=month_start, payment_date__lte=today).aggregate(s=Sum("amount"))["s"])
+    today_collected = _q(payments_qs.filter(payment_date=today).aggregate(s=Sum(F("amount") - F("customer_credit")))["s"])
+    week_collected = _q(payments_qs.filter(payment_date__gte=last_7_days, payment_date__lte=today).aggregate(s=Sum(F("amount") - F("customer_credit")))["s"])
+    month_collected = _q(payments_qs.filter(payment_date__gte=month_start, payment_date__lte=today).aggregate(s=Sum(F("amount") - F("customer_credit")))["s"])
 
     month_disbursed = _q(loans_qs.filter(created_at__date__gte=month_start, created_at__date__lte=today).aggregate(s=Sum("amount"))["s"])
     loans_last_30_days = loans_qs.filter(created_at__date__gte=last_30_days, created_at__date__lte=today).count()
@@ -441,9 +446,9 @@ def business_state_pdf_report(request):
     total_roic = _q(total_roic)
     active_roic = _q(active_roic)
 
-    total_outstanding = _q(total_expected - total_collected)
-    active_outstanding = _q(active_expected - _q(payments_qs.filter(loan__status="ACTIVE").aggregate(s=Sum("amount"))["s"]))
-    principal_outstanding = _q(total_disbursed - total_principal_collected)
+    total_outstanding = _q(sum((loan.balance_amount for loan in loans_qs), Decimal("0.00")))
+    active_outstanding = _q(sum((loan.balance_amount for loan in active_loans_qs), Decimal("0.00")))
+    principal_outstanding = _q(sum((loan.principal_outstanding for loan in loans_qs), Decimal("0.00")))
     roic_outstanding = _q(total_roic - total_roic_collected)
 
     collection_rate = _q((total_collected / total_expected * Decimal("100")) if total_expected > 0 else Decimal("0.00"))
@@ -943,18 +948,8 @@ def dashboard(request):
 
     today = timezone.localdate()
 
-    loans_qs = Loan.objects.select_related("borrower", "agent_name").prefetch_related("payments")
-    borrowers_qs = Borrower.objects.all()
-    payments_qs = (
-        Payment.objects
-        .filter(is_void=False)
-        .select_related("loan", "loan__borrower", "loan__agent_name")
-        .order_by("-created_at")
-    )
-
-    loans_list_all = list(loans_qs)
-    borrowers_list = list(borrowers_qs)
-    payments_list = list(payments_qs)
+    loans_list_all, payments_list = dashboard_loans_and_payments()
+    borrowers_list = list(Borrower.objects.all())
 
     active_loans_list = [loan for loan in loans_list_all if loan.status == "ACTIVE"]
     closed_loans_list = [loan for loan in loans_list_all if loan.status == "CLOSED"]
@@ -979,13 +974,13 @@ def dashboard(request):
     total_roic = quantize_amount(sum((loan.roic_amount for loan in loans_list_all), Decimal("0.00")))
     active_roic = quantize_amount(sum((loan.roic_amount for loan in active_loans_list), Decimal("0.00")))
 
-    total_collected = quantize_amount(sum((payment.amount for payment in payments_list), Decimal("0.00")))
+    total_collected = quantize_amount(sum((payment.loan_applied_amount for payment in payments_list), Decimal("0.00")))
     total_principal_collected = quantize_amount(sum((payment.principal_paid for payment in payments_list), Decimal("0.00")))
     total_roic_collected = quantize_amount(sum((payment.roic_paid for payment in payments_list), Decimal("0.00")))
     total_payments_count = len(payments_list)
 
     default_payments_list = [payment for payment in payments_list if payment.loan.status == "DEFAULT"]
-    default_collected = quantize_amount(sum((payment.amount for payment in default_payments_list), Decimal("0.00")))
+    default_collected = quantize_amount(sum((payment.loan_applied_amount for payment in default_payments_list), Decimal("0.00")))
     default_roic_collected = quantize_amount(sum((payment.roic_paid for payment in default_payments_list), Decimal("0.00")))
 
     last7 = today - timezone.timedelta(days=7)
@@ -993,10 +988,10 @@ def dashboard(request):
     last_90_days = today - timezone.timedelta(days=90)
     month_start = today.replace(day=1)
 
-    today_collected = quantize_amount(sum((payment.amount for payment in payments_list if payment.payment_date == today), Decimal("0.00")))
-    week_collected = quantize_amount(sum((payment.amount for payment in payments_list if last7 <= payment.payment_date <= today), Decimal("0.00")))
-    month_collected = quantize_amount(sum((payment.amount for payment in payments_list if month_start <= payment.payment_date <= today), Decimal("0.00")))
-    last_30_collected = quantize_amount(sum((payment.amount for payment in payments_list if last_30_days <= payment.payment_date <= today), Decimal("0.00")))
+    today_collected = quantize_amount(sum((payment.loan_applied_amount for payment in payments_list if payment.payment_date == today), Decimal("0.00")))
+    week_collected = quantize_amount(sum((payment.loan_applied_amount for payment in payments_list if last7 <= payment.payment_date <= today), Decimal("0.00")))
+    month_collected = quantize_amount(sum((payment.loan_applied_amount for payment in payments_list if month_start <= payment.payment_date <= today), Decimal("0.00")))
+    last_30_collected = quantize_amount(sum((payment.loan_applied_amount for payment in payments_list if last_30_days <= payment.payment_date <= today), Decimal("0.00")))
 
     month_disbursed = quantize_amount(sum((loan.amount for loan in loans_list_all if month_start <= loan.created_at.date() <= today), Decimal("0.00")))
     last_30_disbursed = quantize_amount(sum((loan.amount for loan in loans_list_all if last_30_days <= loan.created_at.date() <= today), Decimal("0.00")))
@@ -1006,15 +1001,15 @@ def dashboard(request):
     last_30_new_borrowers = sum(1 for borrower in borrowers_list if last_30_days <= borrower.created_at.date() <= today)
 
     active_payments_list = [payment for payment in payments_list if payment.loan.status == "ACTIVE"]
-    active_collected = quantize_amount(sum((payment.amount for payment in active_payments_list), Decimal("0.00")))
+    active_collected = quantize_amount(sum((payment.loan_applied_amount for payment in active_payments_list), Decimal("0.00")))
     active_principal_collected = quantize_amount(sum((payment.principal_paid for payment in active_payments_list), Decimal("0.00")))
     active_roic_collected = quantize_amount(sum((payment.roic_paid for payment in active_payments_list), Decimal("0.00")))
 
-    total_outstanding_active = quantize_amount(active_expected - active_collected)
+    total_outstanding_active = quantize_amount(sum((loan.balance_amount for loan in active_loans_list), Decimal("0.00")))
     if total_outstanding_active < 0:
         total_outstanding_active = Decimal("0.00")
 
-    active_principal_outstanding = quantize_amount(active_disbursed - active_principal_collected)
+    active_principal_outstanding = quantize_amount(sum((loan.principal_outstanding for loan in active_loans_list), Decimal("0.00")))
     if active_principal_outstanding < 0:
         active_principal_outstanding = Decimal("0.00")
 
@@ -1026,7 +1021,7 @@ def dashboard(request):
     if total_equity_outstanding < 0:
         total_equity_outstanding = Decimal("0.00")
 
-    total_principal_outstanding = quantize_amount(total_disbursed - total_collected + total_roic_collected)
+    total_principal_outstanding = quantize_amount(sum((loan.principal_outstanding for loan in loans_list_all), Decimal("0.00")))
     if total_principal_outstanding < 0:
         total_principal_outstanding = Decimal("0.00")
 
@@ -1226,7 +1221,7 @@ def dashboard(request):
 
         if agent_key in agent_map:
             agent_entry = agent_map[agent_key]
-            agent_entry["collected"] += payment.amount
+            agent_entry["collected"] += payment.loan_applied_amount
             agent_entry["principal_collected"] += payment.principal_paid
             agent_entry["roic_collected"] += payment.roic_paid
             agent_entry["payment_count"] += 1
@@ -1481,7 +1476,7 @@ def dashboard(request):
             "loan_count": len(window_loans),
             "payment_count": len(window_payments),
             "disbursed": quantize_amount(sum((loan.amount for loan in window_loans), Decimal("0.00"))),
-            "collected": quantize_amount(sum((payment.amount for payment in window_payments), Decimal("0.00"))),
+            "collected": quantize_amount(sum((payment.loan_applied_amount for payment in window_payments), Decimal("0.00"))),
             "principal_collected": quantize_amount(sum((payment.principal_paid for payment in window_payments), Decimal("0.00"))),
             "roic_collected": quantize_amount(sum((payment.roic_paid for payment in window_payments), Decimal("0.00"))),
         })
@@ -1505,7 +1500,7 @@ def dashboard(request):
     for payment in payments_list:
         marker = payment.payment_date.replace(day=1)
         if marker in month_collected_map:
-            month_collected_map[marker] += payment.amount
+            month_collected_map[marker] += payment.loan_applied_amount
             month_payment_count_map[marker] += 1
 
     daily_markers = [today - timezone.timedelta(days=offset) for offset in range(29, -1, -1)]
@@ -1517,7 +1512,7 @@ def dashboard(request):
             daily_disbursed_map[created_day] += loan.amount
     for payment in payments_list:
         if payment.payment_date in daily_collected_map:
-            daily_collected_map[payment.payment_date] += payment.amount
+            daily_collected_map[payment.payment_date] += payment.loan_applied_amount
 
     chart_month_labels = [marker.strftime("%b %Y") for marker in month_markers]
     chart_month_disbursed = [float(quantize_amount(month_disbursed_map[marker])) for marker in month_markers]
@@ -1816,7 +1811,7 @@ def loan_detail(request, loan_id: int):
     loan.borrower.refresh_status(save=True)
 
     # Use PaymentCreateForm here because the loan is already known from the URL
-    payment_form = PaymentCreateForm(request.POST or None)
+    payment_form = PaymentCreateForm(request.POST or None, loan=loan)
 
     if request.method == "POST" and not loan.is_ready_for_disbursement:
         messages.error(request, "Collect and approve the full security deposit before recording loan repayments.")
@@ -1826,7 +1821,11 @@ def loan_detail(request, loan_id: int):
         p = payment_form.save(commit=False)
         p.loan = loan
         p.submitted_by = request.user
-        p.save()
+        try:
+            p.save()
+        except ValidationError as exc:
+            messages.error(request, "; ".join(exc.messages))
+            return redirect("loans:loan_detail", loan_id=loan.pk)
 
         # refresh from DB after payment save
         loan = Loan.objects.select_related("borrower", "agent_name").prefetch_related("payments").get(id=loan_id)
@@ -1885,12 +1884,13 @@ def loan_detail(request, loan_id: int):
         messages.success(request, f"Payment recorded successfully for Loan #{loan.id}.")
         return redirect("loans:loan_detail", loan_id=loan.id)
 
-    payments = list(loan.payments.filter(is_void=False).order_by("payment_date", "id"))
+    payments = list(loan.payments.filter(Q(is_void=False) | Q(reversal__isnull=False)).select_related("reversal__approved_by").order_by("payment_date", "id"))
 
-    payment_dates = [p.payment_date.strftime("%d/%m/%Y") for p in payments]
-    payment_amounts = [float(p.amount) for p in payments]
-    principal_paid_series = [float(p.principal_paid) for p in payments]
-    roic_paid_series = [float(p.roic_paid) for p in payments]
+    chart_payments = [p for p in payments if not p.is_pending and not p.is_void]
+    payment_dates = [p.payment_date.strftime("%d/%m/%Y") for p in chart_payments]
+    payment_amounts = [float(p.loan_applied_amount) for p in chart_payments]
+    principal_paid_series = [float(p.principal_paid) for p in chart_payments]
+    roic_paid_series = [float(p.roic_paid) for p in chart_payments]
 
     cumulative_total = []
     cumulative_principal = []
@@ -1900,8 +1900,8 @@ def loan_detail(request, loan_id: int):
     principal_running = Decimal("0.00")
     roic_running = Decimal("0.00")
 
-    for p in payments:
-        total_running += Decimal(p.amount)
+    for p in chart_payments:
+        total_running += p.loan_applied_amount
         principal_running += Decimal(p.principal_paid)
         roic_running += Decimal(p.roic_paid)
 
@@ -1948,32 +1948,22 @@ def security_deposit(request, loan_id):
     if _role == "agent" and _agent and not agent_can_access(_agent, loan):
         messages.error(request, "You can only manage deposits for loans assigned to you.")
         return redirect("agent_detail", pk=_agent.pk)
-    deposit, created = SecurityDeposit.objects.get_or_create(
-        loan=loan,
-        defaults={
-            "borrower": loan.borrower,
-            "required_amount": ((loan.approved_amount or loan.amount) * Decimal("0.10")).quantize(Decimal("0.01")),
-        },
-    )
-    if created:
-        log_activity(
-            category="SECURITY_DEPOSIT",
-            action="legacy_record_created",
-            actor=request.user,
-            object_type="SecurityDeposit",
-            object_id=deposit.pk,
-            object_label=f"Loan #{loan.id}",
-            message=f"Security-deposit record created for existing Loan #{loan.id}.",
-            metadata={"loan_id": loan.id, "borrower_id": loan.borrower_id, "required_amount": deposit.required_amount},
-            request=request,
-        )
-        messages.info(
-            request,
-            f"A GHS {deposit.required_amount:,.2f} security-deposit record was created for this existing loan. Verify and record any deposit evidence before disbursement actions.",
+    deposit = SecurityDeposit.objects.filter(loan=loan).first()
+    if deposit is None:
+        deposit = SecurityDeposit(
+            loan=loan, borrower=loan.borrower,
+            required_amount=((loan.approved_amount or loan.amount) * Decimal("0.10")).quantize(Decimal("0.01")),
+            enforce_before_disbursement=False,
         )
     form = SecurityDepositActionForm(request.POST or None, deposit=deposit)
     if request.method == "POST" and form.is_valid():
         data = form.cleaned_data
+        if not deposit.pk:
+            with transaction.atomic():
+                Loan.objects.select_for_update().get(pk=loan.pk)
+                deposit, _created = SecurityDeposit.objects.get_or_create(
+                    loan=loan, defaults={"borrower": loan.borrower, "required_amount": deposit.required_amount, "enforce_before_disbursement": False},
+                )
         action_label = dict(form.fields["action"].choices)[data["action"]]
         approval = create_approval_request(
             workflow_type="SECURITY_DEPOSIT",
@@ -2000,69 +1990,8 @@ def security_deposit(request, loan_id):
         log_activity(category="SECURITY_DEPOSIT", action="approval_requested", actor=request.user, object_type="SecurityDeposit", object_id=deposit.pk, object_label=f"Loan #{loan.id}", message=f"{action_label} submitted for approval.", metadata={"approval_id": approval.pk, "loan_id": loan.id}, request=request)
         messages.success(request, f"{action_label} submitted for management approval.")
         return redirect("loans:security_deposit", loan_id=loan.id)
-    return render(request, "loans/security_deposit.html", {"loan": loan, "deposit": deposit, "transactions": deposit.transactions.select_related("approved_by", "accounting_entry"), "transfers": deposit.incoming_transfers.select_related("source", "approved_by"), "form": form, "title": f"Security Deposit — Loan #{loan.id}"})
-
-
-@login_required
-def loan_statement(request, loan_id: int):
-    loan = get_object_or_404(Loan, id=loan_id)
-    if not _can_view_loan(request, loan):
-        raise Http404
-    statement = build_loan_statement(loan)
-    return render(request, "loans/statement.html", {
-        "loan": loan,
-        "statement": statement,
-        "title": f"Statement - Loan #{loan.id}",
-    })
-
-
-@login_required
-def loan_statement_pdf(request, loan_id: int):
-    loan = get_object_or_404(
-        Loan.objects.select_related("borrower", "agent_name").prefetch_related("payments"),
-        id=loan_id,
-    )
-    if not _can_view_loan(request, loan):
-        raise Http404
-    payments = loan.payments.filter(is_void=False).order_by("payment_date", "id")
-    statement = build_loan_statement(loan)
-    generated_at = timezone.localtime()
-
-    try:
-        from apps.company.models import CompanyProfile
-        company = CompanyProfile.get_solo()
-        company_name = company.company_name
-        company_address = company.address
-        company_phone = company.phone
-        company_email = company.email
-    except Exception:
-        company_name = _company_name()
-        company_address = ""
-        company_phone = ""
-        company_email = ""
-
-    html = render_to_string(
-        "loans/statement_pdf.html",
-        {
-            "loan": loan,
-            "payments": payments,
-            "statement": statement,
-            "title": f"Statement - Loan #{loan.id}",
-            "generated_at": generated_at,
-            "company_name": company_name,
-            "company_address": company_address,
-            "company_phone": company_phone,
-            "company_email": company_email,
-        },
-        request=request,
-    )
-
-    pdf_file = HTML(string=html, base_url=request.build_absolute_uri("/")).write_pdf()
-    borrower_slug = slugify(loan.borrower.full_name) or f"borrower-{loan.borrower_id}"
-    filename = f"loan-statement-{loan.id}-{borrower_slug}.pdf"
-    response = HttpResponse(pdf_file, content_type="application/pdf")
-    response["Content-Disposition"] = f'inline; filename="{filename}"'
-    return response
+    from .models import SecurityDepositTransfer
+    return render(request, "loans/security_deposit.html", {"loan": loan, "deposit": deposit, "transactions": deposit.transactions.select_related("approved_by", "accounting_entry", "reversal__approved_by") if deposit.pk else [], "transfers": SecurityDepositTransfer.objects.filter(Q(source=deposit) | Q(target=deposit)).select_related("source", "target", "approved_by", "reversal__approved_by") if deposit.pk else [], "form": form, "title": f"Security Deposit — Loan #{loan.id}"})
 
 
 @login_required
@@ -2732,7 +2661,7 @@ def borrower_analytics(request):
 
         for l in loans:
             category_mix[l.get_loan_category_display()] += 1
-            for p in l.payments.filter(is_void=False):
+            for p in l.payments.filter(is_void=False, is_pending=False):
                 payment_dates.append(p.payment_date)
 
         if payment_dates:
@@ -3438,8 +3367,7 @@ def borrower_detail(request, pk):
                 )
                 return redirect("loans:borrower_detail", pk=borrower.pk)
 
-    loans = borrower.loans.all().order_by("-created_at").prefetch_related("payments")
-    statements = {loan.id: build_loan_statement(loan) for loan in loans}
+    loans = borrower.loans.select_related("agent_name", "portfolio").order_by("-created_at").prefetch_related("payments")
 
     category_summary = defaultdict(int)
     for loan in loans:
@@ -3453,7 +3381,6 @@ def borrower_detail(request, pk):
         "loans": loans,
         "loan_form": loan_form,
         "payment_form": payment_form,
-        "statements": statements,
         "category_summary": dict(category_summary),
         "borrower_category_mix": dict(category_summary),
         "external_debt_check": external_debt_check,
@@ -3479,13 +3406,17 @@ def loan_payment_create(request, loan_id):
         messages.error(request, "Collect and approve the full security deposit before recording loan repayments.")
         return redirect("loans:security_deposit", loan_id=loan.id)
 
-    form = PaymentCreateForm(request.POST or None)
+    form = PaymentCreateForm(request.POST or None, loan=loan)
 
     if request.method == "POST" and form.is_valid():
         payment = form.save(commit=False)
         payment.loan = loan
         payment.submitted_by = request.user
-        payment.save()
+        try:
+            payment.save()
+        except ValidationError as exc:
+            messages.error(request, "; ".join(exc.messages))
+            return redirect("loans:loan_payment_create", loan_id=loan.pk)
         loan.borrower.refresh_status(save=True)
 
         borrower_phone = loan.borrower.phone
@@ -3540,6 +3471,8 @@ def pending_payments_list(request):
 
 
 @login_required
+@require_POST
+@transaction.atomic
 def payment_confirm(request, payment_id):
     """Staff confirms a borrower-submitted pending payment."""
     _role, _agent = _get_request_role(request)
@@ -3547,7 +3480,9 @@ def payment_confirm(request, payment_id):
         return redirect("borrower:portal")
 
     from .models import Payment
-    payment = get_object_or_404(Payment, pk=payment_id, is_pending=True, is_void=False)
+    loan_id = get_object_or_404(Payment, pk=payment_id).loan_id
+    Loan.objects.select_for_update().get(pk=loan_id)
+    payment = get_object_or_404(Payment.objects.select_for_update(), pk=payment_id, is_pending=True, is_void=False)
 
     if _role == "agent" and _agent and not agent_can_access(_agent, payment.loan):
         messages.error(request, "You can only confirm payments on your own loans.")
@@ -3556,7 +3491,11 @@ def payment_confirm(request, payment_id):
     payment.is_pending = False
     if not payment.collected_by_id and _agent:
         payment.collected_by = _agent
-    payment.save()
+    try:
+        payment.save()
+    except ValidationError as exc:
+        messages.error(request, "; ".join(exc.messages))
+        return redirect("loans:pending_payments")
     log_activity(
         category="LOAN",
         action="payment_confirmed",
@@ -3587,6 +3526,8 @@ def payment_confirm(request, payment_id):
 
 
 @login_required
+@require_POST
+@transaction.atomic
 def payment_reject(request, payment_id):
     """Staff rejects (voids) a borrower-submitted pending payment."""
     _role, _agent = _get_request_role(request)
@@ -3594,7 +3535,9 @@ def payment_reject(request, payment_id):
         return redirect("borrower:portal")
 
     from .models import Payment
-    payment = get_object_or_404(Payment, pk=payment_id, is_pending=True, is_void=False)
+    loan_id = get_object_or_404(Payment, pk=payment_id).loan_id
+    Loan.objects.select_for_update().get(pk=loan_id)
+    payment = get_object_or_404(Payment.objects.select_for_update(), pk=payment_id, is_pending=True, is_void=False)
 
     if _role == "agent" and _agent and not agent_can_access(_agent, payment.loan):
         messages.error(request, "You can only reject payments on your own loans.")
@@ -3602,7 +3545,11 @@ def payment_reject(request, payment_id):
 
     payment.is_pending = False
     payment.is_void = True
-    payment.save()
+    try:
+        payment.save()
+    except ValidationError as exc:
+        messages.error(request, "; ".join(exc.messages))
+        return redirect("loans:pending_payments")
     log_activity(
         category="LOAN",
         action="payment_rejected",
@@ -3706,8 +3653,8 @@ def payment_collection_force_reconcile(request, collection_id):
         return redirect("loans:payment_reconciliation")
 
     _role, _agent = _get_request_role(request)
-    if _role == "borrower":
-        return redirect("borrower:portal")
+    if _role != "admin":
+        raise PermissionDenied("Only management may perform manual reconciliation.")
 
     collection = get_object_or_404(
         RepaymentCollection.objects.select_related("loan", "borrower", "loan__agent_name"),
@@ -4355,12 +4302,13 @@ def loan_monthly_analytics(request):
 
     payments = Payment.objects.filter(
         is_void=False,
+        is_pending=False,
         loan__in=loans,
         payment_date__gte=start_date,
         payment_date__lte=end_date
     )
     for payment in payments:
-        daily_collected_map[payment.payment_date.isoformat()] += payment.amount
+        daily_collected_map[payment.payment_date.isoformat()] += payment.loan_applied_amount
 
     rows.sort(key=lambda x: (-x["loan"].balance_amount, x["loan"].borrower.full_name.lower()))
 

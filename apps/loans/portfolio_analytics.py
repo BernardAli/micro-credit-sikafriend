@@ -1,15 +1,17 @@
 """Read-only portfolio snapshots shared by screens and unpaginated exports."""
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta, timezone as datetime_timezone
 from decimal import Decimal, ROUND_CEILING
 
 from django import forms
-from django.db.models import Count, Q
+from django.db.models import Count, F, IntegerField, OuterRef, Prefetch, Q, Subquery, Value
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.core.roles import get_user_role, get_agent_for_user
-from .models import Borrower, CustomerIdentity, Loan, Payment, Portfolio, RepaymentCollection, SecurityDeposit
+from .models import Borrower, CustomerIdentity, Loan, Payment, Portfolio, PortfolioAssignment, RepaymentCollection, SecurityDeposit
 from .portfolios import agent_portfolio_ids
+from .financial_queries import money_total, with_deposit_totals, with_repayment_totals
 
 ZERO = Decimal("0.00")
 
@@ -50,10 +52,15 @@ def visible_portfolios(user):
 
 def dashboard_portfolios(user=None, *, agent=None):
     scope = Portfolio.objects.filter(pk__in=agent_portfolio_ids(agent)) if agent is not None else visible_portfolios(user)
+
+    def portfolio_count(model):
+        rows = model.objects.filter(portfolio_id=OuterRef("pk")).order_by().values("portfolio_id").annotate(total=Count("pk"))
+        return Coalesce(Subquery(rows.values("total")), Value(0), output_field=IntegerField())
+
     portfolios = list(scope.annotate(
-        customer_count=Count("borrowers", distinct=True), loan_count=Count("loans", distinct=True),
-        issued_count=Count("issued_ids", distinct=True),
-    ).prefetch_related("assignments__agent"))
+        customer_count=portfolio_count(Borrower), loan_count=portfolio_count(Loan),
+        issued_count=portfolio_count(CustomerIdentity),
+    ).prefetch_related(Prefetch("assignments", queryset=PortfolioAssignment.objects.filter(ended_at__isnull=True).select_related("agent"))))
     return {
         "rows": portfolios, "count": len(portfolios),
         "active_count": sum(portfolio.is_active for portfolio in portfolios),
@@ -67,9 +74,9 @@ def empty_metrics():
     counts = ("customers", "active_customers", "closed_customers", "bad_customers", "new_customers", "customers_without_loans",
               "loans", "active_loans", "closed_loans", "default_loans", "overdue_loans", "par30_loans", "period_loans",
               "payments", "period_payments", "pending_payments", "current_pending_payments", "void_payments", "awaiting_disbursement", "collection_attempts", "review_collections")
-    amounts = ("principal", "expected", "collected", "principal_collected", "roic_collected", "deposit_applied", "outstanding",
+    amounts = ("principal", "expected", "collected", "customer_credit", "cash_received", "principal_collected", "roic_collected", "deposit_applied", "outstanding",
                "principal_outstanding", "roic_outstanding", "arrears", "overdue_balance", "par30_principal", "risk_principal",
-               "period_disbursed", "period_collected", "period_principal", "period_roic", "pending_amount", "current_pending_amount", "awaiting_amount",
+               "period_disbursed", "period_collected", "period_customer_credit", "period_principal", "period_roic", "pending_amount", "current_pending_amount", "awaiting_amount",
                "deposit_required", "deposit_held", "deposit_due", "pipeline_amount")
     return {**dict.fromkeys(counts, 0), **dict.fromkeys(amounts, ZERO)}
 
@@ -82,7 +89,7 @@ def finish_metrics(metrics):
     metrics["par30_rate"] = rate(metrics["par30_principal"], metrics["risk_principal"])
     metrics["overdue_rate"] = rate(metrics["overdue_loans"], metrics["loans"])
     metrics["average_loan"] = money(metrics["principal"] / metrics["loans"]) if metrics["loans"] else ZERO
-    metrics["period_cash_movement"] = money(metrics["period_collected"] - metrics["period_disbursed"])
+    metrics["period_cash_movement"] = money(metrics["period_collected"] + metrics["period_customer_credit"] - metrics["period_disbursed"])
     return metrics
 
 
@@ -113,6 +120,7 @@ def loan_record(loan, today, deposits):
         "original_officer": loan.agent_name.name, "frequency": loan.get_repayment_frequency_display(),
         "duration": loan.expected_payments_count, "installment": money(loan.weekly_payment),
         "principal": money(loan.amount), "expected": loan.total_expected_amount, "collected": paid,
+        "customer_credit": loan.total_customer_credit, "cash_received": loan.total_cash_received,
         "principal_collected": loan.total_principal_paid, "roic_collected": loan.total_roic_paid,
         "deposit_applied": applied, "outstanding": balance, "principal_outstanding": principal_outstanding,
         "roic_outstanding": loan.roic_outstanding, "arrears": arrears, "days_overdue": days_overdue,
@@ -124,33 +132,32 @@ def loan_record(loan, today, deposits):
 
 def deposit_records(loans):
     records = {}
-    for deposit in SecurityDeposit.objects.filter(loan_id__in=[loan.pk for loan in loans]).select_related("borrower").prefetch_related("transactions", "incoming_transfers", "outgoing_transfers"):
-        amounts = defaultdict(lambda: ZERO)
-        for transaction in deposit.transactions.all():
-            amounts[transaction.action] += transaction.amount
-        incoming = sum((transfer.amount for transfer in deposit.incoming_transfers.all()), ZERO)
-        outgoing = sum((transfer.amount for transfer in deposit.outgoing_transfers.all()), ZERO)
-        held = money(max(ZERO, amounts["COLLECTION"] + incoming - outgoing - amounts["REFUND"] - amounts["DEFAULT_APPLICATION"]))
+    for deposit in with_deposit_totals(SecurityDeposit.objects.filter(loan_id__in=[loan.pk for loan in loans]).select_related("borrower")):
+        held = money(max(ZERO, deposit.collected + deposit.incoming - deposit.outgoing - deposit.refunded - deposit.applied))
         records[deposit.loan_id] = {
             "loan_pk": deposit.loan_id, "customer_id": deposit.borrower.borrower_id, "customer": deposit.borrower.full_name,
-            "status": deposit.get_status_display(), "required": money(deposit.required_amount), "collected": money(amounts["COLLECTION"]),
-            "refunded": money(amounts["REFUND"]), "applied": money(amounts["DEFAULT_APPLICATION"]),
-            "transferred_in": money(incoming), "transferred_out": money(outgoing), "held": held,
+            "status": deposit.get_status_display(), "required": money(deposit.required_amount), "collected": money(deposit.collected),
+            "refunded": money(deposit.refunded), "applied": money(deposit.applied),
+            "transferred_in": money(deposit.incoming), "transferred_out": money(deposit.outgoing), "held": held,
             "due": money(max(ZERO, deposit.required_amount - held)),
         }
     return records
 
 
-def portfolio_snapshot(portfolios, start, end, *, include_unassigned=False, include_private_history=False):
+def portfolio_snapshot(portfolios, start, end, *, include_unassigned=False, include_private_history=False, summary_only=False):
     """Current balances and risk; selected dates filter activity rather than reconstructing an old book."""
     today = timezone.localdate()
-    portfolios = list(portfolios.prefetch_related("assignments__agent", "assignments__assigned_by").annotate(issued_count=Count("issued_ids", distinct=True)))
+    assignments = PortfolioAssignment.objects.select_related("agent", "assigned_by")
+    if summary_only:
+        assignments = assignments.filter(ended_at__isnull=True)
+    portfolios = list(portfolios.prefetch_related(Prefetch("assignments", queryset=assignments)).annotate(issued_count=Count("issued_ids", distinct=True)))
     ids = [portfolio.pk for portfolio in portfolios]
     scope = Q(portfolio_id__in=ids)
     if include_unassigned:
         scope |= Q(portfolio__isnull=True)
     customers = list(Borrower.objects.filter(scope).select_related("portfolio", "identity__portfolio"))
-    loans = list(Loan.objects.filter(scope).select_related("borrower", "agent_name", "portfolio").prefetch_related("payments"))
+    loans = list(with_repayment_totals(Loan.objects.filter(scope).select_related("borrower", "agent_name"), include_pending=True))
+    loans_by_id = {loan.pk: loan for loan in loans}
     loan_owners = {loan.pk: loan.portfolio_id for loan in loans}
     deposits = deposit_records(loans)
     books = {}
@@ -174,7 +181,7 @@ def portfolio_snapshot(portfolios, start, end, *, include_unassigned=False, incl
             "name": customer.full_name, "phone": customer.phone, "email": customer.email, "location": customer.location,
             "group": customer.group_name, "gender": customer.get_gender_display() or "Unspecified", "language": customer.preferred_language,
             "status": customer.status, "registered": customer.created_at, "issuing_portfolio": str(identity.portfolio) if identity else "Not issued",
-            "loans": 0, "principal": ZERO, "collected": ZERO, "outstanding": ZERO, "arrears": ZERO, "max_days_overdue": 0,
+            "loans": 0, "principal": ZERO, "collected": ZERO, "customer_credit": ZERO, "outstanding": ZERO, "arrears": ZERO, "max_days_overdue": 0,
         }
         customer_map[customer.pk] = row
         book = books[customer.portfolio_id]
@@ -192,13 +199,12 @@ def portfolio_snapshot(portfolios, start, end, *, include_unassigned=False, incl
         metrics = book["metrics"]
         metrics["loans"] += 1
         metrics["payments"] += loan.actual_payments_count
-        pending = [payment for payment in loan.payments.all() if payment.is_pending and not payment.is_void]
-        metrics["current_pending_payments"] += len(pending)
-        metrics["current_pending_amount"] += sum((payment.amount for payment in pending), ZERO)
+        metrics["current_pending_payments"] += loan._pending_payment_count
+        metrics["current_pending_amount"] += loan._pending_payment_amount
         status_key = {"ACTIVE": "active_loans", "CLOSED": "closed_loans", "DEFAULT": "default_loans"}.get(loan.status)
         if status_key:
             metrics[status_key] += 1
-        for key in ("principal", "expected", "collected", "principal_collected", "roic_collected", "deposit_applied", "outstanding", "principal_outstanding", "roic_outstanding", "arrears"):
+        for key in ("principal", "expected", "collected", "customer_credit", "cash_received", "principal_collected", "roic_collected", "deposit_applied", "outstanding", "principal_outstanding", "roic_outstanding", "arrears"):
             metrics[key] += row[key]
         if row["disbursed"]:
             metrics["risk_principal"] += row["principal_outstanding"]
@@ -217,7 +223,7 @@ def portfolio_snapshot(portfolios, start, end, *, include_unassigned=False, incl
         customer = customer_map.get(loan.borrower_id)
         if customer:
             customer["loans"] += 1
-            for key in ("principal", "collected", "outstanding", "arrears"):
+            for key in ("principal", "collected", "customer_credit", "outstanding", "arrears"):
                 customer[key] += row[key]
             customer["max_days_overdue"] = max(customer["max_days_overdue"], row["days_overdue"])
         if loan.pk in deposits:
@@ -225,50 +231,87 @@ def portfolio_snapshot(portfolios, start, end, *, include_unassigned=False, incl
             book["deposits"].append(deposit)
             for destination, source in (("deposit_required", "required"), ("deposit_held", "held"), ("deposit_due", "due")):
                 metrics[destination] += deposit[source]
-    for payment in Payment.objects.filter(loan_id__in=[loan.pk for loan in loans], payment_date__range=(start, end)).select_related("loan__borrower", "collected_by", "submitted_by").order_by("-payment_date", "-pk"):
-        book = books[loan_owners[payment.loan_id]]
-        status = "Void" if payment.is_void else "Pending" if payment.is_pending else "Settled"
-        row = {"pk": payment.pk, "loan_pk": payment.loan_id, "date": payment.payment_date, "customer_id": payment.loan.borrower.borrower_id,
-               "customer": payment.loan.borrower.full_name, "phone": payment.loan.borrower.phone, "amount": payment.amount, "principal": payment.principal_paid,
-               "roic": payment.roic_paid, "status": status, "method": payment.get_payment_method_display(), "reference": payment.reference,
-               "collector": payment.collected_by.name if payment.collected_by_id else "Staff / unrecorded collector",
-               "collector_id": payment.collected_by.agent_id if payment.collected_by_id else "", "note": payment.note}
-        book["payments"].append(row)
-        metrics = book["metrics"]
-        if status == "Settled":
-            metrics["period_payments"] += 1
-            metrics["period_collected"] += payment.amount
-            metrics["period_principal"] += payment.principal_paid
-            metrics["period_roic"] += payment.roic_paid
-        elif status == "Pending":
-            metrics["pending_payments"] += 1
-            metrics["pending_amount"] += payment.amount
-        else:
-            metrics["void_payments"] += 1
-    for collection in RepaymentCollection.objects.filter(loan_id__in=[loan.pk for loan in loans]).select_related("borrower", "loan", "submitted_by"):
-        book = books[loan_owners[collection.loan_id]]
-        unresolved = collection.payment_id is None and collection.status in {"PENDING", "PROCESSING", "SUCCEEDED", "MANUAL_REVIEW"}
-        if not unresolved and not start <= collection.initiated_at.date() <= end:
-            continue
-        row = {"pk": collection.pk, "loan_pk": collection.loan_id, "customer_id": collection.borrower.borrower_id,
-               "customer": collection.borrower.full_name, "amount": collection.amount, "status": collection.get_status_display(),
-               "status_code": collection.status, "method": collection.get_payment_method_display(), "reference": collection.display_reference,
-               "initiated": collection.initiated_at, "reconciled": collection.reconciled_at, "reason": collection.failure_reason,
-               "unresolved": unresolved}
-        book["collections"].append(row)
-        book["metrics"]["collection_attempts"] += 1
-        book["metrics"]["review_collections"] += collection.status == "MANUAL_REVIEW"
-        if unresolved:
-            book["metrics"]["pipeline_amount"] += collection.amount
-    for identity in CustomerIdentity.objects.filter(portfolio_id__in=ids).select_related("borrower__portfolio"):
-        borrower = identity.borrower
-        current = borrower and borrower.portfolio_id == identity.portfolio_id
-        books[identity.portfolio_id]["issuance"].append({
-            "customer_id": identity.customer_id, "number": identity.number, "issued": identity.issued_at,
-            "customer": borrower.full_name if borrower and (current or include_private_history) else "Former customer" if borrower else "Deleted customer — ID reserved",
-            "current_portfolio": str(borrower.portfolio) if borrower and borrower.portfolio_id and (current or include_private_history) else "Transferred out" if borrower else "",
-            "state": "Current" if current else "Transferred out" if borrower else "Reserved after deletion",
-        })
+    period_payments = Payment.objects.filter(loan_id__in=loans_by_id, payment_date__range=(start, end))
+    if summary_only:
+        settled = Q(is_void=False, is_pending=False)
+        pending = Q(is_void=False, is_pending=True)
+        activity = period_payments.order_by().values("loan_id").annotate(
+            period_payments=Count("pk", filter=settled),
+            period_collected=money_total(F("amount") - F("customer_credit"), filter=settled),
+            period_customer_credit=money_total("customer_credit", filter=settled),
+            period_principal=money_total("principal_paid", filter=settled),
+            period_roic=money_total("roic_paid", filter=settled),
+            pending_payments=Count("pk", filter=pending), pending_amount=money_total("amount", filter=pending),
+            void_payments=Count("pk", filter=Q(is_void=True)),
+        )
+        for row in activity:
+            metrics = books[loan_owners[row["loan_id"]]]["metrics"]
+            for key, value in row.items():
+                if key != "loan_id":
+                    metrics[key] += value
+    else:
+        for payment in period_payments.select_related("collected_by").order_by("-payment_date", "-pk"):
+            payment.loan = loans_by_id[payment.loan_id]
+            book = books[loan_owners[payment.loan_id]]
+            status = "Void" if payment.is_void else "Pending" if payment.is_pending else "Settled"
+            row = {"pk": payment.pk, "loan_pk": payment.loan_id, "date": payment.payment_date, "customer_id": payment.loan.borrower.borrower_id,
+                   "customer": payment.loan.borrower.full_name, "phone": payment.loan.borrower.phone, "amount": payment.amount, "principal": payment.principal_paid,
+                   "roic": payment.roic_paid, "customer_credit": payment.customer_credit, "loan_applied": payment.loan_applied_amount, "status": status, "method": payment.get_payment_method_display(), "reference": payment.reference,
+                   "collector": payment.collected_by.name if payment.collected_by_id else "Staff / unrecorded collector",
+                   "collector_id": payment.collected_by.agent_id if payment.collected_by_id else "", "note": payment.note}
+            book["payments"].append(row)
+            metrics = book["metrics"]
+            if status == "Settled":
+                metrics["period_payments"] += 1
+                metrics["period_collected"] += payment.loan_applied_amount
+                metrics["period_customer_credit"] += payment.customer_credit
+                metrics["period_principal"] += payment.principal_paid
+                metrics["period_roic"] += payment.roic_paid
+            elif status == "Pending":
+                metrics["pending_payments"] += 1
+                metrics["pending_amount"] += payment.amount
+            else:
+                metrics["void_payments"] += 1
+    unresolved_scope = Q(payment_id__isnull=True, status__in={"PENDING", "PROCESSING", "SUCCEEDED", "MANUAL_REVIEW"})
+    activity_scope = Q(initiated_at__gte=datetime.combine(start, time.min, tzinfo=datetime_timezone.utc),
+                       initiated_at__lt=datetime.combine(end + timedelta(days=1), time.min, tzinfo=datetime_timezone.utc))
+    collections = RepaymentCollection.objects.filter(loan_id__in=loans_by_id).filter(unresolved_scope | activity_scope)
+    if summary_only:
+        activity = collections.order_by().values("loan_id").annotate(
+            collection_attempts=Count("pk"), review_collections=Count("pk", filter=Q(status="MANUAL_REVIEW")),
+            pipeline_amount=money_total("amount", filter=unresolved_scope),
+        )
+        for row in activity:
+            metrics = books[loan_owners[row["loan_id"]]]["metrics"]
+            for key, value in row.items():
+                if key != "loan_id":
+                    metrics[key] += value
+    else:
+        for collection in collections.select_related("borrower"):
+            book = books[loan_owners[collection.loan_id]]
+            unresolved = collection.payment_id is None and collection.status in {"PENDING", "PROCESSING", "SUCCEEDED", "MANUAL_REVIEW"}
+            if not unresolved and not start <= collection.initiated_at.date() <= end:
+                continue
+            row = {"pk": collection.pk, "loan_pk": collection.loan_id, "customer_id": collection.borrower.borrower_id,
+                   "customer": collection.borrower.full_name, "amount": collection.amount, "status": collection.get_status_display(),
+                   "status_code": collection.status, "method": collection.get_payment_method_display(), "reference": collection.display_reference,
+                   "initiated": collection.initiated_at, "reconciled": collection.reconciled_at, "reason": collection.failure_reason,
+                   "unresolved": unresolved}
+            book["collections"].append(row)
+            book["metrics"]["collection_attempts"] += 1
+            book["metrics"]["review_collections"] += collection.status == "MANUAL_REVIEW"
+            if unresolved:
+                book["metrics"]["pipeline_amount"] += collection.amount
+    if not summary_only:
+        for identity in CustomerIdentity.objects.filter(portfolio_id__in=ids).select_related("borrower__portfolio"):
+            borrower = identity.borrower
+            current = borrower and borrower.portfolio_id == identity.portfolio_id
+            books[identity.portfolio_id]["issuance"].append({
+                "customer_id": identity.customer_id, "number": identity.number, "issued": identity.issued_at,
+                "customer": borrower.full_name if borrower and (current or include_private_history) else "Former customer" if borrower else "Deleted customer — ID reserved",
+                "current_portfolio": str(borrower.portfolio) if borrower and borrower.portfolio_id and (current or include_private_history) else "Transferred out" if borrower else "",
+                "state": "Current" if current else "Transferred out" if borrower else "Reserved after deletion",
+            })
     totals = empty_metrics()
     for book in books.values():
         metrics = book["metrics"]
@@ -276,7 +319,7 @@ def portfolio_snapshot(portfolios, start, end, *, include_unassigned=False, incl
         book["loans"].sort(key=lambda row: (row["days_overdue"], row["outstanding"]), reverse=True)
         book["customers"].sort(key=lambda row: row["name"].casefold())
         book["issuance"].sort(key=lambda row: row["number"])
-        book["analytics"] = breakdowns(book, start, end)
+        book["analytics"] = {} if summary_only else breakdowns(book, start, end)
         for key in totals:
             totals[key] += metrics[key]
         finish_metrics(metrics)
@@ -301,21 +344,24 @@ def breakdowns(book, start, end):
         else:
             order = sorted(grouped, key=lambda name: grouped[name]["outstanding"], reverse=True)
         result[label] = [{"label": name, **grouped[name], "customers": len(grouped[name]["customers"]), "share": rate(grouped[name]["outstanding"], book["metrics"]["outstanding"])} for name in order]
-    methods = defaultdict(lambda: {"payments": 0, "collected": ZERO})
-    officers = defaultdict(lambda: {"payments": 0, "collected": ZERO, "principal": ZERO, "roic": ZERO})
-    monthly = defaultdict(lambda: {"loans": 0, "disbursed": ZERO, "payments": 0, "collected": ZERO})
+    methods = defaultdict(lambda: {"payments": 0, "collected": ZERO, "customer_credit": ZERO})
+    officers = defaultdict(lambda: {"payments": 0, "collected": ZERO, "customer_credit": ZERO, "principal": ZERO, "roic": ZERO})
+    monthly = defaultdict(lambda: {"loans": 0, "disbursed": ZERO, "payments": 0, "collected": ZERO, "customer_credit": ZERO})
     for payment in book["payments"]:
         if payment["status"] != "Settled":
             continue
         methods[payment["method"]]["payments"] += 1
         methods[payment["method"]]["collected"] += payment["amount"]
+        methods[payment["method"]]["customer_credit"] += payment["customer_credit"]
         officer = officers[(payment["collector_id"], payment["collector"])]
         officer["payments"] += 1
         officer["collected"] += payment["amount"]
+        officer["customer_credit"] += payment["customer_credit"]
         officer["principal"] += payment["principal"]
         officer["roic"] += payment["roic"]
         monthly[payment["date"].strftime("%Y-%m")]["payments"] += 1
         monthly[payment["date"].strftime("%Y-%m")]["collected"] += payment["amount"]
+        monthly[payment["date"].strftime("%Y-%m")]["customer_credit"] += payment["customer_credit"]
     for loan in book["loans"]:
         if loan["disbursed"] and loan["disbursement_date"] and start <= loan["disbursement_date"] <= end:
             row = monthly[loan["disbursement_date"].strftime("%Y-%m")]

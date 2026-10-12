@@ -8,9 +8,10 @@ from django.utils import timezone
 
 from apps.notifications.services import notify_user
 
-from .models import Payment, RepaymentCollection
+from .models import Loan, Payment, RepaymentCollection, RepaymentReceipt
 
-AUTO_COLLECTION_METHODS = {"MOBILE_MONEY", "BANK", "CARD"}
+# No live provider is configured. Portal submissions require verified staff confirmation.
+AUTO_COLLECTION_METHODS = set()
 SUCCESS_PROVIDER_STATES = {"success", "successful", "paid", "completed"}
 FAILED_PROVIDER_STATES = {"failed", "error", "cancelled", "rejected"}
 
@@ -72,6 +73,8 @@ def review_reason_for_collection(collection: RepaymentCollection) -> str:
 
     if collection.amount <= Decimal("0.00"):
         return "Collection amount must be greater than zero."
+    if not collection.loan.is_ready_for_disbursement:
+        return "The loan's required security deposit has not been approved and collected."
 
     if collection.loan.balance_amount <= Decimal("0.00"):
         return "The related loan is already fully settled."
@@ -114,9 +117,13 @@ def reconcile_collection(
     force: bool = False,
     notes: str = "",
 ):
-    collection = RepaymentCollection.objects.select_related("loan", "borrower", "submitted_by").get(pk=collection.pk)
+    loan = Loan.objects.select_for_update().get(pk=collection.loan_id)
+    collection = RepaymentCollection.objects.select_for_update().get(pk=collection.pk)
+    collection.loan = loan
 
     if collection.payment_id:
+        if collection.payment.is_void or collection.payment.reversal_id:
+            return collection.payment, False
         if collection.status != "RECONCILED":
             collection.status = "RECONCILED"
             collection.reconciled_at = timezone.now()
@@ -126,12 +133,24 @@ def reconcile_collection(
         return collection.payment, False
 
     reason = review_reason_for_collection(collection)
-    if reason and not force:
+    # Forced review never bypasses amount, balance, deposit, or duplicate checks.
+    if reason:
         collection.status = "MANUAL_REVIEW"
         collection.failure_reason = reason
         if notes:
             collection.reconciliation_notes = notes
         collection.save(update_fields=["status", "failure_reason", "reconciliation_notes"])
+        return None, False
+
+    provider_reference = collection.provider_reference or collection.client_reference
+    receipt, _created = RepaymentReceipt.objects.get_or_create(
+        provider=collection.provider.upper(), provider_reference=provider_reference,
+        defaults={"collection": collection},
+    )
+    if receipt.collection_id != collection.pk:
+        collection.status = "MANUAL_REVIEW"
+        collection.failure_reason = "This provider receipt is already posted against another collection."
+        collection.save(update_fields=["status", "failure_reason"])
         return None, False
 
     reference = collection.provider_reference or collection.submitted_reference or collection.client_reference
@@ -194,7 +213,14 @@ def process_collection_callback(
     payload = payload or {}
     status_key = (provider_status or "").strip().lower()
 
-    collection = RepaymentCollection.objects.select_related("loan", "borrower", "submitted_by").get(pk=collection.pk)
+    loan = Loan.objects.select_for_update().get(pk=collection.loan_id)
+    collection = RepaymentCollection.objects.select_for_update().get(pk=collection.pk)
+    collection.loan = loan
+    # Provider retries and out-of-order events cannot undo a settled receipt.
+    if collection.payment_id:
+        return collection, collection.payment, False
+    if collection.status == "CANCELLED":
+        return collection, None, False
     update_fields = ["callback_payload"]
     collection.callback_payload = payload
 

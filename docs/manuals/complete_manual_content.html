@@ -1,0 +1,822 @@
+<!-- Editable handbook source. Build with build_complete_manual.py. -->
+<section class="chapter" id="using-manual">
+<h1>1. Using this handbook</h1>
+<p class="lead">One reference for running, administering, recovering and maintaining the standalone SikaFriend Micro-Credit ERP.</p>
+<h2>Document control and scope</h2>
+<table><thead><tr><th>Item</th><th>Definition</th></tr></thead><tbody>
+<tr><td>Edition</td><td>1.0, illustrated edition, prepared 12 October 2026 from the local project source. Crimson and magenta match the current public brand.</td></tr>
+<tr><td>Product</td><td>Standalone, single-company Django application. One company profile and one active operational database.</td></tr>
+<tr><td>Audience</td><td>Management, operations administrators, field and recovery agents, borrowers, accountants, payroll officers, IT administrators and developers.</td></tr>
+<tr><td>Environment</td><td>The user's local copy is separate from the hosted application. Source changes and local migrations do not establish that the hosted application has been updated.</td></tr>
+<tr><td>Examples</td><td>Worked examples use fictional records and illustrative GHS amounts. No customer names, identity documents, passwords, API keys or database extracts are included.</td></tr>
+<tr><td>Authority</td><td>Instructions describe implemented software behavior. Management must approve lending policy, accounting treatment, statutory configuration and disputed historical terms.</td></tr>
+</tbody></table>
+<p>Use the contents links and PDF bookmarks to move between chapters. A route such as <code>/dashboard/</code> is relative to your installation's hostname. Locally, the current application is accessed at <code>http://127.0.0.1:3000/</code>; the default Django development port is 8000. Replace sample usernames, paths, domains and secrets with your own values.</p>
+<h2>Choose a reading path</h2>
+<table><thead><tr><th>Reader</th><th>Start here</th></tr></thead><tbody>
+<tr><td>New administrator</td><td><a href="#roles">Roles</a>, <a href="#navigation">Navigation</a>, <a href="#company">Company setup</a>, <a href="#borrowers">Borrowers</a>, <a href="#loans">Loans</a>, <a href="#routine">Daily and period-end operations</a>.</td></tr>
+<tr><td>Field / recovery agent</td><td><a href="#portfolios">Portfolios</a>, <a href="#payments">Repayments</a>, <a href="#deposits">Security deposits</a>, <a href="#statements">Statements</a>, <a href="#reversals">Reversal requests</a>.</td></tr>
+<tr><td>Management / finance</td><td><a href="#governance">Approvals and audit</a>, <a href="#reports">Reports</a>, <a href="#credit">Customer credit</a>, <a href="#payroll">Payroll</a>, <a href="#accounting">Accounting</a>, <a href="#management-review">Outstanding management decisions</a>.</td></tr>
+<tr><td>Borrower</td><td><a href="#portal">Borrower portal</a> and <a href="#statements">Statements</a>.</td></tr>
+<tr><td>Technical maintainer</td><td><a href="#installation">Installation</a>, <a href="#configuration">Configuration</a>, <a href="#deployment">Deployment</a>, <a href="#recovery">Backup and recovery</a>, <a href="#maintenance">Development</a>, appendices.</td></tr>
+</tbody></table>
+<h2>What this edition incorporates</h2>
+<p>This handbook covers permanent customer IDs and portfolio ownership, optimized dashboard and portfolio queries, private identity uploads, approval execution controls, repayment allocation repairs, historical customer credit, printable borrower/loan/agent statements and administrator-approved transaction reversals. Public management biographies expand through an explicit Read Biography control; hovering highlights the card without changing its height.</p>
+<div class="callout attention"><p><strong>Current payment integration boundary.</strong> Borrower payment initiation records a request for verification. This version does not initiate a live provider charge or simulate a successful settlement. A submission message is not evidence that money arrived.</p></div>
+<h2>Keeping the handbook current</h2>
+<p>The editable source is <code>docs/manuals/complete_manual_content.html</code>. Styling is in <code>complete_manual.css</code>; <code>build_complete_manual.py</code> creates the PDF and an HTML reading edition. Its reference snapshot contains model definitions, routes, report titles and import columns, rather than installation records. Refresh references after code changes, then review procedures manually before publishing a new edition.</p>
+<pre><code>.venv/bin/python docs/manuals/build_complete_manual.py --refresh-reference
+.venv/bin/python docs/manuals/build_complete_manual.py</code></pre>
+<p>Reference generation disables database connections. PDF rendering embeds its resources and performs no external downloads. The build manifest records page count and file checksum for document control.</p>
+</section>
+
+<section class="chapter" id="overview">
+<h1>2. Product overview and architecture</h1>
+<p class="lead">The ERP combines lending operations, financial controls and customer service for one micro-credit company.</p>
+<h2>Business capabilities</h2>
+<ul><li>Onboard borrowers, retain identity information and provide private portal access.</li><li>Assign permanent customer IDs and current portfolio officers while retaining assignment history.</li><li>Submit and approve loan applications; track agreed terms, security deposits, repayments and arrears.</li><li>Confirm collections, preserve receipt evidence, hold historical excess as customer credit and prepare statements.</li><li>Request financial reversals, require independent administrator review and retain linked ledger offsets.</li><li>Maintain workforce profiles, payroll adjustments, payroll snapshots and payment history.</li><li>Operate the chart of accounts, journals, cashbooks, invoices, bills, budgets and accounting periods.</li><li>Register, assign, maintain, depreciate and dispose of fixed assets.</li><li>Manage communications, campaigns, website leads, notifications, public content and USSD callbacks.</li><li>Produce reports, import records, export backups and inspect audit history.</li></ul>
+<h2>Application architecture</h2>
+<svg class="diagram" viewBox="0 0 760 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ERP architecture">
+<defs><marker id="architecture-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#b4759b"/></marker></defs>
+<g font-family="DejaVu Sans" font-size="15" text-anchor="middle"><rect x="5" y="5" width="235" height="64" rx="8" fill="#fff0f5" stroke="#e6a0be"/><text x="122" y="33">Public website</text><text x="122" y="54" font-size="12">Services · team · enquiries</text><rect x="263" y="5" width="235" height="64" rx="8" fill="#fff0f5" stroke="#e6a0be"/><text x="381" y="33">Staff workspace</text><text x="381" y="54" font-size="12">Operations · approvals · reports</text><rect x="521" y="5" width="235" height="64" rx="8" fill="#fff0f5" stroke="#e6a0be"/><text x="638" y="33">Borrower portal</text><text x="638" y="54" font-size="12">Own loans · statements</text><path d="M122 69V108 M381 69V108 M638 69V108" stroke="#b4759b" stroke-width="2" marker-end="url(#architecture-arrow)"/><rect x="5" y="110" width="751" height="64" rx="8" fill="#b30036"/><text x="381" y="136" fill="white">Django views, services and business models</text><text x="381" y="158" fill="#ffb8d8" font-size="12">Authentication · portfolio scope · approvals · atomic financial operations</text><path d="M122 174V215 M381 174V215 M638 174V215" stroke="#b4759b" stroke-width="2" marker-end="url(#architecture-arrow)"/><rect x="5" y="218" width="235" height="72" rx="8" fill="#fff0f5" stroke="#c6009f"/><text x="122" y="245">Operational database</text><text x="122" y="267" font-size="12">SQLite or MySQL</text><rect x="263" y="218" width="235" height="72" rx="8" fill="#fff0f5" stroke="#c6009f"/><text x="381" y="245">Uploaded files</text><text x="381" y="267" font-size="12">Public company / private KYC</text><rect x="521" y="218" width="235" height="72" rx="8" fill="#fff0f5" stroke="#c6009f"/><text x="638" y="245">Configured channels</text><text x="638" y="267" font-size="12">SMS · email · callbacks</text></g></svg>
+<h2>Module ownership</h2>
+<table><thead><tr><th>Application</th><th>Responsibility</th></tr></thead><tbody>
+<tr><td><code>company</code></td><td>Company profile, branding, public website, channel settings and database exports.</td></tr><tr><td><code>loans</code></td><td>Customers, portfolios, facilities, receipts, security deposits, statements and lending reports.</td></tr><tr><td><code>accounts</code></td><td>Workforce, agent accounts, payroll and portal login management.</td></tr><tr><td><code>accounting</code></td><td>Periods, ledger, cashbooks, receivables, payables, budgets and operational posting synchronization.</td></tr><tr><td><code>assets</code></td><td>Fixed assets, custody, maintenance, depreciation and disposal.</td></tr><tr><td><code>core</code></td><td>Roles, approvals, reversal cases, audit, private media and maintenance commands.</td></tr><tr><td><code>communication</code></td><td>SMS center, campaigns, leads, popups and USSD.</td></tr><tr><td><code>borrower_portal</code></td><td>Customer overview, loan details, passwords and payment requests.</td></tr><tr><td><code>notifications</code></td><td>In-app events and optional email notification delivery.</td></tr>
+</tbody></table>
+<h2>Technology and deployment shape</h2>
+<p>The application uses Python 3.12 or newer, Django 6.0.9 as pinned in this source, Django templates, CSS and JavaScript. WeasyPrint generates PDFs; OpenPyXL handles workbooks; Pillow handles images; Requests supports HTTP channels; python-dotenv loads environment configuration. SQLite is the default local engine; MySQL is selectable. Production exposes Django through WSGI or ASGI behind HTTPS, with persistent database and file storage.</p>
+<p>There are no active tenant schemas, subscription plans, SaaS owner dashboards or tenant provisioning workflows. Legacy fields beginning with <code>tenant_</code> represent company-level channel settings. Creation-limit helpers allow standalone use; cross-company debt lookup does not perform remote credit checking. Perform any external credit review through management's separate process.</p>
+</section>
+
+<section class="chapter" id="roles">
+<h1>3. Roles, accounts and permissions</h1>
+<h2>How access is determined</h2>
+<p>All interactive users sign in through <code>/login/</code>. The redirect endpoint chooses a workspace from the linked account. Django staff or superuser status grants administrator access. An agent login links to an <code>Agent</code> workforce profile; a borrower login links to a <code>Borrower</code> profile. An account without an authorized role cannot access protected loan records.</p>
+<p>Management is a workforce classification. A management user needs Admin Console Access / staff status to enter the administrator workspace. Classifying a record as Management alone does not replace the administrator access requirement.</p>
+<table><thead><tr><th>Capability</th><th>Administrator</th><th>Assigned agent</th><th>Borrower</th></tr></thead><tbody>
+<tr><td>Company settings, database backups</td><td>Yes</td><td>No</td><td>No</td></tr><tr><td>Borrower and loan operations</td><td>All authorized records</td><td>Assigned active portfolios</td><td>Own portal, read access</td></tr><tr><td>Portfolio overview / export</td><td>All; includes unassigned book</td><td>Current active assignments</td><td>No</td></tr><tr><td>Loan / customer statements</td><td>All</td><td>Within permitted scope</td><td>Own records</td></tr><tr><td>Agent statement</td><td>All agents</td><td>Own statement</td><td>No</td></tr><tr><td>Loan receipt / deposit reversal request</td><td>Yes</td><td>Assigned loan portfolios</td><td>No</td></tr><tr><td>Accounting / payroll reversal request</td><td>Yes</td><td>No</td><td>No</td></tr><tr><td>Review or execute reversal</td><td>Different active administrator</td><td>No</td><td>No</td></tr><tr><td>Accounting, payroll, assets, audit</td><td>Administrator workflows</td><td>Permitted own profile context</td><td>No</td></tr>
+</tbody></table>
+<h2>Portfolio scope is current ownership</h2>
+<p>An active officer assignment to an active portfolio grants portfolio access. Ending the assignment removes that access. Financial access checks use each loan's own portfolio. The normal borrower reassignment workflow also moves that customer's loans to the selected portfolio while retaining the permanent ID and originating-agent/receipt history. If a legacy or inconsistent record has a different loan portfolio, the loan's recorded scope still governs access. Deposit transfers require access to both affected loan portfolios when an agent requests a reversal.</p>
+<h2>Maker and checker rules</h2>
+<p>For ordinary approval workflows, the requester normally cannot review their own request. Management-linked accounts and superusers can self-review those ordinary workflows. <strong>Transaction reversals always require a different active administrator, including when the requester is Management or a superuser.</strong> Reversal approval and rejection require a review note of at least ten characters.</p>
+<h2>Provision, recover and retire accounts</h2>
+<ol class="steps"><li>Create the workforce or borrower profile and verify the intended person.</li><li>Create or link a unique login using the profile action. New usernames are plain standalone usernames.</li><li>Enable administrator access only for authorized personnel. Keep personal named accounts for accountability.</li><li>Deliver temporary credentials privately, then have the user change their password.</li><li>Test the landing page and permitted scope using a test account, without sharing administrator credentials.</li><li>At departure, remove portfolio assignments and disable the Django login. Retain transaction history and payroll evidence.</li></ol>
+<p>Some migrated accounts retain a <code>schema__username</code> database username. The login helper supports the visible alias where unambiguous. A password reset request relies on a valid account email and functioning email configuration. Administrators can also reset borrower or workforce access from the relevant profile after identity verification.</p>
+<div class="callout"><p>Deactivating employment and disabling login are related controls. Verify both. The private Django administration site is a maintenance interface; financial evidence records are protected from direct editing or deletion there.</p></div>
+</section>
+
+<section class="chapter" id="navigation">
+<h1>4. Dashboard and navigation</h1>
+<h2>Sign in and move through the workspace</h2>
+<ol class="steps"><li>Open <code>/login/</code>, enter credentials and confirm the company context.</li><li>Administrators land at <code>/dashboard/</code>; agents land in their workforce / portfolio context; borrowers land at <code>/my-account/</code>.</li><li>Use the desktop sidebar or mobile menu to choose lending, insights, communications and governance modules.</li><li>Read flash messages after every submission. A submitted request, a saved record and an executed approval are different outcomes.</li><li>On a tabbed form, check the visible validation summary and complete every required field.</li><li>Sign out using the interface's logout action, especially on a shared device.</li></ol>
+<h2>Dashboard interpretation</h2>
+<p>The homepage summarizes the recorded loan book, borrower activity, repayments, overdue exposure and recent transactions. Comprehensive Management Reports provides formal reporting access; the Loan Portfolios card sits immediately below it. Portfolio cards link to the relevant portfolio page. Counts and balances should be read with their labels and dates; a current outstanding balance is different from collections received during a selected reporting period.</p>
+<p>Repayment totals exclude pending and voided receipts. Held customer credit is separated from repayment applied to the loan. Security funds are reported independently. Investigate an unexpected total through the underlying loan, statement and audit evidence before using an export for a decision.</p>
+<h2>Search, filters, pagination and export</h2>
+<p>Search supports the fields advertised on each page. Select an activity date range before comparing portfolio cash activity. Registers paginate for readability, but an available export usually includes all matching records rather than only the displayed page. Portfolio financial summaries remain the complete selected portfolio even when a customer, loan or payment register is searched. Export notes explain the applied filters.</p>
+<h2>Appearance and mobile use</h2>
+<p>The sun/moon control stores an explicit light or dark appearance choice in the browser. Until a choice is made, the workspace follows the device preference. Charts update with the selected theme. On a narrow screen, open the mobile navigation and use horizontally scrollable tables where provided.</p>
+<h2>When an action seems not to work</h2>
+<p>Check for validation errors, role restrictions and approval status. Avoid repeating a financial submission just because a notification is delayed. Look up the request or receipt first. A PDF takes time to render for a long history; download it once and verify its reference and totals. See <a href="#troubleshooting">Troubleshooting</a> for a diagnostic table.</p>
+</section>
+
+<section class="chapter" id="company">
+<h1>5. Company setup and policy configuration</h1>
+<h2>Initial configuration</h2>
+<ol class="steps"><li>Sign in as an administrator and open <code>/setup/</code> on first use.</li><li>Enter company legal name, trading identity, contacts, location, registration and licence information where applicable.</li><li>Confirm currency, timezone and operational contact details.</li><li>Upload the company logo and favicon. Public company assets are separate from private identity documents.</li><li>Configure loan tiers, rates, duration defaults, repayment cycle and overdue grace periods according to approved policy.</li><li>Set supported borrower languages and public website content.</li><li>Configure payroll policy, email, SMS and USSD settings when those modules are used.</li><li>Save; verify the public site, dashboard, a sample form and a synthetic PDF statement.</li></ol>
+<h2>Later changes</h2>
+<p>Use <code>/settings/</code>. Back up before large policy changes. Keep an approved change record describing the old value, new value, effective date and approving manager. Configuration defaults assist future operations; they do not authorize rewriting the agreed terms of historical loans.</p>
+<table><thead><tr><th>Configuration area</th><th>Verification after saving</th></tr></thead><tbody>
+<tr><td>Identity and contact details</td><td>Public contact page, statements and reporting cover information show correct contacts.</td></tr><tr><td>Brand, fonts and colors</td><td>Public pages and workspace remain legible in desktop, mobile, light and dark modes.</td></tr><tr><td>Lending defaults</td><td>A new loan form proposes the intended frequency, terms and tier; expected total covers principal.</td></tr><tr><td>Payroll and statutory rules</td><td>A draft payroll preview agrees with the approved policy and finance's independent calculation.</td></tr><tr><td>Email / SMS</td><td>Use a controlled recipient to verify delivery and sender identity; inspect delivery results.</td></tr><tr><td>USSD</td><td>Authenticated test callback responds correctly without exposing another customer's account.</td></tr><tr><td>Website content / visibility</td><td>Signed-out pages show only approved public content and documents.</td></tr>
+</tbody></table>
+<h2>Important distinctions</h2>
+<p>Currency configuration labels the company's records; it does not convert previously recorded amounts or introduce foreign-exchange accounting. Payroll rates and tax brackets are configurable business inputs. This manual does not certify them as current statutory rates. Finance must review them for the applicable jurisdiction and pay period.</p>
+<p>Channel fields with the prefix <code>tenant_</code> are legacy names for this company's settings. Treat credentials as secrets. Do not paste them into audit notes, customer statements, screenshots, issue reports or public documents.</p>
+</section>
+
+<section class="chapter" id="borrowers">
+<h1>6. Borrower onboarding and records</h1>
+<h2>Find an existing customer first</h2>
+<p>Open <code>/borrowers/</code>. Search by the available name, customer reference and contact filters. Check permanent and legacy references when working with imported data. Resolve possible duplicates through an administrator before onboarding; do not create a second profile to bypass an identity or username validation error.</p>
+<h2>Create a borrower</h2>
+<ol class="steps"><li>Choose Add Borrower at <code>/borrowers/new/</code>.</li><li>Select an active portfolio. An agent can choose only a currently assigned portfolio.</li><li>Enter full name, national identity number, phone, location and preferred language.</li><li>Complete gender, date of birth, alternative phone, email, group and new/existing borrower classification as appropriate.</li><li>Record residence details: digital address, landmark, directions, residence duration and residence status. If the status is Other, explain it.</li><li>Upload photo and Ghana Card front/back images where collected under company policy. Verify the document belongs to this person.</li><li>Provide a unique portal username. The interactive creation workflow can generate a password and display it to the creator.</li><li>Save and inspect the borrower profile, issued customer ID, portfolio, contacts and login result.</li><li>Provide the borrower with their reference and portal instructions through an approved private channel.</li></ol>
+<h2>Field groups</h2>
+<table><thead><tr><th>Group</th><th>Operational purpose</th></tr></thead><tbody>
+<tr><td>Customer identity</td><td>Permanent customer ID, retained legacy ID, legal name, unique national ID and optional Ghana Card number.</td></tr><tr><td>Contact / residence</td><td>Primary and alternative contacts, email, location, digital address and directions for service and follow-up.</td></tr><tr><td>Demographics / grouping</td><td>Gender, date of birth, language, group and classification for outreach and reports.</td></tr><tr><td>Ownership</td><td>Current borrower portfolio; normal reassignment updates related loan ownership, while source checks use each loan's recorded portfolio.</td></tr><tr><td>Private uploads</td><td>Photo and identity evidence stored behind authenticated access.</td></tr><tr><td>Account relationship</td><td>Linked portal login, loan history, receipts, statements and derived customer status.</td></tr>
+</tbody></table>
+<h2>Edit and maintain</h2>
+<p>Open the borrower profile and choose Edit. Correct contact and demographic information with evidence. A permanent customer ID cannot be replaced through routine editing. Use the portfolio assignment process for management-approved ownership decisions. Borrower status reflects the loan book; it is not a substitute for a documented collections or credit decision.</p>
+<h2>Portal account management</h2>
+<p>Administrators use Create Login when no login exists and Reset Login after identity verification. The corresponding routes are under <code>/agents/borrowers/&lt;id&gt;/create-login/</code> and <code>/agents/borrowers/&lt;id&gt;/reset-login/</code>. An email address used by another login can fail uniqueness checks. Password recovery requires a configured email channel.</p>
+<h2>Deletion and privacy</h2>
+<p>Retain financial history and customer identification according to the company's approved retention policy. Protected loan, portfolio and financial relationships may prevent deletion. The permanent issuance register retains an issued number even if its borrower relationship is cleared, so that number is not reused. Use the application and management process to resolve archival requirements.</p>
+<div class="callout"><p>Customer photos and identity images belong in private storage. Only public company assets should be exposed by a static media mapping. A downloaded statement is confidential customer information even though it contains no credentials.</p></div>
+</section>
+
+<section class="chapter" id="portfolios">
+<h1>7. Portfolios and permanent customer IDs</h1>
+<h2>Ownership and numbering</h2>
+<p>A portfolio has a permanent two-digit number from 01 to 99, a display name, an active flag and officer assignments. The number cannot be changed after creation. Active field agents can be assigned to active portfolios. Assignment history records who was added, who was removed and when.</p>
+<p>A permanent ID follows <code>SFPPNNNN</code>: <code>SF</code>, the issuing portfolio number and a four-digit customer sequence. For example, <code>SF010001</code> is customer 0001 issued by portfolio 01. Each issuing portfolio supports numbers 0001–1000. IDs remain permanent when current ownership changes. A historical imported reference is retained separately for lookup and reconciliation.</p>
+<h2>Review the portfolio overview</h2>
+<ol class="steps"><li>Open <code>/portfolios/</code> or use a dashboard portfolio card.</li><li>Select the activity start and end dates.</li><li>Filter by portfolio number/name, current officer or active/inactive state.</li><li>Compare book balances, receipts, disbursement activity, risk and officer coverage.</li><li>Open the portfolio for the underlying registers and report definitions.</li></ol>
+<h2>Portfolio detail tabs</h2>
+<table><thead><tr><th>Tab</th><th>Use</th></tr></thead><tbody>
+<tr><td>Overview</td><td>Current book position and period activity.</td></tr><tr><td>Customers / Loans</td><td>Customer ownership, loan terms, balances and statuses.</td></tr><tr><td>Payments</td><td>Recorded settled cash, allocations and references.</td></tr><tr><td>Risk</td><td>Aging, principal exposure and concentration.</td></tr><tr><td>Deposits</td><td>Required security, held funds, applications, refunds and transfers.</td></tr><tr><td>Collections</td><td>Payment requests and reconciliation status, distinct from settled receipts.</td></tr><tr><td>Officers</td><td>Current assignments and retained officer history.</td></tr><tr><td>IDs</td><td>Permanent issuance register and remaining customer-number capacity.</td></tr>
+</tbody></table>
+<h2>Change officer assignments</h2>
+<p>An administrator opens <code>/portfolios/&lt;id&gt;/edit/</code>, updates the name or active status, selects active field officers and saves. Added officers gain access immediately; removed officers lose access immediately. Ending an assignment preserves its history. Inactivating a portfolio prevents normal active-scope access and new allocation to it; plan such changes with management.</p>
+<h2>Review legacy customer allocation</h2>
+<p>Use <code>/portfolios/customers/</code> for customer assignment review and <code>/portfolios/export/</code> for the confirmed-assignment CSV. Determine the correct current portfolio using management evidence. A confirmed existing permanent ID must not be replaced. The CSV includes <code>borrower_pk</code>, <code>legacy_reference</code>, <code>full_name</code>, <code>portfolio_number</code> and <code>customer_id</code>.</p>
+<pre><code>python manage.py portfolio_customers --export reviewed-customers.csv
+python manage.py portfolio_customers --import reviewed-customers.csv
+# Commit only after identity checks, management review and backup:
+python manage.py portfolio_customers --import reviewed-customers.csv --apply</code></pre>
+<p>Import without <code>--apply</code> validates changes then rolls them back. Blank portfolio rows are skipped. The command compares the existing reference and name to prevent assigning a CSV to a different database's customer. Duplicate rows or identity mismatches abort the operation. Protect the file: it contains customer names.</p>
+<h2>Reporting boundaries</h2>
+<p>Portfolio balances describe the current book; date filters select repayment and issuance activity. Customer/loan/payment register searches do not reduce the whole-portfolio financial summary. Exports include all matching rows and explain filters. The dashboard and reporting helpers group totals to avoid multiplying rows across borrowers, loans, receipts, deposits and issued IDs.</p>
+</section>
+
+<section class="chapter" id="loans">
+<h1>8. Loan applications and lifecycle</h1>
+<h2>Before submitting</h2>
+<p>Confirm borrower identity, current portfolio, existing exposure, affordability and approved policy. Document any external credit checks separately; this standalone edition's cross-company helper does not fetch another lender's balances.</p>
+<h2>Submit an application</h2>
+<ol class="steps"><li>Open <code>/loans/new/</code>.</li><li>Select the borrower and responsible workforce agent within the permitted portfolio.</li><li>Enter principal amount, duration, repayment frequency, installment amount and relevant dates.</li><li>Complete sector, loan purpose and application metadata.</li><li>Record declarations, signature information, guarantor and collateral evidence where required.</li><li>Read the agreed expected total. A new or amended repayment schedule must cover the recorded principal.</li><li>Submit and retain the approval request reference. Submission creates a pending loan request, rather than an immediately approved facility.</li></ol>
+<h2>Review and execute</h2>
+<p>Administrators open <code>/loan-requests/</code>, review the application and record a decision. Approval creates the loan atomically and records the result; rejection creates no loan. Ordinary makers require a different reviewer, with the ordinary Management/superuser exception described in <a href="#roles">Roles</a>. A Failed request needs investigation and a corrected submission. Check that the status is Executed and the loan actually exists before proceeding.</p>
+<h2>Financial terms</h2>
+<p>The model field <code>weekly_payment</code> stores the installment amount, including when frequency is Daily. The expected count is <code>duration_months × 4 + duration_weeks</code> for weekly repayment, or <code>duration_months × 30 + duration_weeks × 7</code> for daily repayment. These fixed month conversions do not count actual calendar days. Use the displayed expected count when agreeing terms. Expected repayment is that count multiplied by the installment. ROIC is expected repayment less principal, with a floor of zero. These are agreed schedule calculations, not a reducing-balance interest engine.</p>
+<table><thead><tr><th>Illustrative weekly loan</th><th>Calculation</th></tr></thead><tbody>
+<tr><td>Principal</td><td>GHS 1,000.00</td></tr><tr><td>10 installments × GHS 120.00</td><td>Expected repayment GHS 1,200.00</td></tr><tr><td>Agreed ROIC</td><td>GHS 1,200.00 − GHS 1,000.00 = GHS 200.00</td></tr><tr><td>Settled receipt GHS 120.00</td><td>Principal GHS 100.00 + ROIC GHS 20.00</td></tr><tr><td>After the first receipt</td><td>Principal outstanding GHS 900.00; ROIC outstanding GHS 180.00; total GHS 1,080.00.</td></tr>
+</tbody></table>
+<h2>Security and disbursement readiness</h2>
+<p>New facilities use the security-deposit process. Approval and disbursement readiness are distinct. The recorded deposit requirement must be satisfied before a new secured loan accepts repayments. Already-serviced legacy facilities retain their operational eligibility. See <a href="#deposits">Security deposits</a> for collection and carry-forward procedures.</p>
+<h2>Status and arrears</h2>
+<table><thead><tr><th>Loan status</th><th>Meaning in the application</th></tr></thead><tbody>
+<tr><td>ACTIVE</td><td>Outstanding balance remains and the configured default threshold has not been exceeded.</td></tr><tr><td>CLOSED</td><td>Recorded applied repayments and approved deposit applications cover the expected repayment.</td></tr><tr><td>DEFAULT</td><td>Balance remains and overdue installment periods exceed the company's configured grace threshold.</td></tr>
+</tbody></table>
+<p>Default grace is configured in Company Settings; the fallback is six overdue periods. Daily facilities use daily due periods even where a legacy property name includes “weeks”. Paid installments are measured by money covering full installments, rather than by counting receipt rows. Several small receipts do not make several installments paid. Status refresh occurs during business operations; time-sensitive reports should be read together with their calculated aging and generation date.</p>
+<h2>Review the loan record</h2>
+<p>Open <code>/loans/&lt;id&gt;/</code> to inspect principal, frequency, expected total, receipts, principal/ROIC outstanding, customer credit, security and status. Use the statement for complete chronology. A successful reversal can reopen a previously closed loan when the removed receipt leaves an outstanding balance.</p>
+</section>
+
+<section class="chapter" id="deposits">
+<h1>9. Security deposits and carry-forward</h1>
+<p class="lead">Security is customer money held separately from ordinary repayments and customer overpayment credit.</p>
+<h2>Read the security record</h2>
+<p>Open the loan and select Security Deposit, or use <code>/loans/&lt;id&gt;/security-deposit/</code>. Review required amount, collected funds, refunds, applications, incoming/outgoing transfers and funds still held. For newly approved loans the implemented required amount is 10% of principal.</p>
+<pre><code>Funds held = collections + incoming transfers
+             − refunds − applications − outgoing transfers
+Security shortfall = max(required amount − funds held, 0)</code></pre>
+<p>Reversed movements do not contribute to the current held balance. A GET request that displays a legacy loan does not create a new deposit demand. Legacy records can explicitly preserve eligibility where funds were already disbursed or the loan was serviced before the security enforcement change.</p>
+<h2>Collect required security</h2>
+<ol class="steps"><li>Confirm the correct borrower and approved loan.</li><li>Select the collection action and enter amount, actual method, transaction date and reference.</li><li>Complete customer verification / consent fields displayed by the form.</li><li>Submit the approval request and retain its reference.</li><li>An authorized reviewer verifies the evidence and executes the deposit action.</li><li>Reopen the security page; confirm the held balance and secured status. A fully secured new loan records disbursement readiness according to the workflow.</li></ol>
+<h2>Refund, apply or carry forward</h2>
+<p><strong>Refund:</strong> use the refund action for a closed loan with evidence of a genuine customer refund and sufficient held funds. A refund is a real movement of money. Do not request reversal merely because a customer legitimately received their security back.</p>
+<p><strong>Default application:</strong> an eligible loan must be in DEFAULT status. Management-approved application uses held security to reduce outstanding loan principal, capped by the smaller of held funds and principal still due. It does not recognize interest or create a new cash receipt. Verify the loan, available funds and eligible principal before requesting it.</p>
+<p><strong>Carry-forward:</strong> the approved loan/security workflow can transfer available security from a closed loan to the same borrower's receiving facility. It changes the two deposits while leaving combined customer security and the liability ledger unchanged. Review both source and destination references.</p>
+<h2>Illustrative effect</h2>
+<p>A GHS 1,000 loan requires GHS 100 security. Collecting GHS 100 leaves the agreed loan repayment unchanged and holds GHS 100 as security. If an eligible GHS 50 application is approved later, held security becomes GHS 50 and outstanding principal falls by GHS 50. If that application was recorded in error, its approved reversal restores the GHS 50 held and increases outstanding principal by GHS 50.</p>
+<h2>Deposit statuses and exceptions</h2>
+<table><thead><tr><th>Status</th><th>Interpretation</th></tr></thead><tbody>
+<tr><td>REQUIRED</td><td>Held funds are below the recorded required amount.</td></tr><tr><td>SECURED</td><td>Held funds meet or exceed the requirement.</td></tr><tr><td>REFUNDED</td><td>No funds remain held and a refund exists.</td></tr><tr><td>APPLIED</td><td>No funds remain held and an application exists, subject to the model's status precedence.</td></tr>
+</tbody></table>
+<p>A reversal of a collection cannot remove funds already used by a refund, application or transfer. Resolve the dependent movement first through its own approved process. Reversing security after a valid disbursement does not undo the loan disbursement; it reveals a shortfall requiring management follow-up.</p>
+</section>
+
+<section class="chapter" id="payments">
+<h1>10. Repayments and receipt verification</h1>
+<h2>Record a repayment</h2>
+<ol class="steps"><li>Open the correct loan; verify borrower, outstanding balance and disbursement readiness.</li><li>Choose Add Payment at <code>/loans/&lt;id&gt;/payments/new/</code>.</li><li>Enter the received amount, receipt date, real payment method and accurate reference.</li><li>Match the entry to counted cash or bank/mobile-money evidence. Identify the collecting officer where the workflow provides it.</li><li>Submit once; inspect whether the receipt is settled or awaiting confirmation.</li><li>Review the loan's balance and payment list. Give the customer a verified statement or confirmation according to company procedure.</li></ol>
+<h2>Validation and allocation</h2>
+<p>Amounts must be finite, positive monetary values with permitted precision. New receipts cannot exceed the remaining agreed repayment balance. Allocation divides the applied amount between principal and ROIC using the original principal-to-expected-total ratio, rounded to cents and capped by the components still due. Deposit applications reduce remaining principal. Historical excess retained by the repair workflow is recorded as customer credit rather than income.</p>
+<p>Receipt amount equals principal allocation + ROIC allocation + customer credit. For normal new receipts accepted within the balance, customer credit is zero. Pending and void receipts do not count toward settled repayment totals. An approved reversal retains the original allocations as evidence while excluding the receipt from current totals.</p>
+<h2>Verify pending receipts</h2>
+<ol class="steps"><li>Open <code>/payments/pending/</code>.</li><li>Compare loan, customer, amount, date, method and reference to independent receipt evidence.</li><li>Confirm only when the money has actually arrived and the entry is correct.</li><li>Reject an invalid pending receipt and preserve the reason in the applicable review record.</li><li>Reopen the loan; verify the receipt appears once and its balance effect agrees with the evidence.</li></ol>
+<p>Confirmation and rejection are protected POST actions. The confirmation workflow locks the loan and payment and rechecks the remaining balance. A second confirmation or a competing receipt must not be treated as permission to exceed the contract total.</p>
+<h2>Partial receipts and arrears</h2>
+<p>If the installment is GHS 120, three receipts of GHS 20 total GHS 60. They cover half of one installment, not three installments. The due schedule remains overdue until enough applied money covers the scheduled obligation. This distinction matters for risk reports and follow-up.</p>
+<h2>Correct a settled mistake</h2>
+<p>Settled receipt amount, date, method and financial state are protected. Use <a href="#reversals">Transaction Reversals</a>, then record a separate corrected receipt when justified. The original record remains available. Do not edit the database, delete the receipt or use an old bulk void/restore action to disguise a correction.</p>
+<div class="callout attention"><p>An accounting reversal corrects a recorded transaction. It does not automatically refund cash, recover salary, reverse a mobile-money provider transaction or move funds between bank accounts.</p></div>
+</section>
+
+<section class="chapter" id="collections">
+<h1>11. Payment requests and reconciliation</h1>
+<h2>Collection record versus receipt</h2>
+<p>A <code>RepaymentCollection</code> tracks an initiated payment request, client reference, provider, provider reference, status, callback details, reconciliation notes and linked receipt. A request is not settled cash. A linked verified <code>Payment</code> provides the loan balance effect.</p>
+<h2>Current integration behavior</h2>
+<p>The borrower portal records payment initiation for verification, including for displayed electronic methods. It does not launch a live payment provider charge. No simulation endpoint can turn a request into a successful payment. Confirm receipt of funds independently before marking success or reconciling.</p>
+<h2>Status meanings</h2>
+<table><thead><tr><th>Collection status</th><th>Interpretation</th></tr></thead><tbody>
+<tr><td>PENDING</td><td>Request recorded; verification remains outstanding.</td></tr><tr><td>PROCESSING</td><td>Collection is being processed.</td></tr><tr><td>SUCCEEDED</td><td>Success evidence recorded; verify local reconciliation.</td></tr><tr><td>RECONCILED</td><td>Linked repayment posted and the local workflow completed.</td></tr><tr><td>FAILED</td><td>Collection failed according to the recorded outcome.</td></tr><tr><td>MANUAL_REVIEW</td><td>Exception requires staff review.</td></tr><tr><td>CANCELLED</td><td>Cancelled or cancelled following an approved reversal; cannot be reactivated through a late callback.</td></tr>
+</tbody></table>
+<h2>Reconcile an exception</h2>
+<ol class="steps"><li>Open <code>/payments/reconciliation/</code> and locate the request.</li><li>Match the client reference, provider receipt, customer, loan, amount and actual receipt time.</li><li>Confirm funds in the authoritative cash/bank/provider evidence.</li><li>Use the displayed mark-success or force-reconcile action only when the evidence supports it.</li><li>If evidence shows failure, record that outcome; do not force a successful receipt.</li><li>Verify one linked payment, one balance effect and an appropriate final status.</li></ol>
+<h2>Callback and duplicate protections</h2>
+<p>The callback route is <code>/payments/collections/webhook/&lt;provider&gt;/</code>. Production requires the configured webhook secret; insecure callbacks must be disabled. The implemented provider receipt register reserves provider/reference combinations so the same external receipt cannot be posted twice through different requests.</p>
+<p>Reconciled and cancelled outcomes are terminal for the relevant success/cancellation handling. A reversed linked collection becomes cancelled, and its provider receipt remains reserved. Retrying callbacks or reconciliation must not restore the reversed receipt. For a legitimate later payment, use fresh evidence and a new provider reference.</p>
+<h2>External provider enablement</h2>
+<p>A future live initiation adapter needs explicit implementation, provider credentials, signed callback verification, sandbox testing, amount/reference checks, timeout handling and reconciliation tests. Configuring a provider name or API key alone does not implement a charging flow. Document the adapter and update this chapter when such a release is deployed.</p>
+</section>
+
+<section class="chapter" id="credit">
+<h1>12. Customer credit and balance calculations</h1>
+<h2>Management's selected treatment</h2>
+<p>Historical money received above the loan's agreed total is held as customer credit. The original cash receipt amount is retained. The excess does not become loan income or increase the agreed total repayment.</p>
+<pre><code>Settled cash received = sum(active settled receipt amounts)
+Held customer credit = sum(active settled customer-credit allocations)
+Applied repayments = settled cash received − held customer credit
+Loan balance = max(expected repayment − applied repayments
+                   − approved deposit applications, 0)
+Principal outstanding = max(principal − settled principal allocations
+                            − approved deposit applications, 0)
+ROIC outstanding = max(agreed ROIC − settled ROIC allocations, 0)</code></pre>
+<h2>Worked historical example</h2>
+<p>A fictional loan has principal GHS 1,000 and expected total GHS 1,200. Historical receipts total GHS 1,260. If valid records are repaired, GHS 1,000 is allocated to principal, GHS 200 to ROIC and GHS 60 to customer credit. The loan balance is zero; GHS 60 remains an amount owed to the customer. The GHS 1,260 cash evidence remains unchanged.</p>
+<table><thead><tr><th>Money category</th><th>Meaning</th></tr></thead><tbody>
+<tr><td>Principal allocation</td><td>Loan capital repaid.</td></tr><tr><td>ROIC allocation</td><td>The agreed return component paid.</td></tr><tr><td>Customer credit</td><td>Historical excess receipt held for the customer, posted to liability account 2066 where synchronized.</td></tr><tr><td>Security deposit</td><td>Separately held security governed by deposit collection, refund, application and carry-forward workflows.</td></tr><tr><td>Pending collection</td><td>Payment request awaiting verification; not settled cash or credit.</td></tr>
+</tbody></table>
+<h2>Use and refund boundaries</h2>
+<p>This release records and reports held credit. It does not provide a general automatic customer-credit wallet, a provider payout flow or a generic credit-to-new-loan allocation screen. Management must approve any real refund or subsequent application and finance must document the appropriate record and ledger treatment. Do not use a security-deposit transfer as a substitute for customer-credit processing.</p>
+<h2>Reversal effect</h2>
+<p>If a historical receipt holding GHS 60 of credit was itself recorded in error, its approved reversal removes the receipt's principal, ROIC and credit contributions from current totals and offsets any linked posting. The statement retains the original amount and shows a separate negative movement dated on approval. That bookkeeping event does not by itself settle a genuine refund owed to the customer.</p>
+<h2>Integrity review</h2>
+<p>Compare receipt component sums, agreed loan totals and liability balances. The integrity command is read-only; the repair command previews by default. Historical loans with terms below principal remain management exceptions. Do not “fix” them by inventing installment counts.</p>
+</section>
+
+<section class="chapter" id="statements">
+<h1>13. Printing and sharing statements</h1>
+<h2>Three comprehensive statement types</h2>
+<table><thead><tr><th>Statement</th><th>Coverage</th></tr></thead><tbody>
+<tr><td>Loan</td><td>Customer identity/reference, agreed terms, complete receipt chronology, principal/ROIC allocations, credit held, deposits, running balances and reversal evidence.</td></tr><tr><td>Borrower</td><td>The permitted customer's loan register, consolidated balances, complete related transactions and security history.</td></tr><tr><td>Agent</td><td>Officer profile, current portfolio coverage, recorded collections and payroll history within the permitted statement scope.</td></tr>
+</tbody></table>
+<h2>Print or save a PDF</h2>
+<ol class="steps"><li>Open the borrower, loan or agent profile and choose Statement.</li><li>Verify the person, customer/loan reference, generation date and company identity.</li><li>Check the loan register, receipt totals, customer credit and security sections.</li><li>Use Print for the browser's print dialog. Choose A4 and inspect the print preview before printing.</li><li>Use the PDF action for the server-generated document. It includes repeated table headers and page numbering.</li><li>Use Download PDF where shown, or append <code>?download=1</code> to the PDF route to request a download.</li><li>Deliver through an authorized channel and record the purpose of disclosure according to company procedure.</li></ol>
+<h2>Direct paths</h2>
+<table><thead><tr><th>Record</th><th>Preview and PDF</th></tr></thead><tbody>
+<tr><td>Loan</td><td><code>/loans/&lt;id&gt;/statement/</code><br><code>/loans/&lt;id&gt;/statement/pdf/</code></td></tr><tr><td>Borrower</td><td><code>/borrowers/&lt;id&gt;/statement/</code><br><code>/borrowers/&lt;id&gt;/statement/pdf/</code></td></tr><tr><td>Agent</td><td><code>/agents/agents/&lt;id&gt;/statement/</code><br><code>/agents/agents/&lt;id&gt;/statement/pdf/</code></td></tr>
+</tbody></table>
+<h2>How to read the ledger</h2>
+<p>The history includes all relevant rows, not only the profile's current page. Settled active receipts reduce the outstanding loan. Pending and void entries remain visible but do not reduce the balance. Customer credit is separate from applied repayment. Security collections and transfers change held security; only approved applications reduce loan principal.</p>
+<p>An approved reversal leaves the original transaction visible and adds a negative line on the reversal's effective date, with the reversal reference, approver and reason. This explains why a historical receipt can appear alongside a current removal of its effect. Undated historical deposit applications are identified as opening/application adjustments rather than being assigned a fabricated transaction date.</p>
+<h2>Review flags and permissions</h2>
+<p>A statement may flag repayment terms requiring management review. Such a statement accurately describes recorded data, but the flagged terms need a separate management decision. Administrators can access authorized records; borrowers can access only their own statements; agents are scoped to current assigned loan portfolios and their own agent statement.</p>
+<p>The agent statement's loan and receipt coverage follows the officer's current active portfolio assignments. Its recorded-collector subtotal is calculated within that visible portfolio book; it is not a separate lifetime total of every receipt once collected in a former portfolio. Payroll history remains tied to the employee.</p>
+<p>PDF and preview responses use private, no-store caching. Branding images are embedded rather than downloaded from arbitrary URLs during rendering. Once a PDF is downloaded, the application cannot revoke copies already shared. Protect the resulting file.</p>
+</section>
+
+<section class="chapter" id="reversals">
+<h1>14. Administrator-approved reversals</h1>
+<p class="lead">Correct recorded financial errors through a documented independent review, while preserving the original transaction.</p>
+<h2>When to request a reversal</h2>
+<p>Use a reversal for a verified recorded mistake: a duplicate receipt, a receipt assigned to the wrong loan, an incorrect cashbook entry, an unsettled invoice entered in error, a paid payroll run recorded incorrectly, an eligible manual journal or a depreciation run that must be undone. A valid repayment refund, salary recovery or provider refund is a separate real-money operation and requires its own evidence.</p>
+<h2>Request procedure</h2>
+<ol class="steps"><li>Open Transaction Reversals at <code>/reversals/</code> or choose Request reversal on the source record.</li><li>Choose the correct transaction type and original record.</li><li>Read the original amount, reference, date, customer/accounts and stated impact.</li><li>Compare supporting evidence. Confirm that the request corrects a recorded error.</li><li>Enter a reason of 10–4,000 characters and an optional evidence reference of at most 180 characters. Include the cause and expected correction.</li><li>Complete the displayed acknowledgement and submit.</li><li>Record the pending case reference. Submission changes no financial balance.</li></ol>
+<p>Example reason: “Receipt was entered twice from bank reconciliation reference SAMPLE-017; retain the first verified receipt and remove this duplicate entry.” This is more useful than “wrong” or “please reverse”. Do not include a password, API key or full identity-document number in the reason.</p>
+<h2>Independent administrator review</h2>
+<ol class="steps"><li>A different active administrator opens the case from the register or Approvals.</li><li>Compare the requested source with supporting cash and reconciliation evidence.</li><li>Read the original source snapshot and proposed ledger offsets.</li><li>Check downstream use of funds, the affected loan/account and the current accounting period.</li><li>Enter a meaningful review note of at least ten characters.</li><li>Approve &amp; Execute or Reject. Management and superusers cannot review their own reversal.</li><li>Verify final status. If Executed, retain the permanent <code>REV-000001</code>-style reference and print the case for the reconciliation file.</li></ol>
+<h2>Supported sources and effects</h2>
+<table><thead><tr><th>Source</th><th>Approved effect and eligibility</th></tr></thead><tbody>
+<tr><td>Settled repayment</td><td>Exclude original receipt from current collections and credit; restore principal/ROIC outstanding and refresh loan/customer status. Pending or previously voided receipts are not eligible.</td></tr>
+<tr><td>Deposit collection</td><td>Reduce held funds. Collection funds must still be available. An already valid disbursement remains recorded.</td></tr>
+<tr><td>Deposit refund</td><td>Restore the recorded refunded amount to held funds. This corrects an erroneous refund record; it does not recover actual customer cash.</td></tr>
+<tr><td>Deposit application</td><td>Restore held security and increase outstanding loan principal.</td></tr>
+<tr><td>Deposit carry-forward</td><td>Restore source deposit, reduce destination deposit. Receiving funds must remain available. Combined customer security and ledger liability do not change.</td></tr>
+<tr><td>Posted bank / cashbook transaction</td><td>Offset the original entry, including both bank accounts for a transfer.</td></tr>
+<tr><td>Posted invoice / bill</td><td>Only eligible OPEN or OVERDUE unsettled documents. Void document, offset accrual and remove outstanding aging exposure. Settled/partially settled documents require reconciliation first.</td></tr>
+<tr><td>Paid payroll</td><td>Cancel paid run, offset its recorded payroll postings, preserve every employee line and original paid timestamp. Unpaid runs use normal cancellation.</td></tr>
+<tr><td>Manual general journal</td><td>Offset an active posted manual entry. Operationally owned postings must use their source reversal.</td></tr>
+<tr><td>Posted depreciation</td><td>Cancel run, offset depreciation and restore asset values. Later dependent depreciation must be reversed first; disposed assets require management reconciliation.</td></tr>
+</tbody></table>
+<h2>What execution preserves</h2>
+<p>The original source is retained. Receipt amounts, dates, references and allocations remain evidence. Original journals remain posted, with a link to an equal opposing entry. Offsets are dated on approval in the current open accounting period, preserving the original period's recorded history.</p>
+<p>A permanent reversal record stores source type/ID, amount, reason, evidence reference, requester approval relationship, source snapshot, effective date, approving administrator and linked offsets. Reversed evidence cannot be edited or deleted through normal model/admin operations.</p>
+<h2>Atomic execution and failure</h2>
+<p>Approval locks and revalidates the source and its postings. If the source or ledger changed after submission, execution fails and requires a fresh request based on the updated evidence. A closed current period, unbalanced source posting, invalid component allocation or downstream dependency also prevents execution. Financial changes roll back together; the approval retains a Failed outcome for investigation.</p>
+<p>Only one pending request is allowed for a source. Only one completed reversal can exist for it. Repeated execution cannot duplicate its effect. A borrower cannot request or execute reversals; agents can request only eligible lending sources within their active portfolio scope.</p>
+<h2>Withdrawal, rejection and replacement</h2>
+<p>The requester may withdraw a pending case; it becomes Cancelled. A different administrator may reject it with a note; no financial effect occurs. Failed, rejected and cancelled cases remain review evidence. After an executed reversal, enter any legitimate corrected transaction separately with a cross-reference. A reversal journal cannot itself be reversed through this workflow.</p>
+<h2>Verify the result</h2>
+<ul><li>The case is Executed with a permanent reference and review timeline.</li><li>The original source is visible and marked reversed/void/cancelled as applicable.</li><li>The related balance changes once, by the expected amount and components.</li><li>Existing postings have matching offsets in the current open period.</li><li>A linked provider collection is cancelled and its provider receipt remains reserved.</li><li>The customer statement and audit history explain the original and reversal movements.</li></ul>
+<div class="callout attention"><p>Direct reversal does not cover loan disbursements, asset disposals, settled invoices/bills or arbitrary linked operational journals. These need management reconciliation using the correct business process.</p></div>
+</section>
+
+<section class="chapter" id="governance">
+<h1>15. Approvals, audit and evidence</h1>
+<h2>Use the correct queue</h2>
+<p><code>/loan-requests/</code> contains loan-creation requests. <code>/approvals/</code> contains non-loan governance workflows including payroll, accounting, asset/security actions and reversal cases. Reversal entries open the dedicated case page for source evidence and review rather than a quick decision without context.</p>
+<h2>Approval statuses</h2>
+<table><thead><tr><th>Status</th><th>Required response</th></tr></thead><tbody>
+<tr><td>PENDING</td><td>Review facts, authorization and supporting evidence.</td></tr><tr><td>EXECUTED</td><td>Confirm the resulting record and balances; retain the request reference.</td></tr><tr><td>REJECTED</td><td>Read the review reason; correct or abandon the proposed action as appropriate.</td></tr><tr><td>FAILED</td><td>Inspect execution result and logs. Do not assume a partially completed operation or blindly repeat it.</td></tr><tr><td>CANCELLED</td><td>Withdrawn/cancelled request; no approved execution should be inferred.</td></tr>
+</tbody></table>
+<h2>Review standard</h2>
+<ol class="steps"><li>Confirm the actor, workflow, target and requested amount.</li><li>Check the underlying record and evidence, rather than relying on the request title.</li><li>Apply the appropriate maker/checker rule.</li><li>Record a decision note that explains judgment and exceptions.</li><li>Execute or reject using the protected review action.</li><li>Verify the final outcome and affected business record.</li></ol>
+<p>Review and execution occur in controlled database transactions. Source handlers revalidate eligibility at execution time. A failed handler rolls back financial writes while the approval records the failed review. Configured notifications are sent after successful commit where the workflow uses post-commit dispatch.</p>
+<h2>Audit trail</h2>
+<p>Open <code>/audit/</code>. Search for object reference, action, message or record text; filter by category as needed. Events record actor, category, action, affected object, message, metadata and timestamps, with request context where available. Compare approval and reversal references across the source, audit and accounting records.</p>
+<h2>Evidence handling</h2>
+<p>Keep the receipt, bank statement, approved instruction, case printout and reconciliation note in the company's protected evidence store. An evidence reference is a pointer, not an uploaded attachment. Application audit logs support investigation but do not replace a full database/file backup or independent cash reconciliation.</p>
+<h2>Permission for routine approvals</h2>
+<p>Administrator role governs review access. Ordinary staff cannot review their own requests; Management-linked staff and superusers retain the ordinary self-review exception. Reversals have the stronger independent administrator requirement for both approval and rejection. Use separate named accounts even in a small organization.</p>
+</section>
+
+<section class="chapter" id="reports">
+<h1>16. Reports, analytics and risk</h1>
+<h2>Prepare a report</h2>
+<ol class="steps"><li>Open <code>/reports/</code>.</li><li>Select the report type and period: month, quarter, half-year, year or custom range.</li><li>Refresh the report and read its scope, notes and generation date.</li><li>Compare important figures to underlying statements and ledger activity.</li><li>Export in an available format after verification. MCAG Full Workbook supplies multiple sheets.</li><li>Retain the report with period, preparer, reviewer and source release details.</li></ol>
+<h2>Available report catalog</h2>
+{{REPORT_CATALOG}}
+<h2>Analytics versus formal reports</h2>
+<p>Loan analytics, monthly analytics, borrower analytics, workforce analytics and portfolio detail support operational exploration. The report center provides period outputs; the business-state PDF summarizes management information. An analytics chart is not automatically a reconciled financial statement.</p>
+<h2>Balance and activity definitions</h2>
+<p>Current-book balances and selected-period activity answer different questions. Portfolio date filters select issued/disbursed and repayment activity, while principal outstanding and total balance describe current recorded exposure. A reversed original and its offset may belong to different accounting periods. Some reports use operational records and others use posted journals; differences must be reconciled according to each report's source and notes.</p>
+<h2>Aging and PAR</h2>
+<p>Portfolio aging measures the first scheduled repayment amount not fully covered by applied receipts and approved deposit applications. PAR30 uses disbursed principal outstanding on loans more than 30 days overdue divided by all disbursed principal outstanding. It uses principal exposure, not principal plus the full remaining ROIC. A zero denominator requires the report's displayed zero/empty treatment.</p>
+<p>Borrower statuses, stored loan status, overdue installment counts and report-specific aging indicators are related but not interchangeable. Daily and weekly schedules must use their correct due periods. Pending collections and held security do not become repayments until the applicable verified application occurs.</p>
+<h2>Reconciliation and regulatory review</h2>
+<p>Before management or external submission, reconcile receipt cash to applied repayment plus credit, principal components to exposure, security balances to the deposit liability and posted ledger totals to the trial balance. MCAG-style outputs follow the implementation's reporting layout; confirm the current external reporting requirements and company's classifications before filing.</p>
+</section>
+
+<section class="chapter" id="workforce">
+<h1>17. Workforce and agent management</h1>
+<h2>Register an employee</h2>
+<p>Open Workforce at <code>/agents/</code> and select Add Workforce Member. The create route is <code>/agents/agents/new/</code>; the repeated <code>agents</code> path is intentional in the current URL structure.</p>
+<ol class="steps"><li>Complete the profile tab: employee reference, name, workforce role, department, reporting line, employment type/status, dates and location.</li><li>Complete contact/compliance details, emergency contact and identification fields.</li><li>Set base salary, fixed allowances, collection commission, preferred payment method and bank/mobile-money details where applicable.</li><li>Set payroll eligibility and Admin Console Access deliberately.</li><li>Upload authorized private documents and record notes.</li><li>Save; inspect any error summary and the first tab containing an invalid field.</li><li>Verify Overview, Payroll and Portfolio sections on the profile.</li></ol>
+<h2>Agent responsibilities</h2>
+<p>An active field officer needs current portfolio assignments to access lending records. Historic <code>Loan.agent_name</code> identifies the recorded originating agent; current access comes from portfolio assignment. A receipt's <code>collected_by</code> identifies its collector. These relationships can differ and support different performance measures.</p>
+<h2>Create and maintain login access</h2>
+<p>Use the workforce registration/login action or <code>/agents/agents/register/</code>. Set a unique username and temporary password. Confirm any staff permission agrees with the authorized role. Reset access from the individual's profile after verification. Review the resulting redirect and scope.</p>
+<h2>Monitor performance</h2>
+<p>Use workforce analytics, range analysis and an individual's comprehensive analysis to review borrower coverage, recorded disbursements, collections, outstanding exposure and risk. Use the agent statement for a consolidated printable view of their current portfolio scope, collections and payroll history.</p>
+<h2>Offboarding</h2>
+<ol class="steps"><li>Record the employment status/end date according to management instruction.</li><li>End current portfolio assignments and assign coverage to a successor.</li><li>Disable the linked login and verify that the person can no longer authenticate.</li><li>Resolve final payroll and custody assignments with finance and management.</li><li>Retain historical loan, receipt, payroll and approval evidence.</li></ol>
+<p>Protected financial relationships can prevent deletion. Prefer inactive employment and disabled access to deleting a historical officer record. Employment state alone should not be assumed to remove every administrator permission from a linked user; review login flags explicitly.</p>
+</section>
+
+<section class="chapter" id="payroll">
+<h1>18. Payroll preparation, approval and payment</h1>
+<h2>Inputs and policy</h2>
+<p>Payroll combines workforce compensation, period collection metrics and dated adjustments. Company policy configures progressive tax brackets, personal relief, employee/employer pension, welfare and enable flags. Finance must validate the policy for the pay period; software configuration does not certify current statutory compliance.</p>
+<table><thead><tr><th>Component</th><th>Implemented calculation</th></tr></thead><tbody>
+<tr><td>Gross pay</td><td>Base salary + fixed allowances + bonus + overtime + other earnings + collection commission.</td></tr><tr><td>Commission</td><td>Eligible period applied collections recorded for the officer × commission percentage. Held customer credit is excluded.</td></tr><tr><td>Employee pension</td><td>Enabled rate applied to base salary.</td></tr><tr><td>Chargeable income</td><td>Gross pay less employee pension and configured personal relief, floored at zero.</td></tr><tr><td>Tax</td><td>Progressive calculation using configured brackets when enabled.</td></tr><tr><td>Welfare</td><td>Enabled percentage of gross pay plus configured fixed amount.</td></tr><tr><td>Net pay</td><td>Gross pay less statutory deductions, loan/advance recovery and other deductions.</td></tr><tr><td>Employer contribution</td><td>Enabled employer pension rate applied to base salary; tracked separately from employee net pay.</td></tr>
+</tbody></table>
+<h2>Record an adjustment</h2>
+<ol class="steps"><li>Open Payroll at <code>/agents/payroll/</code> and its Run Setup section.</li><li>Select employee, Earning or Deduction, category, descriptive label and amount.</li><li>Set effective dates and whether it recurs.</li><li>Save and verify the adjustment on the employee payroll context.</li><li>Review whether the run includes commissions and loan recovery.</li></ol>
+<p>Recurring adjustments apply when their date window overlaps the payroll period. A one-off adjustment applies when its effective-from date is within the period. Check category and inclusion settings carefully; an omitted loan-recovery flag should not be confused with deletion of the adjustment.</p>
+<h2>Generate and approve a run</h2>
+<ol class="steps"><li>Enter run title, period start/end, pay date and notes.</li><li>Generate Draft Payroll.</li><li>Inspect every employee line: earnings, commissions, deductions, statutory breakdown, payment details and net pay.</li><li>Compare totals to an independent payroll control sheet and check unexpected negative/large net amounts.</li><li>Recalculate while Draft if source inputs changed; recheck all affected lines.</li><li>Submit the payroll approval action. A separate eligible reviewer opens Approvals and executes the request.</li><li>Confirm the run becomes Approved and retain the approval reference.</li></ol>
+<h2>Record payment and export</h2>
+<p>Mark Paid only after actual payroll disbursement is completed and verified. The system records status and paid timestamp; the action does not itself send bank or mobile-money transfers. Export CSV or Excel for authorized reconciliation and distribution. Keep payroll files confidential.</p>
+<h2>Status and correction</h2>
+<table><thead><tr><th>Status</th><th>Action</th></tr></thead><tbody>
+<tr><td>DRAFT</td><td>Review, recalculate, request approval or cancel through the normal workflow.</td></tr><tr><td>APPROVED</td><td>Pay and then mark Paid when verified; ordinary unpaid cancellation remains available according to the screen.</td></tr><tr><td>PAID</td><td>Financial history protected. Request an independent administrator-approved reversal if the run was recorded in error.</td></tr><tr><td>CANCELLED</td><td>Excluded from active payroll treatment. A reversal retains original lines and paid evidence.</td></tr>
+</tbody></table>
+<p>A paid-run reversal offsets all recorded payroll postings and preserves employee lines. It does not retrieve salary paid to employees. Prevent duplicate payroll by reconciling employee/period coverage before generating a replacement run.</p>
+</section>
+
+<section class="chapter" id="accounting">
+<h1>19. Accounting, journals and cashbooks</h1>
+<h2>Accounting workspace</h2>
+<p>Open <code>/accounting/</code>. The hub groups overview, chart/cashbook, journals, receivables, payables, reports and controls/budgets. Underlying records include accounting periods, ledger accounts, counterparties, journal headers/lines, bank accounts/transactions, invoices, bills and budget lines.</p>
+<h2>Initial finance setup</h2>
+<ol class="steps"><li>Review the seeded chart of accounts and system control accounts.</li><li>Create additional approved accounts with unique codes and correct account types.</li><li>Create bank/cash/mobile-money cashbooks linked to the correct ledger accounts.</li><li>Create customer/supplier/other counterparties as needed.</li><li>Create open accounting periods and approved budgets.</li><li>Agree opening balances and finance's reconciliation process before ordinary posting.</li></ol>
+<h2>Post a manual journal</h2>
+<ol class="steps"><li>Open Journals and enter transaction date, reference and clear memo.</li><li>Select active ledger accounts for each line.</li><li>Enter either a debit or a credit per line; avoid negative amounts or a line with both sides populated.</li><li>Confirm positive total debits equal positive total credits.</li><li>Submit the journal request and review it in Approvals according to the screen's workflow.</li><li>Verify the executed entry number and lines in <code>/accounting/journals/&lt;id&gt;/</code>.</li></ol>
+<p>Posting validates account state, line values, balance and applicable accounting period. A closed period blocks the posting. A balanced journal does not prove that account selection or business classification is correct; finance must review both.</p>
+<h2>Record a cashbook transaction</h2>
+<p>Select the source bank account, transaction type, date, amount, reference and description. A transfer requires the destination account. Review both cashbook and ledger impacts. Posting records the accounting event; it does not instruct a bank to transfer actual money.</p>
+<h2>Invoices, bills and aging</h2>
+<p>Create a document with the correct counterparty, document number, issue/due dates, amount, status and ledger mapping. Review its posted accrual and outstanding aging. Only eligible unsettled OPEN/OVERDUE documents can be reversed directly. Settlements or partially settled documents need finance reconciliation first.</p>
+<h2>Synchronize operational postings</h2>
+<ol class="steps"><li>Reconcile underlying loan, repayment and payroll evidence.</li><li>Use Sync Loans, Repayments &amp; Payroll Into Ledger from the overview.</li><li>Read the result; inspect recent ledger activity and trial balance.</li><li>Check source keys and references for the expected operational records.</li><li>Investigate exceptions before repeating synchronization.</li></ol>
+<p>Synchronization uses source identities to avoid duplicate active postings. When a previously posted receipt was corrected through an authorized historical process, the old posting remains evidence and an offset can be created before the replacement. An approved reversed source stays excluded from future synchronization.</p>
+<h2>Illustrative repayment posting</h2>
+<table><thead><tr><th>Account purpose</th><th>Debit</th><th>Credit</th></tr></thead><tbody>
+<tr><td>Recorded cash received</td><td>GHS 126.00</td><td>—</td></tr><tr><td>Loan principal receivable reduced</td><td>—</td><td>GHS 100.00</td></tr><tr><td>Agreed return received</td><td>—</td><td>GHS 20.00</td></tr><tr><td>Historical customer credit liability</td><td>—</td><td>GHS 6.00</td></tr>
+</tbody></table>
+<p>This fictional example illustrates a historical excess allocation. New repayment forms reject overpayment. The account mapping comes from implementation/configuration; customer credit uses seeded liability account 2066.</p>
+<h2>Budgets and statements</h2>
+<p>Create the budget header, period and account lines under Controls &amp; Budgets. Reports compare posted activity to configured budget lines. Set a reporting date window to review income statement, balance sheet, trial balance and cashbook movement. Confirm whether each table shows period movement or closing position.</p>
+<h2>Closing and reversals</h2>
+<p>Close a period only after cashbooks, deposits, credit, payroll, receivables/payables and trial balance reconcile. Preserve the close evidence. A later approved reversal posts its equal offset on the approval date in the current open period; the original entry remains posted. A closed current period causes the reversal to fail atomically.</p>
+<p>Operational journal entries cannot be reversed as arbitrary manual journals. Start from the source repayment, deposit, bank transaction, invoice, bill, payroll or depreciation run so that business balances and accounting remain aligned.</p>
+</section>
+
+<section class="chapter" id="assets">
+<h1>20. Fixed assets and depreciation</h1>
+<h2>Register and categorize</h2>
+<ol class="steps"><li>Open <code>/assets/</code>, then Register.</li><li>Create/review the asset category and default accounting/depreciation policy.</li><li>Enter unique asset code, name, category, acquisition date/cost, salvage value, depreciation method and useful life where applicable.</li><li>Complete location, serial/reference information, condition, status and notes.</li><li>Save; verify the asset register and any generated acquisition posting.</li></ol>
+<p>Correct useful life and residual value before posting depreciation. An asset's status, assignments, maintenance, accumulated depreciation and disposal history explain its current carrying value.</p>
+<h2>Custody and maintenance</h2>
+<p>Open Custody &amp; Maintenance. Record assignment to the responsible workforce custodian, effective dates, condition and notes. For maintenance, record provider, type, dates, cost, status and outcome. Review any expense posting associated with a completed maintenance record. Keep supporting service evidence.</p>
+<h2>Post depreciation</h2>
+<ol class="steps"><li>Open Depreciation &amp; Disposal.</li><li>Enter the run period, posting date and descriptive title.</li><li>Confirm asset eligibility and policy.</li><li>Post Depreciation; inspect every generated asset line and total.</li><li>Verify expense/accumulated-depreciation journal and updated carrying values.</li><li>Retain the run reference with month-end evidence.</li></ol>
+<p>The run is built atomically and guards against duplicate effects. A failure should not leave part of the asset group depreciated. Review policy and prior runs before posting again.</p>
+<h2>Dispose of an asset</h2>
+<p>Select the asset, disposal type/date, proceeds, buyer, reason and relevant accounts. Submit the disposal request; an eligible administrator reviews it in Approvals. Verify status, disposal record, derecognition and any gain/loss posting. Approval records the disposal; it does not collect sale proceeds.</p>
+<h2>Reverse an incorrect depreciation run</h2>
+<p>Use the dedicated reversal request on an eligible posted run. Later depreciation depending on it must be resolved first, newest run first. Disposed/written-off assets or recorded posted disposals require management reconciliation. Approval cancels the run, offsets its posting and restores the affected book values while retaining original lines.</p>
+<h2>Import assets</h2>
+<p>Use <code>/assets/import/</code> and download a fresh sample. Supported formats include CSV, XLSX, JSON and XML. Confirm category, ledger mapping, dates, values and unique asset code. Test a small batch and review row-level results. Imports can establish financial records; follow the controlled process in <a href="#imports">Imports</a>.</p>
+</section>
+
+<section class="chapter" id="communications">
+<h1>21. Messages, campaigns and notifications</h1>
+<h2>Management SMS center</h2>
+<ol class="steps"><li>Open <code>/communication/management/messages/</code>.</li><li>Choose the workforce/borrower audience and available operational filters.</li><li>Write the message with enough context to be useful and no confidential credentials.</li><li>Preview Recipients; review count, names and normalized phone numbers.</li><li>Check consent and the company's communication policy.</li><li>Send through the explicit send action and inspect dispatch outcomes.</li></ol>
+<p>Ghana phone normalization helps provider delivery but does not prove that a number still belongs to the intended person. An SMS may reveal financial information to whoever controls the phone. Keep customer messages proportionate to their purpose.</p>
+<h2>Marketing templates and campaigns</h2>
+<p>Open <code>/communication/management/marketing/</code>. Save reusable content in Templates. Create a campaign with its channel, audience filters, content/template and applicable schedule details. Preview the audience and content before launching, then inspect dispatch History.</p>
+<p>A scheduled time stored on a campaign does not establish that an unattended scheduler is running. Verify the deployed dispatch mechanism before relying on future automatic delivery. An application dispatch result also does not guarantee recipient reading.</p>
+<h2>Website leads and popups</h2>
+<p>Leads &amp; Popup shows website enquiries for follow-up. Review contact details, source and status; update the lead as work progresses. Configure popup title/badge, content, image, CTA, date window and active state. Verify the public page in a signed-out browser.</p>
+<h2>Channel configuration</h2>
+<p>Company Settings supports channel overrides. Environment variables provide baseline SMTP and Arkesel configuration. Check provider URL, API key, sender identity, permitted recipients and outbound connectivity. In local development, console email prints to the terminal rather than sending mail.</p>
+<h2>USSD callbacks</h2>
+<p>Routes are <code>/communication/hubtel/ussd/</code> and <code>/communication/arkesel/ussd/</code>. Configure the provider, shortcode, API/user fields and callback authentication in Company Settings. Production should reject unauthenticated callbacks. Test account lookup and privacy boundaries with controlled sample data.</p>
+<h2>Notifications</h2>
+<p>Use Notifications to inspect application events such as requests and operational changes. Optional email delivery depends on configured channels. A missing notification is not evidence that a database transaction failed; inspect the actual request/record before resubmitting. Notification delivery should not be used as the accounting source of truth.</p>
+</section>
+
+<section class="chapter" id="portal">
+<h1>22. Borrower self-service manual</h1>
+<h2>Sign in</h2>
+<ol class="steps"><li>Open the company's official website and select Login, or open <code>/login/</code>.</li><li>Enter the username and password provided privately by the company.</li><li>After sign-in, open My Account at <code>/my-account/</code>.</li><li>If you cannot sign in, use password recovery where available or contact the company for identity-verified assistance.</li></ol>
+<p>Never send your password to an officer or include it in a payment reference. On a shared device, sign out before leaving.</p>
+<h2>Understand your account</h2>
+<p>The overview shows your own loans and account information. Select a loan to see principal, agreed repayment, installment schedule, recorded payments, amount still owed and security information. You cannot view another customer's account.</p>
+<h2>Request a payment</h2>
+<ol class="steps"><li>Choose the correct loan and payment action.</li><li>Enter the requested amount and displayed payment details.</li><li>Follow the company's actual cash, bank or mobile-money instructions.</li><li>Keep your real transfer or receipt evidence and correct reference.</li><li>Wait for verification and check that the repayment appears correctly.</li></ol>
+<div class="callout attention"><p>The current portal records a payment request for verification. It does not charge your bank or mobile-money account automatically. A request displayed as Pending does not mean the company has received money.</p></div>
+<h2>Read reversed or pending entries</h2>
+<p>Pending entries await verification and do not reduce your final balance. A reversed receipt stays in history and shows reversal information. The original row and its negative reversal line explain a recorded correction; contact the company if the change does not match your evidence.</p>
+<h2>Get a statement</h2>
+<p>Open the loan or account statement, verify your reference and use Print or PDF. Keep the file private. If a receipt is missing, duplicated or disputed, provide the company with the loan reference, amount, date and receipt reference. Do not repeatedly submit the same payment request while waiting.</p>
+<h2>Change password and seek help</h2>
+<p>Use <code>/my-account/change-password/</code> to set a strong unique password. Contact the company when your phone/contact information changes, your balance appears wrong, a payment is missing or you suspect account misuse. Staff can arrange a correction or reversal review; borrowers cannot execute financial reversals themselves.</p>
+</section>
+
+<section class="chapter" id="website">
+<h1>23. Public website and content management</h1>
+<h2>Public pages</h2>
+<table><thead><tr><th>Path</th><th>Content</th></tr></thead><tbody>
+<tr><td><code>/</code></td><td>Homepage, services, calls to action and company highlights.</td></tr><tr><td><code>/about/</code></td><td>Company story, values and applicable management content.</td></tr><tr><td><code>/services/</code>, service detail</td><td>Product/service descriptions from configured content.</td></tr><tr><td><code>/team/</code></td><td>Approved public management/workforce presentation.</td></tr><tr><td><code>/our-impact/</code></td><td>Corporate social responsibility narratives, initiatives and outcomes.</td></tr><tr><td><code>/documents/</code></td><td>Company documents intended for public disclosure.</td></tr><tr><td><code>/contact/</code></td><td>Contact information and enquiry form.</td></tr><tr><td><code>/privacy-policy/</code></td><td>Published company privacy content.</td></tr>
+</tbody></table>
+<h2>Publish content through Company Settings</h2>
+<ol class="steps"><li>Prepare approved copy and public images.</li><li>Open website sections in Company Settings.</li><li>Update hero, services, company story, team, branches, FAQs, testimonials and CTA fields as applicable.</li><li>Set visibility toggles and public documents deliberately.</li><li>Save and inspect signed-out desktop/mobile pages.</li><li>Check links, contrast, image cropping, forms and the actual published contact details.</li></ol>
+<h2>Our Impact</h2>
+<p>Configure narrative, headline metrics, continuing commitments, initiative outcomes, locations, reporting periods and initiative photography. Support outcome claims with company evidence. Date metrics clearly so old figures are not mistaken for current performance.</p>
+<h2>Management cards</h2>
+<p>Hovering highlights a management card without revealing a large biography or stretching its neighboring cards. Read Biography expands the full text; Hide Biography closes it. The native control supports keyboard and touch interaction. Team and About share the same card include; maintain the shared template rather than creating divergent copies.</p>
+<h2>Enquiry handling</h2>
+<p>The contact form stores a website lead and can notify an administrator. CSRF, a honeypot and per-IP throttling help prevent abuse. Persistence failures display an error rather than a false success message. Ensure a staff member monitors leads and channel delivery.</p>
+<h2>Public versus private files</h2>
+<p>Publish only approved company documents. Customer/workforce identity images and payroll records belong in private authenticated workflows. Do not map the entire <code>/media/</code> directory to a web server simply to fix a missing public image.</p>
+</section>
+
+<section class="chapter" id="imports">
+<h1>24. Imports and legacy migration</h1>
+<h2>Supported import areas</h2>
+<table><thead><tr><th>Module</th><th>Import route / identity</th></tr></thead><tbody>
+<tr><td>Borrowers</td><td><code>/borrowers/import/</code>; customer references and unique identity fields.</td></tr><tr><td>Loans</td><td><code>/loans/import/</code>; loan/customer references and linked workforce data.</td></tr><tr><td>Workforce</td><td><code>/agents/agents/import/</code>; workforce identifiers and employee details.</td></tr><tr><td>Assets</td><td><code>/assets/import/</code>; unique asset code and accounting/category relationships.</td></tr>
+</tbody></table>
+<p>CSV, Excel XLSX, JSON and XML are supported by the listed import modules. Download the current sample for the selected module and format. Exact sample columns appear in <a href="#import-reference">Appendix D</a>. Do not assume the same headers or matching rules across modules.</p>
+<h2>Controlled batch procedure</h2>
+<ol class="steps"><li>Back up the destination database and uploads; record source/version.</li><li>Prepare a clean file from a fresh sample. Preserve identifiers and use unambiguous dates/decimal values.</li><li>Check referenced portfolios, employees, categories and ledger accounts exist and are appropriate.</li><li>Select Create only for new records; choose Upsert only when intentional updates to matching identifiers are authorized.</li><li>Test a small representative batch in a separate staging installation.</li><li>Read imported/updated/skipped/error counts and row-level messages.</li><li>Reconcile names, IDs, terms, statuses and financial totals to the source control sheet.</li><li>Import the approved batch and retain a protected error/reconciliation log.</li></ol>
+<p>Browser imports are business data operations, not automatically approval-queued loan applications. Do not treat the import screen as a dry-run unless the displayed feature explicitly says so. A row-error report can coexist with successful rows depending on the module; inspect the summary before retrying a whole file.</p>
+<h2>Separate legacy database importer</h2>
+<p><code>import_legacy_data</code> reads users, agents, borrowers, loans and payments from a configured separate legacy MySQL database. Destination <code>DB_NAME</code> stays pointed at the new active database. <code>LEGACY_DB_*</code> selects the read source. The command rejects a source/destination database-name match.</p>
+<pre><code>python manage.py import_legacy_data --dry-run
+# After staging rehearsal, source reconciliation and backup:
+python manage.py import_legacy_data</code></pre>
+<p>The dry run performs work inside a transaction then rolls it back. The second command commits; it has no <code>--apply</code> flag. Preserve imported references and review unassigned customers before new lending. New imported users do not automatically receive staff/superuser privilege. Existing matched users are not a substitute for a fresh access review.</p>
+<h2>Move SQLite records into MySQL</h2>
+<p>Switching the database engine only changes the connection; it does not move records. Rehearse export/load with both databases backed up. Migrations can seed portfolios and control records, so inspect potential fixture collisions rather than assuming a fresh migrated database is empty.</p>
+<pre><code># Source SQLite environment; protect the resulting data file.
+python manage.py dumpdata --natural-foreign --natural-primary \
+  --exclude contenttypes --exclude auth.permission \
+  --indent 2 --output data-export.json
+
+# Separate, reviewed MySQL destination environment:
+python manage.py migrate
+python manage.py loaddata data-export.json</code></pre>
+<p>Reconcile company profile, users, IDs, borrowers, loans, receipts, credit, security, payroll, journals, assets and approvals. Copy public and private uploads separately. Do not replace hosted production data with the local database merely to deploy a source update.</p>
+</section>
+
+<section class="chapter" id="routine">
+<h1>25. Daily, weekly and period-end operations</h1>
+<h2>Start of day</h2>
+<ol class="steps"><li>Verify the application is reachable and the previous backup is present.</li><li>Review dashboard balances and current portfolio coverage.</li><li>Check pending loan requests, ordinary approvals and reversal cases.</li><li>Review pending receipts and unreconciled collections.</li><li>Prioritize overdue accounts using aging and borrower context.</li><li>Inspect notifications, website leads and failed channel dispatches.</li></ol>
+<h2>Agent field cycle</h2>
+<p>Confirm assigned customers, prepare the follow-up list, verify customer identity and terms, collect through approved methods, record accurate references, report discrepancies promptly and reconcile collected cash to entered receipts. Do not promise a loan before execution or a payment balance change before confirmation.</p>
+<h2>End of day</h2>
+<ol class="steps"><li>Reconcile cash, bank and mobile-money evidence to settled receipts.</li><li>Explain differences between gross cash, applied repayment, credit and security.</li><li>Resolve or assign pending confirmations and collection exceptions.</li><li>Review new approvals/reversals and their ledger effects.</li><li>Retain control totals and evidence; verify backup status.</li><li>Sign out and secure physical receipts and devices.</li></ol>
+<h2>Weekly review</h2>
+<ul><li>Portfolio principal exposure, aging, PAR and concentration.</li><li>Officer assignment coverage and inactive/unassigned records.</li><li>Customer-credit and security liabilities.</li><li>Duplicate/unmatched provider references and reconciliation delays.</li><li>Audit exceptions and failed approval executions.</li><li>Workforce access, upcoming adjustments and open asset custody issues.</li><li>Backup completeness and at least a scheduled restoration rehearsal.</li></ul>
+<h2>Month-end control sequence</h2>
+<ol class="steps"><li>Fix the period cutoff and confirm that entries through it are complete.</li><li>Reconcile operational loan/receipt/security/credit totals.</li><li>Review payroll, payment evidence and statutory configuration.</li><li>Synchronize eligible operational postings and resolve exceptions.</li><li>Reconcile cashbooks, receivables, payables and control accounts.</li><li>Post approved depreciation and review asset changes.</li><li>Inspect trial balance and draft financial/reporting outputs.</li><li>Management reviews report definitions, exceptions and pending historical decisions.</li><li>Retain signed control evidence and a verified database/file backup.</li><li>Close the period through the appropriate finance control.</li></ol>
+<p>Record who prepared and who reviewed each control. If work remains unresolved, show the exception explicitly rather than changing terms or amounts to make a report balance.</p>
+</section>
+
+<section class="chapter" id="installation">
+<h1>26. Installation and local operation</h1>
+<h2>Prerequisites</h2>
+<p>Use a supported Python 3.12+ interpreter, a shell, a virtual environment and a database choice. Install pinned packages from <code>requirements.txt</code>. MySQL requires the mysqlclient build/runtime dependencies supported by the operating system. WeasyPrint also needs native rendering libraries and fonts; diagnose missing native dependencies using the <a href="https://doc.courtbouillon.org/weasyprint/stable/first_steps.html">official WeasyPrint installation guide</a>.</p>
+<h2>Manual first installation</h2>
+<pre><code>cd /path/to/micro-credit-standalone
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+cp .env.example .env
+# Edit .env before migration; do not overwrite an existing installation's file.
+python manage.py check
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver 127.0.0.1:3000</code></pre>
+<p>Open <code>http://127.0.0.1:3000/</code>, sign in, complete Company Setup and create controlled sample records. With <code>DB_ENGINE=sqlite</code>, <code>SQLITE_NAME=db.sqlite3</code> stores the local database in the project root.</p>
+<h2>Automated helper</h2>
+<p><code>bash setup.sh</code> creates/reuses <code>.venv</code>, installs dependencies, creates <code>.env</code> if absent, migrates and prompts for a superuser. Read the script and confirm the active environment before running it against an existing database. <code>bash run.sh 127.0.0.1:3000</code> activates the environment and launches the local server. Without a port argument, its default is 8000.</p>
+<h2>Restart after interruption</h2>
+<ol class="steps"><li>Confirm database service health and storage availability.</li><li>Activate the project's virtual environment.</li><li>Run <code>python manage.py check</code> and inspect any pending migration plan.</li><li>Start the local server.</li><li>Inspect the last affected request/receipt before resubmitting any interrupted business action.</li><li>If a transaction was interrupted or evidence is uncertain, run the read-only integrity audit and reconcile the relevant source records.</li></ol>
+<h2>Local MySQL</h2>
+<p>Create a dedicated database/user, then set <code>DB_ENGINE=mysql</code>, <code>DB_NAME</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>DB_HOST</code> and optional port. Required values must be present. Apply migrations after confirming the connection targets the intended local database.</p>
+<h2>Verification commands</h2>
+<pre><code>python manage.py check
+python manage.py showmigrations
+python manage.py migrate --plan
+python manage.py makemigrations --check --dry-run
+python manage.py test --settings=config.test_settings</code></pre>
+<p>Tests use a separate test database. <code>config.test_settings</code> isolates uploaded files in memory but inherits the selected database engine and test database configuration. Never set the test database name equal to the operational database.</p>
+</section>
+
+<section class="chapter" id="configuration">
+<h1>27. Environment configuration reference</h1>
+<h2>Configuration loading</h2>
+<p><code>config/settings.py</code> loads the root <code>.env</code> with python-dotenv. Already defined process environment variables take precedence. This means a web worker can differ from an interactive console even when they share a file. Protect <code>.env</code> and review the effective deployment settings without printing secrets.</p>
+<table><thead><tr><th>Variable</th><th>Purpose / behavior</th></tr></thead><tbody>
+<tr><td><code>DJANGO_DEBUG</code></td><td>Defaults true; disable for production. Debug toolbar is enabled only in debug mode.</td></tr><tr><td><code>DJANGO_SECRET_KEY</code></td><td>Required when debug is false. Generate a long unique secret; keep it out of source control.</td></tr><tr><td><code>DJANGO_ALLOWED_HOSTS</code></td><td>Comma-separated hostnames without scheme or path.</td></tr><tr><td><code>DJANGO_CSRF_TRUSTED_ORIGINS</code></td><td>Comma-separated scheme-qualified origins for trusted form requests.</td></tr><tr><td><code>DJANGO_INTERNAL_IPS</code></td><td>Debug-toolbar client IP allowlist; default 127.0.0.1.</td></tr><tr><td><code>TIME_ZONE</code></td><td>Default Africa/Accra. Timezone-aware timestamps enabled.</td></tr><tr><td><code>DB_ENGINE</code></td><td><code>sqlite</code> or <code>mysql</code>.</td></tr><tr><td><code>SQLITE_NAME</code></td><td>Local SQLite file; default db.sqlite3.</td></tr><tr><td><code>DB_NAME / DB_USER / DB_PASSWORD / DB_HOST</code></td><td>Required for MySQL. Treat password as secret.</td></tr><tr><td><code>DB_PORT / DB_CONN_MAX_AGE</code></td><td>MySQL port defaults 3306; connection age defaults 60 seconds.</td></tr><tr><td><code>DB_TEST_NAME</code></td><td>Optional explicit MySQL test database. Must be distinct from production.</td></tr><tr><td><code>LEGACY_DB_*</code></td><td>Optional separate source database for controlled legacy import.</td></tr><tr><td><code>EMAIL_BACKEND / DEFAULT_FROM_EMAIL</code></td><td>Console backend by default; SMTP needed for real external delivery.</td></tr><tr><td><code>EMAIL_HOST / EMAIL_PORT / EMAIL_HOST_USER / EMAIL_HOST_PASSWORD</code></td><td>SMTP connection and authentication; default port 587.</td></tr><tr><td><code>EMAIL_USE_TLS / EMAIL_USE_SSL</code></td><td>Configure for the mail server; do not enable incompatible modes together.</td></tr><tr><td><code>ARKESEL_API_KEY / ARKESEL_SENDER_ID / ARKESEL_BASE_URL</code></td><td>Baseline SMS channel credentials, sender and endpoint.</td></tr><tr><td><code>PAYMENT_WEBHOOK_SECRET</code></td><td>Shared callback secret. Configuring it does not implement live payment initiation.</td></tr><tr><td><code>ALLOW_INSECURE_PAYMENT_WEBHOOKS</code></td><td>Defaults to debug state; explicitly false in production.</td></tr><tr><td><code>ALLOW_INSECURE_USSD_CALLBACKS</code></td><td>Defaults to debug state; explicitly false in production.</td></tr>
+</tbody></table>
+<h2>HTTPS settings</h2>
+<p>SSL redirect, secure session/CSRF cookies and HSTS settings default to enabled when debug is false. Match HSTS scope to the actual HTTPS deployment, especially subdomains. Trust forwarded HTTPS only behind a trusted proxy that controls forwarded headers.</p>
+<pre><code>DJANGO_DEBUG=False
+DJANGO_SECRET_KEY=REPLACE_WITH_A_NEW_RANDOM_SECRET
+DJANGO_ALLOWED_HOSTS=credit.example.com
+DJANGO_CSRF_TRUSTED_ORIGINS=https://credit.example.com
+TIME_ZONE=Africa/Accra
+DJANGO_SECURE_SSL_REDIRECT=True
+DJANGO_SESSION_COOKIE_SECURE=True
+DJANGO_CSRF_COOKIE_SECURE=True
+DJANGO_SECURE_HSTS_SECONDS=31536000
+DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS=False
+DJANGO_SECURE_HSTS_PRELOAD=False
+PAYMENT_WEBHOOK_SECRET=REPLACE_WITH_A_NEW_CALLBACK_SECRET
+ALLOW_INSECURE_PAYMENT_WEBHOOKS=False
+ALLOW_INSECURE_USSD_CALLBACKS=False</code></pre>
+<h2>Generate and protect secrets</h2>
+<pre><code>python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+chmod 600 .env</code></pre>
+<p>The generator prints a new secret for the administrator to copy privately; do not retain terminal output in a shared support log. Changing the Django secret affects sessions and signed tokens. Changing a callback secret requires updating the trusted sender as well.</p>
+<h2>Storage paths</h2>
+<p><code>static/</code> contains source assets; <code>staticfiles/</code> is collectstatic output; <code>media/</code> stores public company uploads; <code>private-media/</code> stores borrower/workforce images. File backup paths are operational storage, not public website routes.</p>
+</section>
+
+<section class="chapter" id="deployment">
+<h1>28. Production deployment and updates</h1>
+<h2>Release preparation</h2>
+<ol class="steps"><li>Record source release, dependency pins and expected migrations.</li><li>Rehearse in a separate environment with sanitized data.</li><li>Prepare a tested source/database/file rollback set.</li><li>Agree a maintenance window and pause financial writes.</li><li>Back up production database, public uploads, private uploads, configuration and WSGI/service settings.</li><li>Install reviewed source while preserving production-specific data and credentials.</li></ol>
+<h2>Apply a normal source update</h2>
+<pre><code>source /path/to/production/virtualenv/bin/activate
+cd /path/to/production/project
+python -m pip install -r requirements.txt
+python manage.py check
+python manage.py migrate --plan
+python manage.py migrate
+python manage.py collectstatic --noinput
+python manage.py check --deploy</code></pre>
+<p>Use checked-in migrations; do not generate new migrations on the server or use <code>--fake</code> to conceal an unapplied schema. Reload the application workers after deployment. <code>runserver</code> is a development launcher. Review environment-specific production controls against the <a href="https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/">Django deployment checklist</a>.</p>
+<h2>Current migration baseline</h2>
+<table><thead><tr><th>Application</th><th>Latest migration in this edition</th></tr></thead><tbody>
+<tr><td>core</td><td>0003 — reversal case/register and related governance changes.</td></tr><tr><td>accounting</td><td>0007 — journal reversal/source dates, customer credit account, source reversal links and protected bank relationships.</td></tr><tr><td>accounts</td><td>0009 — private workforce uploads and protected payroll evidence/reversal links.</td></tr><tr><td>assets</td><td>0002 — depreciation reversal links and protected evidence relationships.</td></tr><tr><td>loans</td><td>0021 — portfolios/IDs, private uploads, legacy eligibility, provider receipt uniqueness, customer credit and transaction reversal links.</td></tr>
+</tbody></table>
+<p>Dashboard query improvements, printable statements and management-card hover behavior do not independently require new schema changes. The cumulative financial-security/reversal release does require the migrations above. Applying migrations does not execute a real transaction reversal or settle disputed historical loan terms.</p>
+<h2>PythonAnywhere deployment</h2>
+<p>The existing-project flow uses uploaded source, a matching virtual environment, a manually configured Web app and the platform WSGI file. The Web tab's Python version must match the environment. See the <a href="https://help.pythonanywhere.com/pages/DeployExistingDjangoProject/">official existing Django project guide</a> for the platform flow.</p>
+<ol class="steps"><li>Confirm the account offers the intended database and Python version.</li><li>Create or select the MySQL database; use the full displayed name such as <code>YOUR_USERNAME$sikafriend</code>. The dollar sign is part of the name.</li><li>Set the actual database hostname and credentials in the protected production environment.</li><li>Install source and dependencies in the matching environment, then apply migrations.</li><li>Configure the Web app virtualenv and source/working directory.</li><li>Edit the WSGI file linked by the Web tab using <code>deployment/pythonanywhere_wsgi.py.example</code> with the real project path.</li><li>Configure static/public-media mappings, reload and review error logs.</li></ol>
+<pre><code>import os
+import sys
+
+project_home = "/home/YOUR_USERNAME/micro-credit-standalone"
+if project_home not in sys.path:
+    sys.path.insert(0, project_home)
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()</code></pre>
+<h2>Static and media mappings</h2>
+<table><thead><tr><th>URL</th><th>Filesystem destination</th></tr></thead><tbody>
+<tr><td><code>/static/</code></td><td><code>/home/YOUR_USERNAME/micro-credit-standalone/staticfiles</code></td></tr><tr><td><code>/media/company/</code></td><td><code>/home/YOUR_USERNAME/micro-credit-standalone/media/company</code></td></tr><tr><td><code>/private-media/</code></td><td>No direct mapping. Requests go through authenticated Django views.</td></tr>
+</tbody></table>
+<p>A platform static mapping serves every file under its mapped directory; see <a href="https://help.pythonanywhere.com/pages/StaticFiles/">PythonAnywhere static file mappings</a>. Therefore do not map the whole media tree or borrower/agent directories directly. Remove old broad mappings when moving identity files to private storage.</p>
+<h2>Release acceptance</h2>
+<p>Verify public pages, named-role login, dashboard, portfolio filters, a controlled application approval, pending receipt verification, statements/PDFs, independent reversal review in staging, ledger consistency and backup export. Confirm logged-out and unrelated users cannot view identity files. Real production transactions used as smoke tests must have explicit business authorization.</p>
+<h2>Rollback</h2>
+<p>Stop writes. Restore a matching source, database and file set from the pre-release backup after assessing any post-release business entries. Do not roll back source alone across an incompatible schema. Preserve secure media mappings and rotated secrets. If financial writes occurred after the backup, reconcile them before restoration to avoid losing valid receipts.</p>
+</section>
+
+<section class="chapter" id="recovery">
+<h1>29. Backups, restoration and power-cut recovery</h1>
+<h2>What a complete backup contains</h2>
+<ul><li>Database, including users, loans, receipts, credit, deposits, accounting, approvals, reversal cases and audit history.</li><li>Public company uploads and private borrower/workforce uploads.</li><li>Matching project source/dependency/migration release.</li><li>Protected environment and web-server/WSGI configuration.</li><li>Checksums, backup time, operator, storage location and restoration verification record.</li></ul>
+<p>A source ZIP is not a customer database backup. A database export usually records file paths but does not embed the corresponding uploaded images. Static output can be rebuilt; unique uploads cannot.</p>
+<h2>Application export screen</h2>
+<ol class="steps"><li>Open <code>/settings/database-backup/</code> as an administrator.</li><li>Review the selected database scope and model/table overview.</li><li>Choose the appropriate format and download.</li><li>Store it in protected backup storage; it can contain identity information and password hashes.</li><li>Record date, scope and format, and verify that the file is readable.</li></ol>
+<table><thead><tr><th>Format</th><th>Purpose and limit</th></tr></thead><tbody>
+<tr><td>JSON / XML</td><td>Django structured model snapshots. Restore requires compatible schema, dependency order and a tested fixture procedure.</td></tr><tr><td>CSV ZIP</td><td>One CSV per model plus manifest; useful for review. It is not an automatic complete Django restore.</td></tr><tr><td>Excel</td><td>Workbook for authorized analysis; not a native disaster-recovery image.</td></tr><tr><td>SQL</td><td>Application-generated table schema/inserts. Rehearse compatibility; prefer native database tools for full operational recovery.</td></tr>
+</tbody></table>
+<p>The export helper iterates models; it does not establish one global transactional snapshot of all concurrent changes. Pause financial writes for a coherent application export or use an appropriate native snapshot procedure.</p>
+<h2>SQLite backup example</h2>
+<p>For a stopped application with no other writers, copy the database to protected storage. A simple file copy during active writes is unsafe, especially if journal/WAL files are involved. Python's SQLite backup API can produce a database copy; match your configured path and ensure a complete business cutoff.</p>
+<pre><code>umask 077
+mkdir -p backups/private
+# Stop application writers before this simple file-copy procedure.
+cp db.sqlite3 backups/private/sqlite-before-update.sqlite3
+sha256sum backups/private/sqlite-before-update.sqlite3</code></pre>
+<h2>MySQL native backup example</h2>
+<p>Use a permitted account and database name. Prompt for the password or use a protected client configuration; do not put the password in the command line. Check native-tool version and privileges for the host. The example assumes transactional tables and writes paused for the business cutoff.</p>
+<pre><code>umask 077
+mkdir -p backups/private
+mysqldump --host=DB_HOST --user=DB_USER --password \
+  --single-transaction --no-tablespaces \
+  'YOUR_USERNAME$sikafriend' \
+  --result-file=backups/private/database-before-update.sql
+sha256sum backups/private/database-before-update.sql</code></pre>
+<p>Check the tool's exit status and validate that the dump completed. A file existing or having a large size does not prove restoration will succeed. Encrypt/copy protected backups to the organization's independent storage according to policy.</p>
+<h2>Restore rehearsal</h2>
+<ol class="steps"><li>Use a separate environment and database, with external messaging/callback traffic disabled.</li><li>Install the matching source and dependencies.</li><li>Restore the native database backup; do not import it over an active production database.</li><li>Restore public and private uploads in their corresponding protected locations.</li><li>Apply only the reviewed migration path and run Django checks.</li><li>Verify model counts, customer IDs, loans, receipt cash/components, credit, security and payroll.</li><li>Check trial balance, active/offset journal pairs, approval cases and statements.</li><li>Run the read-only integrity audit; explain every finding.</li><li>Record recovery time, missing dependencies and results.</li></ol>
+<h2>After a sudden power cut</h2>
+<ol class="steps"><li>Check disk capacity, filesystem health and database startup logs before restoring anything.</li><li>Preserve the current database/files and logs; do not overwrite the only copy.</li><li>Determine the last verified business action using receipt, approval and audit references.</li><li>Check whether the interrupted request is Pending, Executed or Failed and whether a linked record exists.</li><li>Reconcile cash received independently of screen messages.</li><li>Run the integrity audit and inspect affected statements/ledger entries.</li><li>Resume writes only when the database and affected business evidence are coherent.</li><li>Restore from a tested backup only if necessary, with management/finance reconciliation of entries after the backup cutoff.</li></ol>
+<p>Atomic approval execution helps prevent partial financial updates, but it cannot replace durable database storage, operating-system health, power protection or tested backups.</p>
+</section>
+
+<section class="chapter" id="security">
+<h1>30. Security administration and privacy</h1>
+<h2>Application controls</h2>
+<p>Protected views check role and record scope. Financial state changes use POST and CSRF protection for interactive actions. Private identity files are served through authenticated Django access rather than a broad public mapping. Unknown-role accounts cannot access loan operations. Protected financial evidence cannot be casually edited/deleted through Django admin.</p>
+<h2>Production administrator duties</h2>
+<ul><li>Use named accounts and review staff/superuser access.</li><li>Disable debug and enable HTTPS/secure cookies.</li><li>Protect environment files, private uploads, database exports and payroll PDFs.</li><li>Disable insecure webhook/USSD modes and synchronize callback secrets.</li><li>Remove legacy public identity-file mappings.</li><li>Review dependency releases and apply tested security updates.</li><li>Audit failed approvals, unusual reversals and access changes.</li><li>Retain and test independent backups.</li></ul>
+<h2>Move legacy private uploads</h2>
+<pre><code>python manage.py secure_private_uploads
+# After backup and verification of public/private paths:
+python manage.py secure_private_uploads --apply</code></pre>
+<p>The first command previews. Apply moves borrower/agent uploads to the private root, verifies identical existing copies and rejects unsafe linked paths or conflicting copies. Ensure the application user can read files and the backup process includes the private root. Test both new and legacy authenticated URLs afterwards.</p>
+<h2>Known historical exposure</h2>
+<p>Earlier project files <code>db.txt</code> and <code>restore_data.json</code> contained deployment secrets and sensitive records/password hashes. They were removed from the working source and private local copies were retained outside publishable packages. Earlier Git history and previously shared copies can still contain them.</p>
+<p>The hosted owner must rotate exposed database, Django and callback secrets, change reused passwords and assess affected account resets. Local source changes cannot rotate hosted credentials. Shared-history cleanup requires a coordinated repository maintenance process; deletion in a new commit alone does not invalidate a leaked secret.</p>
+<h2>Incident response</h2>
+<ol class="steps"><li>Record the incident time, affected accounts and evidence without circulating secrets.</li><li>Contain unauthorized access and preserve logs/source/database evidence.</li><li>Rotate affected credentials and disable compromised accounts through the appropriate system owner.</li><li>Reconcile any affected financial transactions.</li><li>Use the normal approval/reversal process for authorized corrections.</li><li>Management reviews required customer/authority communication and remediation.</li><li>Test the repaired access and recovery controls before returning to normal service.</li></ol>
+<h2>Support data minimization</h2>
+<p>Share route, timestamp, exception type, request/loan ID and sanitized logs with technical support. Remove passwords, provider payload secrets, identity documents and unnecessary personal data. Use synthetic records for training, screenshots and automated demonstrations.</p>
+</section>
+
+<section class="chapter" id="maintenance">
+<h1>31. Developer and maintenance handbook</h1>
+<h2>Repository layout</h2>
+<pre><code>apps/          Domain models, views, forms, services and tests
+config/        Settings, routing, WSGI/ASGI and isolated upload test settings
+templates/     Workspace, public pages, portal and document templates
+static/        Source CSS, JavaScript, images and logos
+deployment/    Hosted deployment and cumulative release instructions
+docs/manuals/  Role guides, complete handbook source and generated PDF
+manage.py      Django command entry point
+requirements.txt  Pinned application dependencies</code></pre>
+<h2>Data relationships</h2>
+<p>A portfolio has current/historical officer assignments and a permanent issuance register. Borrowers hold current ownership and a linked login. Loans retain borrower, originating agent, own portfolio, terms and related security/receipts. Receipts retain allocations and optionally a collector/collection relationship. Approval requests execute controlled operations. Reversal records link one source to its approved case and offset journals.</p>
+<p>Accounting entries use source identities, balanced lines and period validation. Assets and payroll runs retain their own line snapshots. Protected relationships preserve financial evidence. Consult <a href="#data-reference">Appendix C</a> for exact storage fields and deletion behavior.</p>
+<h2>Financial implementation rules</h2>
+<ul><li>Use Decimal values for money; validate positive finite inputs and cent precision.</li><li>Keep agreed loan terms separate from receipts and held customer funds.</li><li>Exclude pending, void and reversed effects from current financial totals.</li><li>Preserve original transaction evidence; correct through authorized offsets and replacement records.</li><li>Use atomic transactions and consistent lock ordering, commonly Loan before Payment.</li><li>Revalidate source state at execution time instead of trusting an old form preview.</li><li>Run external notifications after successful database commit where applicable.</li><li>Keep provider receipt reservation even after reversal.</li><li>Use operational source workflows for their journals.</li></ul>
+<h2>Performance patterns</h2>
+<p>Dashboard helpers annotate/group settled receipt and deposit totals and reuse fetched records. Portfolio overview calculates summaries without loading every register; detailed exports retain full data. Related officers/users and customer IDs are prefetched or selected together. Deposit totals separate collection/application/refund sums from independent transfer sums to avoid joined-row multiplication.</p>
+<p>When changing a template, inspect whether a property triggers database work per row. Prefer prepared view context and shared aggregate helpers. Compare query counts with representative large fixtures and verify values as well as speed. A faster total that multiplies deposits across receipts is incorrect.</p>
+<h2>Verification workflow</h2>
+<pre><code>python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test --settings=config.test_settings
+python manage.py test apps.core apps.accounts apps.loans \
+  apps.communication --settings=config.test_settings
+git diff --check</code></pre>
+<p>Use a separate database and in-memory upload storage for tests. MySQL installations may require a pre-created test database and explicit <code>DB_TEST_NAME</code>. SQLite cannot establish all row-lock/concurrency behavior; test financially sensitive concurrency on an isolated database of the deployed engine.</p>
+<h2>Meaningful regression coverage</h2>
+<p>Protect role/portfolio boundaries, private files, repayment component caps, partial-installment coverage, approval rollback, duplicate provider receipts, source snapshot changes, closed-period reversal rollback, statement reversal chronology and deposit transfer independence. UI verification should cover desktop/mobile, keyboard, both appearance modes and representative long names/biographies.</p>
+<h2>Read-only integrity audit</h2>
+<pre><code>python manage.py audit_financial_integrity \
+  --report backups/private/integrity-review.json
+# Useful for a check pipeline after accepted exceptions are addressed:
+python manage.py audit_financial_integrity --fail</code></pre>
+<p>The audit checks receipt component sums, loan component/balance consistency, excess settlements, collection/payment consistency, duplicate posted provider references and posted journal balance/source consistency. It uses record IDs rather than customer names in its report. It is an application check, not a complete forensic or native database corruption detector.</p>
+<h2>Historical allocation repair</h2>
+<pre><code># Preview only; keep all five management-deferred loans excluded.
+python manage.py repair_payment_allocations \
+  --exclude-loan 1688 --exclude-loan 2058 --exclude-loan 2683 \
+  --exclude-loan 2693 --exclude-loan 3084 \
+  --report backups/private/allocation-preview.json
+
+# Commit only after backup and approval of the preview:
+python manage.py repair_payment_allocations --apply \
+  --exclude-loan 1688 --exclude-loan 2058 --exclude-loan 2683 \
+  --exclude-loan 2693 --exclude-loan 3084 \
+  --report backups/private/allocation-applied.json</code></pre>
+<p>The repair preserves original receipt cash and adjusts derived allocations, holding excess as credit. It skips approved reversal evidence. Invalid schedules require source evidence; an apply attempt that encounters such a blocking record rolls back the transaction. Do not rerun a repair merely because it is documented: check the current audit and approved business need.</p>
+<h2>Safe changes and migration discipline</h2>
+<p>Review local work before editing, preserve existing user changes and keep secrets/data out of source packages. Generate migrations in development, inspect their effect, rehearse on a backup and commit them through the project's normal review process. Test source/schema compatibility and keep rollback instructions for financially material changes.</p>
+</section>
+
+<section class="chapter" id="troubleshooting">
+<h1>32. Troubleshooting and support procedures</h1>
+<h2>First diagnostic steps</h2>
+<ol class="steps"><li>Read the exact visible message and record the route/time/reference.</li><li>Check role, portfolio scope, active status and request outcome.</li><li>Check form errors and the first invalid tab.</li><li>Inspect the actual saved record before repeating a financial action.</li><li>An administrator checks audit history and sanitized server logs.</li><li>Reproduce using a controlled staging record where possible.</li></ol>
+<table><thead><tr><th>Symptom</th><th>Likely cause / response</th></tr></thead><tbody>
+<tr><td>Cannot sign in</td><td>Check username, active login, linked role and password. Use identity-verified reset; do not share an administrator account.</td></tr><tr><td>Agent sees no customers</td><td>Check employment is Active, portfolio active and current assignment exists. Historic originating-agent fields do not grant current access.</td></tr><tr><td>403 / 404 on a record</td><td>Confirm role/ownership and actual record ID. A scoped 404 can hide an unauthorized record; do not bypass it in the database.</td></tr><tr><td>Loan submission shows no new facility</td><td>Look in Loan Requests. The application may be Pending or Failed rather than Executed.</td></tr><tr><td>Own approval rejected</td><td>Ordinary staff require another reviewer. Reversals always require a different active administrator, including Management/superusers.</td></tr><tr><td>Payment does not reduce balance</td><td>Check pending/void/reversed state and whether it is merely a collection request. Verify actual funds and receipt allocation.</td></tr><tr><td>Overpayment validation</td><td>Review current balance and competing receipts. Do not inflate terms; historical excess treatment does not authorize new overpayment entry.</td></tr><tr><td>Loan blocked before repayment</td><td>Review disbursement/security eligibility. New required security may be incomplete.</td></tr><tr><td>Several receipts but loan still overdue</td><td>Receipt row count differs from paid installments. Compare applied money with the scheduled installment amount.</td></tr><tr><td>Reversal request blocked</td><td>Check settled/posted eligibility, a pending/completed reversal, valid source terms and downstream deposit/depreciation usage.</td></tr><tr><td>Reversal execution Failed</td><td>Read the case result: source may have changed, the current period may be closed or postings may fail validation. Financial writes roll back; submit a fresh reviewed request after correction.</td></tr><tr><td>Provider receipt already used</td><td>Inspect the existing reservation/linked collection. Reversed receipts remain reserved; do not reuse a genuine provider reference.</td></tr><tr><td>Accounting totals differ from operations</td><td>Check sync coverage, pending/credit/security classification, period cutoff and approval-dated offsets.</td></tr><tr><td>PDF fails or logo missing</td><td>Check WeasyPrint native libraries/fonts and readable approved logo. Inspect sanitized render error; statement resources are embedded.</td></tr><tr><td>Private upload 404</td><td>Check authenticated role, storage migration, file path and application-user read permission. Do not expose the directory publicly to fix it.</td></tr><tr><td>SMS/email missing</td><td>Check effective company/environment channel, valid sender/recipient, outbound access and logs. Console email does not send mail.</td></tr><tr><td>Static CSS/images 404</td><td>Run collectstatic, verify the specific static mapping and reload workers. Hard-refresh stale browser assets.</td></tr><tr><td>HTTPS redirect loop</td><td>Review trusted proxy HTTPS handling and forwarded headers. Enable trust only for the deployed trusted proxy.</td></tr><tr><td>MySQL access error</td><td>Check complete database name, host, user, password and service availability without printing credentials.</td></tr><tr><td>SQLite locked</td><td>Reduce simultaneous writers, close duplicate servers and inspect long transactions. Rehearse MySQL for sustained concurrency.</td></tr><tr><td>Changes not visible online</td><td>The local copy and hosted deployment are separate. Confirm the host received source/migrations/assets and its workers were reloaded.</td></tr><tr><td>TemplateDoesNotExist / NoReverseMatch</td><td>Confirm the intended checkout, template file, route namespace and running worker. Use the route reference for exact names.</td></tr><tr><td>Port already in use</td><td>Identify the existing process or run on a different local port, such as <code>python manage.py runserver 127.0.0.1:8001</code>.</td></tr>
+</tbody></table>
+<h2>Support ticket contents</h2>
+<p>Provide installation/release, route, timestamp/timezone, role, sanitized request/record reference, exact message, expected/actual behavior and steps to reproduce. Include a synthetic screenshot or sanitized excerpt only if it helps. State whether the record is Pending, Executed, Failed, Rejected, Cancelled or Reversed.</p>
+<h2>Escalation boundaries</h2>
+<p>Technical support resolves implementation/configuration issues. Management decides disputed terms, ownership, customer refunds and lending policy. Finance reconciles cash and ledger differences. The hosted account owner rotates hosted credentials and changes hosting configuration.</p>
+</section>
+
+<section class="chapter" id="management-review">
+<h1>33. Management decisions and release limits</h1>
+<h2>Five deferred historical loans</h2>
+<p>Management asked that the following records be skipped until their correct agreed repayment terms are decided. Their recorded schedules fall below principal. Keep them unchanged pending signed source evidence and an approved correction plan.</p>
+<table><thead><tr><th>Loan number</th><th>Recorded principal</th><th>Recorded schedule</th><th>Recorded total</th></tr></thead><tbody>
+<tr><td>1688</td><td>GHS 17,000.00</td><td>8 × GHS 1,000.00</td><td>GHS 8,000.00</td></tr><tr><td>2058</td><td>GHS 3,000.00</td><td>12 × GHS 210.00</td><td>GHS 2,520.00</td></tr><tr><td>2683</td><td>GHS 4,000.00</td><td>4 × GHS 340.00</td><td>GHS 1,360.00</td></tr><tr><td>2693</td><td>GHS 10,000.00</td><td>12 × GHS 525.00</td><td>GHS 6,300.00</td></tr><tr><td>3084</td><td>GHS 5,000.00</td><td>8 × GHS 525.00</td><td>GHS 4,200.00</td></tr>
+</tbody></table>
+<h2>Decision record</h2>
+<ol class="steps"><li>Locate signed agreement, disbursement evidence, approved amendments and receipt history.</li><li>Confirm principal and the correct installment count/amount or agreed total.</li><li>Management records its decision, reason, evidence and effective treatment.</li><li>Finance previews allocation, customer credit and ledger impact.</li><li>Back up, apply the approved correction through a reviewed process and rerun integrity checks.</li><li>Issue an explained statement to the customer if required by the company's process.</li></ol>
+<p>The local review repaired valid historical allocations using held-credit treatment while preserving cash evidence. The remaining flagged terms are intentional management exceptions, not permission to invent new schedules. A fresh audit may differ as new business is recorded; review current findings rather than treating a historic count as permanent.</p>
+<h2>Local versus hosted completion</h2>
+<p>This source/manual reflects local implementation. Hosted credentials, deployment, private-upload movement and historical correction data require work in the hosted environment. Do not assume the hosted database matches the local copy. Replay only reviewed migration/assignment/correction operations with target-specific identity checks and backups.</p>
+<h2>Explicit functional limits</h2>
+<ul><li>No live payment initiation/charge adapter in this release.</li><li>No payment-success simulation workflow.</li><li>No automatic customer-credit refund or general wallet application screen.</li><li>No direct source reversal for loan disbursement, asset disposal or settled/partially settled documents.</li><li>No guarantee of unattended marketing/backup scheduling without an installed operating process.</li><li>No exchange-rate conversion when currency labels change.</li><li>No remote cross-company credit check in the standalone helper.</li><li>No automatic removal of secrets from earlier shared Git history.</li></ul>
+</section>
+
+<section class="chapter" id="glossary">
+<h1>34. Glossary and financial definitions</h1>
+<table><thead><tr><th>Term</th><th>Meaning in this project</th></tr></thead><tbody>
+<tr><td>Agent</td><td>Workforce model; field agents operate assigned portfolios. The model also stores non-field employee roles.</td></tr><tr><td>Applied repayment</td><td>Settled receipt cash less held customer credit.</td></tr><tr><td>Approval request</td><td>Recorded proposed action with submitter, payload, reviewer, decision and execution status.</td></tr><tr><td>Borrower</td><td>Customer profile with permanent/legacy reference, current portfolio and optional portal account.</td></tr><tr><td>Carry-forward</td><td>Movement of held security between eligible loans of the same borrower.</td></tr><tr><td>Collection</td><td>Payment-request/reconciliation tracking record; not necessarily a settled receipt.</td></tr><tr><td>Customer credit</td><td>Historical excess cash held as a customer liability rather than loan income.</td></tr><tr><td>Expected repayment</td><td>Expected installment count multiplied by installment amount.</td></tr><tr><td>Maker / checker</td><td>Person requesting an operation and person reviewing it.</td></tr><tr><td>Offset journal</td><td>Equal opposing debits/credits preserving the original posting and reversing its effect.</td></tr><tr><td>PAR30</td><td>Portfolio principal exposure on loans over 30 days overdue divided by eligible total disbursed principal outstanding.</td></tr><tr><td>Pending payment</td><td>Receipt/request awaiting confirmation; excluded from settled repayment totals.</td></tr><tr><td>Permanent customer ID</td><td>SF + issuing portfolio number + four-digit customer sequence; retained across later ownership changes.</td></tr><tr><td>Portfolio</td><td>Current loan/customer book and its officer access assignments.</td></tr><tr><td>Principal</td><td>Recorded loan capital.</td></tr><tr><td>Reconciliation</td><td>Matching application records to authoritative cash/provider/bank evidence and resolving differences.</td></tr><tr><td>Reversal</td><td>Independently approved correction removing a source's financial effect while retaining original evidence.</td></tr><tr><td>ROIC</td><td>The application's agreed return component: expected repayment less principal, floored at zero.</td></tr><tr><td>Security application</td><td>Approved use of held security to reduce outstanding loan principal.</td></tr><tr><td>Security deposit</td><td>Customer funds held separately as lending security.</td></tr><tr><td>Source key</td><td>Stable operational identifier used to prevent duplicate active accounting postings.</td></tr><tr><td>Standalone</td><td>Single company and operational database; no active tenant/subscription lifecycle.</td></tr><tr><td>Trial balance</td><td>Ledger debit/credit totals by account; balance alone does not prove correct classification.</td></tr><tr><td>Upsert</td><td>Import mode that creates new records and intentionally updates matched identifiers.</td></tr><tr><td>Void</td><td>Record retained but excluded from active financial treatment; settled receipts require the approved reversal process.</td></tr></tbody></table>
+</section>
+
+<section class="chapter" id="workflow-reference">
+<h1>Appendix A. Workflow and control reference</h1>
+<h2>Lifecycle at a glance</h2>
+<svg class="diagram" viewBox="0 0 760 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Loan and reversal workflows">
+<g font-family="DejaVu Sans" text-anchor="middle" font-size="12"><rect x="5" y="5" width="175" height="55" rx="6" fill="#b30036"/><text x="92" y="37" fill="white">Application submitted</text><rect x="198" y="5" width="175" height="55" rx="6" fill="#fff0f5"/><text x="286" y="37">Loan request reviewed</text><rect x="390" y="5" width="175" height="55" rx="6" fill="#fff0f5"/><text x="478" y="37">Approved loan created</text><rect x="582" y="5" width="173" height="55" rx="6" fill="#fff0f5"/><text x="668" y="27">Security satisfied</text><text x="668" y="46">Ready for repayments</text><text x="189" y="36">→</text><text x="381" y="36">→</text><text x="573" y="36">→</text><rect x="5" y="99" width="240" height="55" rx="6" fill="#b30036"/><text x="125" y="131" fill="white">Receipt independently verified</text><rect x="262" y="99" width="240" height="55" rx="6" fill="#fff0f5"/><text x="382" y="131">Applied repayment / credit recorded</text><rect x="519" y="99" width="236" height="55" rx="6" fill="#fff0f5"/><text x="637" y="131">Statement and ledger checked</text><text x="253" y="130">→</text><text x="510" y="130">→</text><rect x="5" y="197" width="240" height="55" rx="6" fill="#b30036"/><text x="125" y="229" fill="white">Recorded error: request reversal</text><rect x="262" y="197" width="240" height="55" rx="6" fill="#fff0f5"/><text x="382" y="218">Different administrator reviews</text><text x="382" y="238">Source rechecked under lock</text><rect x="519" y="197" width="236" height="55" rx="6" fill="#fff0f5"/><text x="637" y="218">Atomic reversal + current offset</text><text x="637" y="238">Original evidence retained</text><text x="253" y="228">→</text><text x="510" y="228">→</text></g></svg>
+<h2>Decision matrix</h2>
+<table><thead><tr><th>Situation</th><th>Correct route</th></tr></thead><tbody>
+<tr><td>New lending request</td><td>Loan application → Loan Requests → eligible review/execution.</td></tr><tr><td>Unverified payment</td><td>Pending Payments / reconciliation, using actual receipt evidence.</td></tr><tr><td>Incorrect settled receipt</td><td>Source reversal request → different administrator → verified result.</td></tr><tr><td>Customer genuinely repays too much now</td><td>New receipt form rejects excess. Resolve the real cash difference with finance; do not alter the agreed schedule.</td></tr><tr><td>Historical valid excess receipt</td><td>Reviewed historical allocation treatment, held as customer credit.</td></tr><tr><td>Real security refund</td><td>Deposit refund action and applicable approval/evidence.</td></tr><tr><td>Erroneous security refund record</td><td>Deposit refund reversal with independent administrator.</td></tr><tr><td>Unpaid payroll no longer needed</td><td>Normal payroll cancellation.</td></tr><tr><td>Paid payroll recorded incorrectly</td><td>Paid-run reversal; separately reconcile actual salary cash.</td></tr><tr><td>Operational ledger posting incorrect</td><td>Start at its source workflow; do not manually detach journal history.</td></tr><tr><td>Disputed loan agreement</td><td>Management source review, documented terms decision and approved correction plan.</td></tr>
+</tbody></table>
+<h2>Reconciliation record template</h2>
+<table class="checklist"><thead><tr><th>Field</th><th>Record</th></tr></thead><tbody>
+<tr><td>Period / cutoff</td><td>____________________________________________</td></tr><tr><td>Prepared by / date</td><td>____________________________________________</td></tr><tr><td>Reviewed by / date</td><td>____________________________________________</td></tr><tr><td>Receipt cash</td><td>____________________________________________</td></tr><tr><td>Applied repayment / credit</td><td>____________________________________________</td></tr><tr><td>Security held / movements</td><td>____________________________________________</td></tr><tr><td>Bank / cash evidence</td><td>____________________________________________</td></tr><tr><td>Ledger / offsets</td><td>____________________________________________</td></tr><tr><td>Exceptions / references</td><td>____________________________________________</td></tr><tr><td>Backup and verification</td><td>____________________________________________</td></tr>
+</tbody></table>
+</section>
+
+<section class="chapter" id="route-reference">
+<h1>Appendix B. Application routes</h1>
+<p>Generated from the non-debug root URL configuration. Replace <code>&lt;int:…&gt;</code> and other placeholders with the actual permitted reference. A route's existence does not grant access or imply GET can execute a mutation. Callback endpoints follow callback authentication; interactive financial mutations use protected form actions.</p>
+<p>The Django admin has its own generated route tree under <code>/admin/</code> and is omitted from this table. Development static/debug routes are also omitted. Private media routes are intentionally authenticated.</p>
+{{ROUTE_REFERENCE}}
+</section>
+
+<section class="chapter" id="data-reference">
+<h1>Appendix C. Complete application data dictionary</h1>
+<p>This reference is generated from application model definitions without querying an installation database. It lists storage fields, relationships, choices and declared validation metadata. It does not include actual customer records or secret values.</p>
+<p>“Non-null” describes database storage; “blank allowed” describes model form validation. Custom forms/business services can impose stronger requirements. Automatic primary keys/timestamps and non-editable fields do not require manual entry despite their model blank flag. JSON settings hold configured structures; foreign-key deletion rules govern removal of the referenced record.</p>
+<p>Derived properties such as expected repayment, held security and outstanding balance are explained in the financial chapters rather than listed as database columns. Django authentication/session built-in tables and automatically generated many-to-many intermediary tables are outside this application-field listing.</p>
+{{DATA_DICTIONARY}}
+</section>
+
+<section class="chapter" id="import-reference">
+<h1>Appendix D. Import sample columns</h1>
+<p>The following lists are taken from each module's current sample-column constants. Download the format-specific sample from the active import screen and use its help text for required fields, matching keys and permitted values. These lists describe file structure, not permission to overwrite historical records.</p>
+{{IMPORT_COLUMNS}}
+<h2>Formatting rules</h2>
+<ul><li>Keep identifiers as text in spreadsheets so leading zeros and permanent references are preserved.</li><li>Use ISO dates such as <code>2026-10-12</code> where the module expects dates.</li><li>Use plain numeric money values such as <code>1200.00</code>, without currency symbols or grouping commas unless the parser explicitly supports them.</li><li>Use model choice codes or sample labels exactly as instructed.</li><li>Keep required related references valid; do not insert a display name where a module expects an ID/code.</li><li>Preserve CSV quoting around values containing commas and line breaks.</li><li>Retain the approved source file and result report in protected storage.</li></ul>
+</section>
+
+<section class="chapter" id="implementation-reference">
+<h1>Appendix E. Source and command reference</h1>
+<h2>Primary implementation locations</h2>
+<table><thead><tr><th>Concern</th><th>Source</th></tr></thead><tbody>
+<tr><td>Configuration / routing</td><td><code>config/settings.py</code>, <code>config/urls.py</code>, app <code>urls.py</code> files.</td></tr><tr><td>Role and scope</td><td><code>apps/core/roles.py</code>, <code>apps/loans/portfolios.py</code>.</td></tr><tr><td>Models</td><td><code>apps/*/models.py</code> and checked-in migrations.</td></tr><tr><td>Approval engine</td><td><code>apps/core/approvals.py</code>, <code>apps/core/views.py</code>.</td></tr><tr><td>Reversal engine / interface</td><td><code>apps/core/reversals.py</code>, <code>apps/core/reversal_views.py</code>, <code>templates/core/</code>.</td></tr><tr><td>Loan operations / collection</td><td><code>apps/loans/views.py</code>, <code>apps/loans/services.py</code>.</td></tr><tr><td>Receipt allocation / posting</td><td><code>apps/loans/payment_allocations.py</code>, <code>apps/accounting/repayments.py</code>.</td></tr><tr><td>Statement data / rendering</td><td><code>apps/loans/statements.py</code>, <code>apps/loans/statement_views.py</code>, <code>templates/statements/</code>.</td></tr><tr><td>Portfolio reporting</td><td><code>apps/loans/portfolio_views.py</code>, <code>portfolio_analytics.py</code>, <code>portfolio_exports.py</code>.</td></tr><tr><td>Reports</td><td><code>apps/loans/reports.py</code>, accounting report helpers.</td></tr><tr><td>Payroll calculations</td><td><code>apps/accounts/views.py</code>, company statutory helpers/settings.</td></tr><tr><td>Accounting sync / reports</td><td><code>apps/accounting/views.py</code>, <code>apps/accounting/models.py</code>.</td></tr><tr><td>Asset lifecycle</td><td><code>apps/assets/views.py</code>, <code>apps/assets/models.py</code>.</td></tr><tr><td>Private files</td><td><code>apps/core/private_media.py</code>, <code>secure_private_uploads</code> command.</td></tr><tr><td>Backup formats</td><td><code>apps/core/db_backups.py</code>, company backup views.</td></tr><tr><td>Public content / channels</td><td><code>apps/company/models.py</code>, <code>views.py</code>, <code>messaging.py</code>, communication views.</td></tr><tr><td>Management card</td><td><code>templates/website/includes/management_card.html</code>, shared website base CSS.</td></tr><tr><td>Workspace styling</td><td><code>templates/base.html</code>, navigation include, <code>static/css/</code>, <code>static/js/</code>.</td></tr>
+</tbody></table>
+<h2>Maintenance command safety</h2>
+<table><thead><tr><th>Command</th><th>Default effect</th></tr></thead><tbody>
+<tr><td><code>check</code>, <code>showmigrations</code>, <code>migrate --plan</code></td><td>Inspection; no schema mutation.</td></tr><tr><td><code>migrate</code></td><td>Changes schema and runs checked-in data migrations.</td></tr><tr><td><code>collectstatic --noinput</code></td><td>Writes collected static files.</td></tr><tr><td><code>audit_financial_integrity</code></td><td>Read-only application audit; optional private report and failure exit.</td></tr><tr><td><code>repair_payment_allocations</code></td><td>Preview; <code>--apply</code> commits reviewed derived allocations/ledger corrections.</td></tr><tr><td><code>secure_private_uploads</code></td><td>Preview; <code>--apply</code> moves legacy files into private storage.</td></tr><tr><td><code>portfolio_customers --import FILE</code></td><td>Rollback-only validation; <code>--apply</code> commits assignments.</td></tr><tr><td><code>portfolio_customers --export FILE</code></td><td>Writes a confidential assignment CSV.</td></tr><tr><td><code>import_legacy_data --dry-run</code></td><td>Transactional rehearsal, rolled back.</td></tr><tr><td><code>import_legacy_data</code></td><td>Commits imported legacy records; use after rehearsal and backup.</td></tr><tr><td><code>test</code></td><td>Creates/uses a separate test database; verify isolation before running.</td></tr><tr><td><code>build_complete_manual.py</code></td><td>Writes documentation artifacts; reference refresh forbids database connections.</td></tr>
+</tbody></table>
+<h2>Related repository documentation</h2>
+<p><code>README.md</code> provides the quick start. <code>PROJECT_DOCUMENTATION.md</code> describes the broader project. Role guides and the shorter dashboard operations manual remain under <code>docs/manuals/</code>. For host-specific implementation details, read <code>deployment/PYTHONANYWHERE.md</code>, <code>deployment/PORTFOLIO_UPDATE.md</code> and <code>deployment/SECURITY_UPDATE.md</code> alongside the current source release.</p>
+<h2>Document acceptance checklist</h2>
+<p>Before distributing a later edition, verify chapter order, generated reference freshness, internal links, PDF bookmarks, table wrapping, page numbering, commands, financial examples and unresolved management items. Keep the editable source and build manifest with the PDF. Update workflow instructions when behavior changes; reference generation alone cannot document a new business feature.</p>
+</section>

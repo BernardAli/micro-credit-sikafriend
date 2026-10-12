@@ -4,7 +4,7 @@ from django import forms
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Prefetch, Q
 from django.http import HttpResponse, HttpResponseBadRequest, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -12,7 +12,7 @@ from django.utils import timezone
 from apps.accounts.models import Agent
 from apps.core.roles import admin_required, agent_or_admin_required, get_user_role
 from apps.core.pagination import paginate_items
-from .models import Borrower, Portfolio
+from .models import Borrower, Loan, Portfolio, PortfolioAssignment
 from .portfolios import assign_customer, set_portfolio_agents
 from .portfolio_analytics import PortfolioPeriodForm, visible_portfolios, portfolio_snapshot
 from .portfolio_exports import export_report, make_report, summary_row
@@ -42,7 +42,7 @@ class PortfolioForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance.pk:
-            self.fields["agents"].initial = self.instance.assignments.filter(ended_at__isnull=True).values_list("agent_id", flat=True)
+            self.fields["agents"].initial = [assignment.agent_id for assignment in self.instance.assignments.all() if assignment.ended_at is None]
 
 
 @agent_or_admin_required
@@ -64,7 +64,7 @@ def portfolio_list(request):
         portfolios = portfolios.filter(assignments__agent_id=officer, assignments__ended_at__isnull=True).distinct()
     is_admin = get_user_role(request.user) == "admin"
     snapshot = portfolio_snapshot(portfolios, form.cleaned_data["date_from"], form.cleaned_data["date_to"],
-                                  include_unassigned=is_admin and not (q or state or officer), include_private_history=is_admin)
+                                  include_unassigned=is_admin and not (q or state or officer), include_private_history=is_admin, summary_only=True)
     if request.GET.get("export"):
         return _export(snapshot, request)
     rows = [{**book, "summary": summary_row(book)} for pk, book in snapshot["books"].items() if pk is not None]
@@ -141,7 +141,9 @@ def portfolio_detail(request, pk):
 
 @admin_required
 def portfolio_update(request, pk):
-    portfolio = get_object_or_404(Portfolio, pk=pk)
+    portfolio = get_object_or_404(Portfolio.objects.prefetch_related(Prefetch(
+        "assignments", queryset=PortfolioAssignment.objects.select_related("agent", "assigned_by"),
+    )), pk=pk)
     form = PortfolioForm(request.POST or None, instance=portfolio)
     if request.method == "POST" and form.is_valid():
         with transaction.atomic():
@@ -153,14 +155,17 @@ def portfolio_update(request, pk):
         messages.success(request, f"Portfolio {portfolio.number} updated.")
         return redirect("loans:portfolio_detail", pk=portfolio.pk)
     return render(request, "loans/portfolios/update.html", {
-        "portfolio": portfolio, "form": form, "history": portfolio.assignments.select_related("agent", "assigned_by"),
+        "portfolio": portfolio, "form": form, "history": portfolio.assignments.all(),
         "title": f"Manage {portfolio}",
     })
 
 
 @admin_required
 def portfolio_customers(request):
-    customers = Borrower.objects.select_related("portfolio").prefetch_related("loans__agent_name")
+    history = Loan.objects.select_related("agent_name").only("pk", "borrower_id", "agent_name_id", "created_at", "agent_name__id", "agent_name__name")
+    customers = Borrower.objects.select_related("portfolio").only(
+        "pk", "full_name", "borrower_id", "legacy_borrower_id", "portfolio_id", "portfolio__id", "portfolio__number", "portfolio__name",
+    ).prefetch_related(Prefetch("loans", queryset=history, to_attr="portfolio_loan_history"))
     q = (request.GET.get("q") or "").strip()
     if q:
         customers = customers.filter(Q(full_name__icontains=q) | Q(borrower_id__icontains=q) | Q(legacy_borrower_id__icontains=q))
@@ -198,8 +203,8 @@ def portfolio_export(request):
     response["Content-Disposition"] = 'attachment; filename="customer_portfolios.csv"'
     writer = csv.writer(response)
     writer.writerow(["borrower_pk", "legacy_reference", "full_name", "portfolio_number", "customer_id"])
-    for customer in Borrower.objects.select_related("portfolio").order_by("pk"):
-        writer.writerow([customer.pk, customer.legacy_borrower_id or customer.borrower_id, customer.full_name,
-                         customer.portfolio.number if customer.portfolio_id else "",
-                         customer.borrower_id if hasattr(customer, "identity") else ""])
+    customers = Borrower.objects.order_by("pk").values("pk", "legacy_borrower_id", "borrower_id", "full_name", "portfolio__number", "identity__customer_id")
+    for customer in customers.iterator():
+        writer.writerow([customer["pk"], customer["legacy_borrower_id"] or customer["borrower_id"], customer["full_name"],
+                         customer["portfolio__number"] or "", customer["borrower_id"] if customer["identity__customer_id"] else ""])
     return response

@@ -702,6 +702,10 @@ class LoanCreateForBorrowerForm(forms.ModelForm):
 
 
 class PaymentCreateForm(forms.ModelForm):
+    def __init__(self, *args, loan=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.loan = loan
+
     payment_date = forms.DateField(
         widget=forms.DateInput(
             attrs={"type": "date", "class": "form-control"},
@@ -724,6 +728,8 @@ class PaymentCreateForm(forms.ModelForm):
             raise forms.ValidationError("Payment amount is required.")
         if amount <= Decimal("0.00"):
             raise forms.ValidationError("Payment amount must be greater than 0.")
+        if self.loan is not None and amount > self.loan.balance_amount:
+            raise forms.ValidationError(f"Payment cannot exceed the outstanding balance of {self.loan.balance_amount:,.2f}.")
         return amount
 
 
@@ -792,7 +798,7 @@ class SecurityDepositActionForm(forms.Form):
         if action == "DEFAULT_APPLICATION":
             if self.deposit.loan.status != "DEFAULT":
                 self.add_error("action", "A deposit can be applied only to a defaulted loan.")
-            elif amount > min(self.deposit.held_amount, self.deposit.loan.balance_amount):
+            elif amount > min(self.deposit.held_amount, self.deposit.loan.principal_outstanding):
                 self.add_error("amount", "Application cannot exceed the held deposit or loan balance.")
         if action == "CARRY_FORWARD":
             source = cleaned.get("source_deposit")

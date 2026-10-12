@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load chart_data %}
 
 {% load currency %}
 
@@ -11,57 +12,6 @@
     gap:18px;
   }
 
-  .hero-card{
-    position:relative;
-    overflow:hidden;
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:30px;
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
-      var(--primary-2) 36%,
-      var(--primary) 72%,
-      var(--gold-2) 100%
-    );
-    color:#fff;
-    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
-  }
-
-  [data-theme="dark"] .hero-card{
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
-      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
-      color-mix(in srgb,var(--primary) 60%,#000) 72%,
-      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
-    );
-    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
-  }
-
-  .hero-card::before{
-    content:"";
-    position:absolute;
-    top:-70px;
-    right:-60px;
-    width:300px;
-    height:300px;
-    border-radius:50%;
-    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
-    pointer-events:none;
-  }
-
-  .hero-card::after{
-    content:"";
-    position:absolute;
-    left:28%;
-    bottom:-60px;
-    width:380px;
-    height:220px;
-    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
-    pointer-events:none;
-  }
-
-
-  .hero-inner{position:relative;z-index:1;padding:28px}
-
   .hero-wrap{
     display:flex;
     align-items:flex-start;
@@ -69,10 +19,6 @@
     gap:16px;
     flex-wrap:wrap;
   }
-
-  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
-
-  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
 
   .hero-meta{
     margin-top:8px;
@@ -107,34 +53,9 @@
     flex-wrap:wrap;
   }
 
-  .btn-soft{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    padding:10px 16px;
-    border-radius:999px;
-    font-weight:800;
-    text-decoration:none;
-    border:1px solid var(--border);
-    background:var(--panel-strong);
-    color:var(--text);
-    box-shadow:0 10px 24px rgba(26,31,20,.08);
-    transition:all .16s ease;
-  }
-
   .btn-soft:hover{
     color:var(--text);
     transform:translateY(-1px);
-  }
-
-  .btn-soft-primary{
-    background:var(--primary);
-    color:#fff;
-    border-color:var(--primary);
-  }
-
-  .btn-soft-primary:hover{
-    color:#fff;
   }
 
   .metrics-grid-4{
@@ -156,11 +77,7 @@
   }
 
   .stat-card{
-    border:1px solid var(--border);
-    border-radius:22px;
-    background:var(--panel);
-    padding:18px;
-    box-shadow:0 18px 45px rgba(26,31,20,.05);
+
     min-height:132px;
     transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
   }
@@ -210,9 +127,7 @@
 
   .tabs-title{
     margin:0;
-    font-size:18px;
-    font-weight:900;
-    color:var(--text);
+
   }
 
   .tabs-sub{
@@ -233,10 +148,7 @@
     border:1px solid var(--border);
     background:var(--panel-strong);
     color:var(--text-2);
-    border-radius:999px;
-    padding:10px 14px;
-    font-size:13px;
-    font-weight:800;
+
     cursor:pointer;
     transition:all .16s ease;
     box-shadow:0 8px 20px rgba(26,31,20,.04);
@@ -246,13 +158,6 @@
     transform:translateY(-1px);
     border-color:rgba(58,90,30,.16);
     background:rgba(58,90,30,.05);
-  }
-
-  .tab-btn.active{
-    color:var(--primary-2);
-    background:rgba(58,90,30,.10);
-    border-color:rgba(58,90,30,.18);
-    box-shadow:0 10px 26px rgba(58,90,30,.08);
   }
 
   .tab-panels{
@@ -274,10 +179,7 @@
   }
 
   .section-card{
-    border:1px solid var(--border);
-    border-radius:24px;
-    background:var(--panel-strong);
-    box-shadow:0 20px 50px rgba(26,31,20,.05);
+
     overflow:hidden;
   }
 
@@ -287,9 +189,7 @@
 
   .section-title{
     margin:0;
-    font-size:18px;
-    font-weight:900;
-    color:var(--text);
+
   }
 
   .section-sub{
@@ -370,13 +270,7 @@
     display:inline-flex;
     align-items:center;
     gap:6px;
-    padding:6px 10px;
-    border-radius:999px;
-    border:1px solid var(--border);
-    background:var(--panel-strong);
-    font-size:12px;
-    font-weight:800;
-    color:var(--text-2);
+
   }
 
   .chip-blue{ background:rgba(46,92,138,.08); color:var(--info); border-color:rgba(46,92,138,.18); }
@@ -384,7 +278,7 @@
   .chip-amber{ background:rgba(245,158,11,.10); color:var(--warning); border-color:rgba(245,158,11,.16); }
   .chip-slate{ background:rgba(100,116,139,.08); color:var(--muted); border-color:var(--border); }
   .chip-red{ background:rgba(220,38,38,.08); color:var(--danger); border-color:rgba(220,38,38,.14); }
-  .chip-violet{ background:rgba(124,58,237,.08); color:#8b5cf6; border-color:rgba(124,58,237,.14); }
+  .chip-violet{ background:rgba(124,58,237,.08); color:var(--violet); border-color:rgba(124,58,237,.14); }
 
   .soft-form{
     display:grid;
@@ -482,7 +376,6 @@
 
   @media (max-width: 640px){
     .metrics-grid-4{ grid-template-columns: 1fr; }
-    .hero-title{ font-size:24px; }
     .stat-value{ font-size:22px; }
     .tab-nav{ display:grid; grid-template-columns:1fr 1fr; }
   }
@@ -514,7 +407,7 @@
         <div class="hero-actions">
           <a class="btn-soft" href="{% url 'loans:borrower_detail' loan.borrower.id %}">Back to Borrower</a>
           <a class="btn-soft" href="{% url 'loans:security_deposit' loan.id %}">Security Deposit</a>
-          <a class="btn-soft btn-soft-primary" href="{% url 'loans:loan_statement' loan.id %}">View Statement</a>
+          <a class="btn-soft btn-soft-primary" href="{% url 'loans:loan_statement' loan.id %}" target="_blank" rel="noopener">Print Loan Statement</a>
         </div>
       </div>
     </div>
@@ -573,6 +466,7 @@
           <div class="stat-card">
             <div class="stat-label">Principal Paid</div>
             <div class="stat-value">{{ loan.total_principal_paid|ghs }}</div>
+            {% if loan.total_customer_credit %}<div class="stat-sub">Customer credit held: {{ loan.total_customer_credit|ghs }}</div>{% endif %}
             <div class="stat-sub">Recovered principal component</div>
           </div>
 
@@ -839,7 +733,7 @@
         <section class="section-card">
           <div class="section-head">
             <h3 class="section-title">Payments</h3>
-            <div class="section-sub">History of non-void receipts with principal and ROIC allocation split</div>
+            <div class="section-sub">Receipt history with original allocations and approved reversal records</div>
           </div>
 
           <div class="section-body">
@@ -851,6 +745,7 @@
                     <div class="payment-meta">
                       {% if p.reference %}Ref: {{ p.reference }} · {% endif %}
                       Posted: {{ p.created_at|date:"d/m/Y H:i" }}
+                      {% if p.reversal_id %}<br>Reversed {{ p.reversal.effective_date|date:"d/m/Y" }} · {{ p.reversal.reference }} · Approved by {{ p.reversal.approved_by }}{% elif p.is_pending %} · Pending verification{% endif %}
                     </div>
                   </div>
                 </div>
@@ -859,11 +754,14 @@
                   <span class="chip chip-violet">Category: {{ loan_category_label|default:loan.get_loan_category_display }}</span>
                   <span class="chip chip-green">Principal Paid: {{ p.principal_paid|ghs }}</span>
                   <span class="chip chip-amber">ROIC Paid: {{ p.roic_paid|ghs }}</span>
+                  {% if p.customer_credit %}<span class="chip">Customer Credit Held: {{ p.customer_credit|ghs }}</span>{% endif %}
                 </div>
 
                 {% if p.note %}
                   <div class="payment-meta" style="margin-top:8px;">{{ p.note }}</div>
                 {% endif %}
+                {% if p.reversal_id %}<div class="payment-meta">{{ p.reversal.reason }} · This receipt is excluded from collections and the current loan balance.</div>{% endif %}
+                {% if user_role == 'admin' or user_role == 'agent' %}<div class="chip-row">{% if p.reversal_id %}<a class="btn" href="{% url 'core:reversal_detail' p.reversal.approval_id %}">View reversal</a>{% elif not p.is_pending %}<a class="btn" href="{% url 'core:reversal_request' 'PAYMENT' p.pk %}">Request reversal</a>{% endif %}</div>{% endif %}
               </div>
             {% empty %}
               <div class="muted">No payments recorded yet.</div>
@@ -913,17 +811,17 @@
     });
   })();
 
-  const paymentDates = {{ chart_payment_dates|safe }};
-  const paymentAmounts = {{ chart_payment_amounts|safe }};
-  const principalPaidSeries = {{ chart_principal_paid_series|safe }};
-  const roicPaidSeries = {{ chart_roic_paid_series|safe }};
-  const cumulativeTotal = {{ chart_cumulative_total|safe }};
-  const cumulativePrincipal = {{ chart_cumulative_principal|safe }};
-  const cumulativeRoic = {{ chart_cumulative_roic|safe }};
-  const allocationBreakdown = {{ chart_allocation_breakdown|safe }};
-  const outstandingBreakdown = {{ chart_outstanding_breakdown|safe }};
+  const paymentDates = {{ chart_payment_dates|json_js }};
+  const paymentAmounts = {{ chart_payment_amounts|json_js }};
+  const principalPaidSeries = {{ chart_principal_paid_series|json_js }};
+  const roicPaidSeries = {{ chart_roic_paid_series|json_js }};
+  const cumulativeTotal = {{ chart_cumulative_total|json_js }};
+  const cumulativePrincipal = {{ chart_cumulative_principal|json_js }};
+  const cumulativeRoic = {{ chart_cumulative_roic|json_js }};
+  const allocationBreakdown = {{ chart_allocation_breakdown|json_js }};
+  const outstandingBreakdown = {{ chart_outstanding_breakdown|json_js }};
 
-  const paymentTrendChart = echarts.init(document.getElementById('paymentTrendChart'));
+  const paymentTrendChart = SikaCharts.init(document.getElementById('paymentTrendChart'));
   paymentTrendChart.setOption({
     tooltip: { trigger: 'axis' },
     grid: { left: 45, right: 20, top: 30, bottom: 50 },
@@ -940,7 +838,7 @@
     }]
   });
 
-  const paymentAllocationChart = echarts.init(document.getElementById('paymentAllocationChart'));
+  const paymentAllocationChart = SikaCharts.init(document.getElementById('paymentAllocationChart'));
   paymentAllocationChart.setOption({
     tooltip: { trigger: 'item' },
     legend: { bottom: 0 },
@@ -951,7 +849,7 @@
     }]
   });
 
-  const cumulativeRecoveryChart = echarts.init(document.getElementById('cumulativeRecoveryChart'));
+  const cumulativeRecoveryChart = SikaCharts.init(document.getElementById('cumulativeRecoveryChart'));
   cumulativeRecoveryChart.setOption({
     tooltip: { trigger: 'axis' },
     legend: { bottom: 0 },
@@ -984,7 +882,7 @@
     ]
   });
 
-  const outstandingBreakdownChart = echarts.init(document.getElementById('outstandingBreakdownChart'));
+  const outstandingBreakdownChart = SikaCharts.init(document.getElementById('outstandingBreakdownChart'));
   outstandingBreakdownChart.setOption({
     tooltip: { trigger: 'item' },
     legend: { bottom: 0 },

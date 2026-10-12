@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from decimal import Decimal
+from apps.core.private_media import private_upload_storage
+from apps.core.models import ReversibleTransaction
 
 
 
@@ -120,9 +122,9 @@ class Agent(models.Model):
     )
     notes = models.TextField(blank=True)
 
-    photo = models.ImageField(upload_to="agents/photos/", blank=True, null=True)
-    ghana_card_front = models.ImageField(upload_to="agents/ghana_cards/front/", blank=True, null=True)
-    ghana_card_back = models.ImageField(upload_to="agents/ghana_cards/back/", blank=True, null=True)
+    photo = models.ImageField(upload_to="agents/photos/", storage=private_upload_storage, blank=True, null=True)
+    ghana_card_front = models.ImageField(upload_to="agents/ghana_cards/front/", storage=private_upload_storage, blank=True, null=True)
+    ghana_card_back = models.ImageField(upload_to="agents/ghana_cards/back/", storage=private_upload_storage, blank=True, null=True)
 
     ghana_card_number = models.CharField(max_length=30, unique=True, null=True, blank=True)
     group_name = models.CharField(max_length=150, blank=True)
@@ -211,7 +213,13 @@ class PayrollAdjustment(models.Model):
         return f"{self.employee.name} - {self.label}"
 
 
-class PayrollRun(models.Model):
+class PayrollRun(ReversibleTransaction):
+    def save(self, *args, **kwargs):
+        if self.pk and self.status != "PAID" and type(self).objects.filter(pk=self.pk, status="PAID").exists():
+            from django.core.exceptions import ValidationError
+            raise ValidationError("A paid payroll run requires an approved reversal before cancellation.")
+        return super().save(*args, **kwargs)
+
     title = models.CharField(max_length=160)
     period_start = models.DateField()
     period_end = models.DateField()
@@ -263,8 +271,8 @@ class PayrollRun(models.Model):
 
 
 class PayrollLine(models.Model):
-    run = models.ForeignKey(PayrollRun, on_delete=models.CASCADE, related_name="lines")
-    employee = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="payroll_lines")
+    run = models.ForeignKey(PayrollRun, on_delete=models.PROTECT, related_name="lines")
+    employee = models.ForeignKey(Agent, on_delete=models.PROTECT, related_name="payroll_lines")
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default="BANK")
     base_salary = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     fixed_allowances = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))

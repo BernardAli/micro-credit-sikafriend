@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from apps.core.financial_admin import FinancialEvidenceAdmin
 
 from .models import Agent, PayrollAdjustment, PayrollLine, PayrollRun
 
@@ -238,7 +239,7 @@ class PayrollLineInline(admin.TabularInline):
 
 
 @admin.register(PayrollRun)
-class PayrollRunAdmin(admin.ModelAdmin):
+class PayrollRunAdmin(FinancialEvidenceAdmin):
     list_display = ("title", "period_start", "period_end", "pay_date", "status", "created_by", "created_at")
     list_filter = ("status", "include_active_only", "include_commissions", "include_loan_recovery")
     search_fields = ("title",)

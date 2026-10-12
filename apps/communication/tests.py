@@ -231,8 +231,8 @@ class HubtelUSSDTests(StandaloneDataTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Balance: GHS 960.00.")
-        self.assertContains(response, "Paid: 1/10 installments.")
-        self.assertContains(response, "Remaining: 9.")
+        self.assertContains(response, "Paid: 2/10 installments.")
+        self.assertContains(response, "Remaining: 8.")
 
     def test_contact_option_returns_company_contact_details(self):
         response = self.client.post(

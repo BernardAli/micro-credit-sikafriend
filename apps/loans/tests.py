@@ -147,8 +147,10 @@ class SecurityDepositWorkflowTests(TestCase):
         response = self.client.get(reverse("loans:security_deposit", args=[self.loan.pk]))
 
         self.assertEqual(response.status_code, 200)
-        deposit = SecurityDeposit.objects.get(loan=self.loan)
+        self.assertFalse(SecurityDeposit.objects.filter(loan=self.loan).exists())
+        deposit = response.context["deposit"]
         self.assertEqual(deposit.required_amount, Decimal("500.00"))
+        self.assertTrue(Loan.objects.get(pk=self.loan.pk).is_ready_for_disbursement)
 
     def test_deposit_collection_requires_approval_and_unblocks_the_loan_when_fully_secured(self):
         blocked = self.client.post(reverse("loans:loan_payment_create", args=[self.loan.pk]), {"payment_date": "2026-08-10", "amount": "10.00"})

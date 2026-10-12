@@ -3,78 +3,25 @@
 {% block content %}
 <style>
   .profile-shell{display:grid;gap:16px}
-  .hero-card{
-    position:relative;
-    overflow:hidden;
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:30px;
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 60%,#000) 0%,
-      var(--primary-2) 36%,
-      var(--primary) 72%,
-      var(--gold-2) 100%
-    );
-    color:#fff;
-    box-shadow:0 24px 70px var(--primary-glow),0 4px 16px var(--gold-glow);
-  }
-
-  [data-theme="dark"] .hero-card{
-    background:linear-gradient(145deg,
-      color-mix(in srgb,var(--primary-2) 30%,#000) 0%,
-      color-mix(in srgb,var(--primary-2) 55%,#000) 36%,
-      color-mix(in srgb,var(--primary) 60%,#000) 72%,
-      color-mix(in srgb,var(--gold-2) 40%,#000) 100%
-    );
-    border-color:color-mix(in srgb,var(--primary-3) 10%,transparent);
-  }
-
-  .hero-card::before{
-    content:"";
-    position:absolute;
-    top:-70px;
-    right:-60px;
-    width:300px;
-    height:300px;
-    border-radius:50%;
-    background:radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent),transparent 70%);
-    pointer-events:none;
-  }
-
-  .hero-card::after{
-    content:"";
-    position:absolute;
-    left:28%;
-    bottom:-60px;
-    width:380px;
-    height:220px;
-    background:radial-gradient(ellipse,color-mix(in srgb,var(--primary-3) 12%,transparent),transparent 68%);
-    pointer-events:none;
-  }
-  .hero-inner{position:relative;z-index:1;padding:28px}
   .hero-wrap{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;align-items:center}
   .hero-left{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
   .hero-avatar{width:96px;height:96px;border-radius:24px;overflow:hidden;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900}
   .hero-avatar img{width:100%;height:100%;object-fit:cover}
-  .hero-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.5em;font-weight:700;color:var(--gold);margin-bottom:8px}
-  .hero-title{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:400;line-height:1.08}
   .hero-meta{margin-top:6px;opacity:.88;line-height:1.6}
   .hero-chips,.chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-  .chip{display:inline-flex;align-items:center;padding:7px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);font-size:12px;font-weight:800;color:#fff}
+  .chip{display:inline-flex;align-items:center;}
   .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
-  .btn-soft{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;font-weight:800;text-decoration:none;border:1px solid var(--border);background:var(--panel-strong);color:var(--text)}
-  .btn-soft-primary{background:var(--primary);border-color:var(--primary);color:#fff}
   .grid-4,.grid-3,.grid-2{display:grid;gap:14px}
   .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
   .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
   .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
   .stat-card,.section-card,.line-card{border:1px solid var(--border);border-radius:24px;background:var(--panel);box-shadow:0 18px 45px rgba(26,31,20,.05)}
-  .stat-card{padding:18px}
   .stat-label{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
   .stat-value{margin-top:8px;font-size:24px;font-weight:900;color:var(--text)}
   .stat-sub{margin-top:6px;font-size:12px;color:var(--muted);line-height:1.55}
   .section-card{overflow:hidden}
   .section-head{padding:18px 20px 0}
-  .section-title{margin:0;font-size:18px;font-weight:900;color:var(--text)}
+  .section-title{margin:0;}
   .section-sub{margin-top:4px;font-size:13px;color:var(--muted)}
   .section-body{padding:18px 20px 20px}
   .detail-list{display:grid;gap:10px}
@@ -91,7 +38,6 @@
   .detail-tabs{display:flex;gap:6px;padding:6px;border:1px solid var(--border);border-radius:16px;background:var(--panel);box-shadow:var(--shadow-xs);overflow-x:auto}
   .detail-tab{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:9px 16px;border:0;border-radius:11px;background:transparent;color:var(--muted);font-weight:900;white-space:nowrap;cursor:pointer;transition:background .18s,color .18s,box-shadow .18s}
   .detail-tab:hover{background:var(--bg-soft);color:var(--text)}
-  .detail-tab.active{background:var(--primary);color:#fff;box-shadow:0 8px 20px var(--primary-glow)}
   .detail-tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:7px;background:color-mix(in srgb,currentColor 12%,transparent);font-size:10px}
   .detail-panel{display:none;gap:16px}
   .detail-panel.active{display:grid}
@@ -121,6 +67,7 @@
           </div>
         </div>
         <div class="hero-actions">
+          <a class="btn-soft" href="{% url 'agent_statement' agent.pk %}" target="_blank" rel="noopener">Print Agent Statement</a>
           {% if agent.is_field_agent %}
             <a href="{% url 'agent_comprehensive_analysis' agent.pk %}" class="btn-soft btn-soft-primary">Portfolio Analysis</a>
           {% endif %}

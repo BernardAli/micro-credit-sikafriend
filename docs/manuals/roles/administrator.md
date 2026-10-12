@@ -47,6 +47,8 @@ Ordinary administrators cannot approve their own submissions. Management users a
 
 Review pending payments before confirmation. Match amount, borrower, loan, method, reference, and evidence. Use Reconciliation for online collections whose provider status and local status differ. Never force reconciliation without independent evidence.
 
+Correct settled financial mistakes through **Transaction Reversals** at `/reversals/`. A different active administrator must review each case; management and superusers cannot self-review reversals. Review the source evidence and offsets, enter a meaningful note, and verify the resulting balances and statement. A reversal does not itself refund or recover actual money. See the [complete handbook](../SikaFriend_Complete_Project_Manual.pdf).
+
 ## Workforce and payroll
 
 Workforce records contain personal, employment, access, banking, payroll, and compliance information. Use Admin Console Access sparingly. Payroll runs should be reviewed for salary, allowances, commissions, adjustments, deductions, and statutory values before approval.

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from apps.core.financial_admin import FinancialEvidenceAdmin, FinancialEvidenceInline
 
 from .models import (
     AssetAssignment,
@@ -42,13 +43,13 @@ class AssetMaintenanceAdmin(admin.ModelAdmin):
     search_fields = ("asset__asset_code", "asset__name", "description")
 
 
-class DepreciationLineInline(admin.TabularInline):
+class DepreciationLineInline(FinancialEvidenceInline):
     model = DepreciationLine
     extra = 0
 
 
 @admin.register(DepreciationRun)
-class DepreciationRunAdmin(admin.ModelAdmin):
+class DepreciationRunAdmin(FinancialEvidenceAdmin):
     list_display = ("title", "period_start", "period_end", "posting_date", "status", "total_depreciation")
     list_filter = ("status", "posting_date")
     search_fields = ("title",)

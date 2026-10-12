@@ -1,4 +1,5 @@
 from django.contrib import admin
+from apps.core.financial_admin import FinancialEvidenceAdmin
 
 from .models import (
     AccountingPeriod,
@@ -41,6 +42,15 @@ class JournalEntryAdmin(admin.ModelAdmin):
     search_fields = ("entry_no", "memo", "reference", "source_key")
     inlines = [JournalLineInline]
 
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(Counterparty)
 class CounterpartyAdmin(admin.ModelAdmin):
@@ -57,21 +67,21 @@ class BankAccountAdmin(admin.ModelAdmin):
 
 
 @admin.register(BankTransaction)
-class BankTransactionAdmin(admin.ModelAdmin):
+class BankTransactionAdmin(FinancialEvidenceAdmin):
     list_display = ("bank_account", "transaction_date", "transaction_type", "amount", "reference")
     list_filter = ("transaction_type", "transaction_date")
     search_fields = ("reference", "description")
 
 
 @admin.register(Invoice)
-class InvoiceAdmin(admin.ModelAdmin):
+class InvoiceAdmin(FinancialEvidenceAdmin):
     list_display = ("invoice_number", "counterparty", "issue_date", "due_date", "amount", "status")
     list_filter = ("status", "issue_date")
     search_fields = ("invoice_number", "description", "counterparty__name")
 
 
 @admin.register(Bill)
-class BillAdmin(admin.ModelAdmin):
+class BillAdmin(FinancialEvidenceAdmin):
     list_display = ("bill_number", "counterparty", "issue_date", "due_date", "amount", "status")
     list_filter = ("status", "issue_date")
     search_fields = ("bill_number", "description", "counterparty__name")

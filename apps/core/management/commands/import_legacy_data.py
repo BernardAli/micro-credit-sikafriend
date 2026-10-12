@@ -98,11 +98,16 @@ class Command(BaseCommand):
             else:
                 user = users.get(row["user_id"])
                 if user and Borrower.objects.filter(user=user).exists(): user = None
-                obj = Borrower.objects.create(user=user, borrower_id=row["borrower_id"], full_name=row["full_name"],
+                obj = Borrower(user=user, borrower_id=row["borrower_id"], full_name=row["full_name"],
                     national_id=row["national_id"], phone=row["phone"], location=row["location"], photo=row["photo"],
                     ghana_card_front=row["ghana_card_front"], ghana_card_back=row["ghana_card_back"],
                     ghana_card_number=row["ghana_card_number"], group_name=row["group_name"],
                     preferred_language=row["preferred_language"] or "Twi", status=row["status"] or "CLOSED")
+                # Preserve historical IDs and leave ownership for management review.
+                # Only this trusted import path may stage unassigned legacy records.
+                obj._legacy_import = True
+                obj.save()
+                self.warnings.append(f"Legacy customer {obj.pk} needs portfolio review before new loan issuance.")
                 Borrower.objects.filter(pk=obj.pk).update(created_at=row["created_at"]); self.counts["borrowers_created"] += 1
             result[row["id"]] = obj
         return result
@@ -117,9 +122,12 @@ class Command(BaseCommand):
                 start_date=row["start_date"], weekly_payment=row["weekly_payment"], created_at=row["created_at"]).first()
             if obj: self.counts["loans_existing"] += 1
             else:
-                obj = Loan.objects.create(borrower=borrower, agent_name=agent, amount=row["amount"],
+                obj = Loan(borrower=borrower, agent_name=agent, amount=row["amount"],
                     duration_weeks=row["duration_weeks"], start_date=row["start_date"],
                     weekly_payment=row["weekly_payment"], status=row["status"])
+                obj._legacy_import = True
+                obj._skip_new_loan_notifications = True
+                obj.save()
                 Loan.objects.filter(pk=obj.pk).update(created_at=row["created_at"]); self.counts["loans_created"] += 1
             result[row["id"]] = obj
         return result
@@ -131,8 +139,10 @@ class Command(BaseCommand):
             obj = Payment.objects.filter(loan=loan, payment_date=row["payment_date"], amount=row["amount"],
                 reference=row["reference"], created_at=row["created_at"]).first()
             if obj: self.counts["payments_existing"] += 1; continue
-            obj = Payment.objects.create(loan=loan, payment_date=row["payment_date"], amount=row["amount"],
+            obj = Payment(loan=loan, payment_date=row["payment_date"], amount=row["amount"],
                 reference=row["reference"], note=row["note"], is_void=bool(row["is_void"]), payment_method="CASH")
-            Payment.objects.filter(pk=obj.pk).update(principal_paid=Decimal(row["principal_paid"]),
-                roic_paid=Decimal(row["roic_paid"]), created_at=row["created_at"])
+            obj._legacy_import = True
+            obj._skip_notifications = True
+            obj.save()
+            Payment.objects.filter(pk=obj.pk).update(created_at=row["created_at"])
             self.counts["payments_created"] += 1
