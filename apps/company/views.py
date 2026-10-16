@@ -16,6 +16,9 @@ from apps.core.db_backups import (
     get_database_overview,
     resolve_database_alias,
 )
+from apps.core.export_limits import export_limit_response
+from apps.core.security import client_ip
+from apps.accounts.security import reserve_attempt
 from .forms import CompanyDocumentFormSet, CompanyProfileForm
 from .models import CompanyDocument, CompanyProfile
 
@@ -26,18 +29,11 @@ CONTACT_RATE_WINDOW = 15 * 60
 
 
 def _contact_client_ip(request):
-    return request.META.get("REMOTE_ADDR", "") or "unknown"
+    return client_ip(request) or "unknown"
 
 
 def _contact_rate_limited(request):
-    key = f"website-contact:{_contact_client_ip(request)}"
-    if cache.add(key, 1, CONTACT_RATE_WINDOW):
-        return False
-    try:
-        return cache.incr(key) > CONTACT_RATE_LIMIT
-    except ValueError:
-        cache.set(key, 1, CONTACT_RATE_WINDOW)
-        return False
+    return bool(reserve_attempt('website-contact', _contact_client_ip(request), CONTACT_RATE_LIMIT, window=CONTACT_RATE_WINDOW))
 
 
 def _match_service_blueprint(title):
@@ -549,6 +545,8 @@ def database_backup_hub(request):
 
 @staff_member_required
 def database_backup_download(request, fmt):
+    if (limited := export_limit_response(request)) is not None:
+        return limited
     alias = resolve_database_alias(request.GET.get("db"))
     format_config = next((item for item in BACKUP_FORMATS if item["slug"] == fmt), None)
     if format_config is None:

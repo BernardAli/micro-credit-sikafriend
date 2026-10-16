@@ -335,6 +335,7 @@ class Loan(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [models.Index(fields=["status", "created_at"], name="loan_status_created_idx")]
 
     def get_loan_category(self) -> str:
         amount = Decimal(self.amount or Decimal("0.00"))
@@ -622,6 +623,11 @@ class Payment(ReversibleTransaction):
 
     class Meta:
         ordering = ["payment_date", "id"]
+        indexes = [
+            models.Index(fields=["loan", "is_void", "is_pending"], name="pay_loan_settled_idx"),
+            models.Index(fields=["is_void", "is_pending", "payment_date"], name="pay_settled_date_idx"),
+            models.Index(fields=["is_void", "is_pending", "created_at"], name="pay_settled_created_idx"),
+        ]
 
     @property
     def loan_applied_amount(self):

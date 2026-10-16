@@ -16,7 +16,7 @@
   {% if form.errors %}
     <div class="message-card">
       <span class="dot"></span>
-      <div>Invalid username or password. Please check your credentials and try again.</div>
+      <div>{{ form.non_field_errors|striptags|default:"Invalid username or password. Please check your credentials and try again." }}</div>
     </div>
   {% endif %}
 

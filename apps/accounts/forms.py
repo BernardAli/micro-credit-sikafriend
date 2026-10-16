@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
 from .models import Agent, PayrollAdjustment, PayrollRun
@@ -35,6 +36,12 @@ def _validate_unique_user_email(email, *, exclude_user_id=None):
 
 
 class StandaloneAuthenticationForm(AuthenticationForm):
+    def confirm_login_allowed(self, user):
+        super().confirm_login_allowed(user)
+        employee = getattr(user, "agent_profile", None)
+        if employee and employee.employment_status in {"SUSPENDED", "EXITED"}:
+            raise self.get_invalid_login_error()
+
     def clean(self):
         username = self.cleaned_data.get("username")
         password = self.cleaned_data.get("password")
@@ -255,6 +262,11 @@ class AgentRegisterForm(forms.ModelForm):
         p2 = cleaned.get("password2")
         if p1 and p2 and p1 != p2:
             self.add_error("password2", "Passwords do not match.")
+        if p1:
+            try:
+                validate_password(p1, User(username=cleaned.get("username", ""), email=cleaned.get("email", "")))
+            except ValidationError as exc:
+                self.add_error("password", exc)
         return cleaned
 
     def clean_email(self):
@@ -293,6 +305,11 @@ class AgentResetPasswordForm(forms.Form):
         cleaned = super().clean()
         if cleaned.get("new_password") != cleaned.get("new_password2"):
             self.add_error("new_password2", "Passwords do not match.")
+        if cleaned.get("new_password"):
+            try:
+                validate_password(cleaned["new_password"])
+            except ValidationError as exc:
+                self.add_error("new_password", exc)
         return cleaned
 
 
@@ -388,6 +405,11 @@ class BorrowerCreateLoginForm(forms.Form):
         cleaned = super().clean()
         if cleaned.get("password") != cleaned.get("password2"):
             self.add_error("password2", "Passwords do not match.")
+        if cleaned.get("password"):
+            try:
+                validate_password(cleaned["password"], User(username=cleaned.get("username", "")))
+            except ValidationError as exc:
+                self.add_error("password", exc)
         return cleaned
 
 
@@ -437,13 +459,6 @@ class UsernameOrEmailPasswordResetForm(PasswordResetForm):
 
     def clean_email(self):
         identifier = (self.cleaned_data.get("email") or "").strip()
-        matches = list(self._matching_users(identifier))
-        if not matches:
-            raise ValidationError(self.error_messages["unknown_account"])
-
-        if not any(self._user_can_reset(user) for user in matches):
-            raise ValidationError(self.error_messages["missing_email"])
-
         return identifier
 
     def get_users(self, email):

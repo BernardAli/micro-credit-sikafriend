@@ -188,6 +188,29 @@ class PortfolioAnalyticsTests(TestCase):
             self.snapshot()
         self.assertLessEqual(len(queries), 18)
 
+    def test_payment_screen_reads_only_one_database_page_and_overview_has_no_receipt_rows(self):
+        with patch('apps.loans.signals.notify_user'):
+            for number in range(70):
+                Payment.objects.create(loan=self.loan, amount='1', reference=f'PAGE-RECEIPT-{number}', payment_date=self.today)
+        url = reverse('loans:portfolio_detail', args=[self.portfolio.pk])
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(url, {'tab':'payments'})
+        self.assertEqual(len(response.context['page_obj']), 25)
+        self.assertEqual(response.context['register_count'], 73)
+        self.assertEqual(response.context['book']['payments'], [])
+        self.assertTrue(any('LIMIT 25' in query['sql'] for query in queries))
+        response = self.client.get(url, {'tab':'overview'})
+        self.assertEqual(response.context['book']['payments'], [])
+        self.assertEqual(sum(row['payments'] for row in response.context['book']['analytics']['methods']), 71)
+
+    def test_summary_payment_analytics_match_complete_export_analytics(self):
+        from .portfolio_analytics import breakdowns
+        from .portfolio_registers import payment_register
+        full = self.snapshot()['books'][self.portfolio.pk]
+        summary = portfolio_snapshot(Portfolio.objects.filter(pk=self.portfolio.pk), self.start, self.today, summary_only=True)['books'][self.portfolio.pk]
+        actual = breakdowns(summary, self.start, self.today, payment_queryset=payment_register(self.portfolio, self.start, self.today))
+        self.assertEqual(actual, full['analytics'])
+
     def test_payment_phone_search_matches_customer(self):
         response = self.client.get(reverse("loans:portfolio_detail", args=[self.portfolio.pk]), {"export": "json", "section": "payments", "q": self.customer.phone})
         self.assertEqual(len(response.json()["tables"][0]["rows"]), 3)

@@ -10,17 +10,24 @@ from apps.accounts.auth_views import (
     PasswordResetDonePageView,
     PasswordResetRequestView,
     TenantLoginPageView,
+    mfa_setup, mfa_verify, mfa_recovery, account_security,
 )
 from apps.core.roles import role_redirect_view
 from apps.core.private_media import media_file
+from apps.core.health import health
 
 urlpatterns = [
+    path("health/", health, name="health"),
     path("private-media/<path:path>", media_file, name="private_media"),
     path("media/<path:path>", media_file, {"public": True}, name="legacy_media"),
     path("admin/", admin.site.urls),
 
     # Authentication
     path("login/", TenantLoginPageView.as_view(template_name="registration/tenant_login.html"), name="login"),
+    path("account-security/", account_security, name="account_security"),
+    path("account-security/setup/", mfa_setup, name="mfa_setup"),
+    path("account-security/verify/", mfa_verify, name="mfa_verify"),
+    path("account-security/recovery/", mfa_recovery, name="mfa_recovery"),
     path("password-reset/", PasswordResetRequestView.as_view(), name="password_reset"),
     path("password-reset/done/", PasswordResetDonePageView.as_view(), name="password_reset_done"),
     path("reset/<uidb64>/<token>/", PasswordResetConfirmPageView.as_view(), name="password_reset_confirm"),

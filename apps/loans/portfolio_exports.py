@@ -11,6 +11,7 @@ from django.utils import timezone
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 from weasyprint import HTML
+from apps.core.pdf import LocalPDFResources
 from apps.company.models import CompanyProfile
 
 
@@ -173,7 +174,7 @@ def export_report(report, fmt, *, section=None):
             columns = [column for column in item["columns"] if item["key"] not in compact or column[0] in compact[item["key"]]]
             pdf_sections.append({**item, "columns": columns, "cells": [[row.get(key, "") for key, label in columns] for row in item["rows"]]})
         html = render_to_string("loans/portfolios/pdf.html", {"report": report, "sections": pdf_sections})
-        response = HttpResponse(HTML(string=html).write_pdf(), content_type="application/pdf")
+        response = HttpResponse(HTML(string=html, url_fetcher=LocalPDFResources()).write_pdf(), content_type="application/pdf")
         extension = "pdf"
     else:
         raise ValueError("Choose CSV, Excel, PDF, or JSON.")

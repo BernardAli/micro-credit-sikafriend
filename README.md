@@ -1,6 +1,8 @@
 # Micro Credit ERP
 
-The client handover guide is [SikaFriend Client User Manual (PDF)](docs/manuals/SikaFriend_Client_User_Manual.pdf): 120 pages with 82 screenshots covering everyday operations, approvals/reversals, statements, reporting and end-user help. Use this edition for client distribution.
+The client handover guide is [SikaFriend Client User Manual (PDF)](docs/manuals/SikaFriend_Client_User_Manual.pdf): 121 pages with 82 screenshots covering everyday operations, authenticator setup/recovery, approvals/reversals, statements, reporting and end-user help. Use this edition for client distribution.
+
+For the latest MFA, shared request limits, paginated financial summaries, patched dependencies, backup integrity and CI changes, see [deployment/SECURITY_PERFORMANCE_UPDATE.md](deployment/SECURITY_PERFORMANCE_UPDATE.md).
 
 The internal [Complete Project Manual (PDF)](docs/manuals/SikaFriend_Complete_Project_Manual.pdf) retains installation, deployment, recovery and implementation references for maintainers. The [documentation index](docs/manuals/README.md) includes both editions, editable sources and rebuild instructions.
 

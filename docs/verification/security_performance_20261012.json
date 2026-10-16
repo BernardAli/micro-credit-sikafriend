@@ -1,0 +1,50 @@
+{
+  "release_date": "2026-10-12",
+  "scope": "Local source, local configuration and isolated verification; hosted deployment pending",
+  "tests": {
+    "mysql": {"discovered": 226, "passed": 226, "skipped": 0, "seconds": 120.269},
+    "sqlite": {"discovered": 226, "passed": 217, "skipped": 9, "seconds": 115.262},
+    "sqlite_skip_reason": "MySQL concurrency, financial row locking and snapshot features"
+  },
+  "dependencies": {"audited_packages": 31, "known_vulnerabilities": 0, "dependency_consistency": "passed"},
+  "checks": {
+    "source_production_defaults": "passed",
+    "repository_hygiene": "passed",
+    "migration_drift": "none",
+    "compilation": "passed",
+    "whitespace": "passed"
+  },
+  "backup_verification": {
+    "database_native_backup_restored": true,
+    "application_sql_backup_restored": true,
+    "core_tables_verified": 5,
+    "all_core_rows_match": true,
+    "temporary_restore_environment": "Private network-disabled MySQL instance",
+    "local_application_account": "Scoped to its own project database; root credentials unchanged"
+  },
+  "dashboard_benchmark": {
+    "sample_loans": 3000,
+    "sample_receipts": 60000,
+    "before": {"seconds": 53.549, "peak_python_memory_mib": 104.28, "queries": 9},
+    "after": {"seconds": 7.660, "peak_python_memory_mib": 2.92, "queries": 25},
+    "financial_and_chart_context_match": true,
+    "environment": "Isolated synthetic SQLite; Python allocation tracing enabled",
+    "limits": "Rendering, network latency and hosted load excluded; recent-loan ordering deliberately corrected"
+  },
+  "pdf_rendering": {
+    "business_management_report": "passed",
+    "loan_statement": "passed",
+    "borrower_statement": "passed",
+    "agent_statement": "passed",
+    "environment": "Actual WeasyPrint rendering from isolated fictional training records"
+  },
+  "client_manual": {"pages": 121, "screenshots": 82, "authenticator_instructions": true, "client_only_content_verified": true},
+  "management_deferred_loans": [1688, 2058, 2683, 2693, 3084],
+  "remaining_host_actions": [
+    "Install the release and verify production configuration",
+    "Rotate any previously exposed hosted credentials and address shared Git history",
+    "Enroll administrators and officers, verify PDF output and restore hosted backups",
+    "Run hosted concurrency, access-control, load and availability checks"
+  ],
+  "assurance": "Evidence for this release; no guarantee of perfect security or hosted performance"
+}

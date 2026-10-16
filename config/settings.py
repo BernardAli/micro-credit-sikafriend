@@ -76,6 +76,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.accounts.security_middleware.AccountSecurityMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -162,6 +163,40 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
+
+# Staff MFA is enforced on management views, Django admin and private media.
+MFA_ENABLED = True
+STAFF_MFA_REQUIRED = _env_bool("STAFF_MFA_REQUIRED", True)
+MFA_ENCRYPTION_KEYS = _env_list("MFA_ENCRYPTION_KEYS", [])
+MFA_ENROLLMENT_MAX_AGE = 600
+MFA_SESSION_MAX_AGE = 28800
+AUTH_THROTTLE_WINDOW = 900
+AUTH_PASSWORD_ATTEMPT_LIMIT = 10
+AUTH_MFA_ATTEMPT_LIMIT = 5
+AUTH_RESET_ATTEMPT_LIMIT = 5
+AUTH_IP_ATTEMPT_LIMIT = 120
+TRUSTED_PROXY_CIDRS = _env_list("TRUSTED_PROXY_CIDRS", [])
+# Browsers share cookies across ports, including other Django apps on localhost.
+SESSION_COOKIE_NAME = os.getenv("DJANGO_SESSION_COOKIE_NAME", "microcredit_sessionid")
+CSRF_COOKIE_NAME = os.getenv("DJANGO_CSRF_COOKIE_NAME", "microcredit_csrftoken")
+SESSION_COOKIE_AGE = 28800
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+SECURE_REFERRER_POLICY = "same-origin"
+PASSWORD_RESET_TIMEOUT = 3600
+HEALTHCHECK_TOKEN = os.getenv("HEALTHCHECK_TOKEN", "")
+MAX_UPLOAD_BYTES = 20 * 1024 * 1024
+IMPORT_MAX_BYTES = 10 * 1024 * 1024
+IMPORT_MAX_EXPANDED_BYTES = 32 * 1024 * 1024
+IMPORT_MAX_ROWS = 10000
+IMPORT_MAX_COLUMNS = 100
+EXPORTS_PER_MINUTE = 6
+FILE_UPLOAD_HANDLERS = [
+    "apps.core.upload_limits.LimitedUploadHandler",
+    "django.core.files.uploadhandler.MemoryFileUploadHandler",
+    "django.core.files.uploadhandler.TemporaryFileUploadHandler",
 ]
 
 LANGUAGE_CODE = "en-us"

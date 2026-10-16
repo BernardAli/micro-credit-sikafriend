@@ -9,6 +9,7 @@ from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from apps.core.import_security import bounded_import, excel_rows, limited_rows, safe_xml
 from openpyxl import Workbook, load_workbook
 
 from apps.core.limits import can_create_borrower
@@ -100,6 +101,7 @@ def infer_borrower_import_format(filename: str) -> str | None:
     return None
 
 
+@bounded_import
 def parse_borrower_import(uploaded_file, file_type: str) -> list[dict]:
     if file_type == "csv":
         return _parse_csv(uploaded_file)
@@ -226,14 +228,12 @@ def _parse_csv(uploaded_file) -> list[dict]:
     uploaded_file.seek(0)
     text = uploaded_file.read().decode("utf-8-sig")
     reader = csv.DictReader(io.StringIO(text))
-    return [dict(row) for row in reader if any(str(value or "").strip() for value in row.values())]
+    return limited_rows(dict(row) for row in reader if any(str(value or "").strip() for value in row.values()))
 
 
 def _parse_excel(uploaded_file) -> list[dict]:
     uploaded_file.seek(0)
-    workbook = load_workbook(uploaded_file, data_only=True)
-    sheet = workbook.active
-    rows = list(sheet.iter_rows(values_only=True))
+    rows = excel_rows(uploaded_file)
     if not rows:
         return []
 
@@ -263,7 +263,7 @@ def _parse_json(uploaded_file) -> list[dict]:
 
 def _parse_xml(uploaded_file) -> list[dict]:
     uploaded_file.seek(0)
-    root = ET.fromstring(uploaded_file.read())
+    root = safe_xml(uploaded_file.read())
     if root.tag.lower() == "borrower":
         nodes = [root]
     else:

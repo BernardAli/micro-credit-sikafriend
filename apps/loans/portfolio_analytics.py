@@ -5,7 +5,7 @@ from decimal import Decimal, ROUND_CEILING
 
 from django import forms
 from django.db.models import Count, F, IntegerField, OuterRef, Prefetch, Q, Subquery, Value
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, TruncMonth
 from django.utils import timezone
 
 from apps.core.roles import get_user_role, get_agent_for_user
@@ -329,7 +329,7 @@ def portfolio_snapshot(portfolios, start, end, *, include_unassigned=False, incl
     return {"books": books, "totals": totals, "start": start, "end": end, "as_of": today}
 
 
-def breakdowns(book, start, end):
+def breakdowns(book, start, end, *, payment_queryset=None):
     result = {}
     for label, field in (("aging", "aging"), ("sectors", "sector"), ("locations", "location"), ("groups", "group"), ("categories", "category")):
         grouped = defaultdict(lambda: {"loans": 0, "customers": set(), "principal": ZERO, "outstanding": ZERO, "arrears": ZERO})
@@ -347,19 +347,29 @@ def breakdowns(book, start, end):
     methods = defaultdict(lambda: {"payments": 0, "collected": ZERO, "customer_credit": ZERO})
     officers = defaultdict(lambda: {"payments": 0, "collected": ZERO, "customer_credit": ZERO, "principal": ZERO, "roic": ZERO})
     monthly = defaultdict(lambda: {"loans": 0, "disbursed": ZERO, "payments": 0, "collected": ZERO, "customer_credit": ZERO})
-    for payment in book["payments"]:
+    payment_rows = book["payments"]
+    if payment_queryset is not None:
+        grouped = payment_queryset.filter(is_void=False, is_pending=False).order_by().annotate(month=TruncMonth('payment_date')).values(
+            'month', 'payment_method', 'collected_by__agent_id', 'collected_by__name',
+        ).annotate(count=Count('pk'), amount=money_total('amount'), principal=money_total('principal_paid'), roic=money_total('roic_paid'), customer_credit=money_total('customer_credit'))
+        methods_lookup = dict(Payment.PAYMENT_METHOD_CHOICES)
+        payment_rows = ({'status':'Settled','method':methods_lookup.get(row['payment_method'],row['payment_method']),
+                         'collector_id':row['collected_by__agent_id'] or '', 'collector':row['collected_by__name'] or 'Staff / unrecorded collector',
+                         'date':row['month'], 'amount':row['amount'], 'principal':row['principal'], 'roic':row['roic'],
+                         'customer_credit':row['customer_credit'], '_count':row['count']} for row in grouped.iterator(chunk_size=200))
+    for payment in payment_rows:
         if payment["status"] != "Settled":
             continue
-        methods[payment["method"]]["payments"] += 1
+        methods[payment["method"]]["payments"] += payment.get('_count', 1)
         methods[payment["method"]]["collected"] += payment["amount"]
         methods[payment["method"]]["customer_credit"] += payment["customer_credit"]
         officer = officers[(payment["collector_id"], payment["collector"])]
-        officer["payments"] += 1
+        officer["payments"] += payment.get('_count', 1)
         officer["collected"] += payment["amount"]
         officer["customer_credit"] += payment["customer_credit"]
         officer["principal"] += payment["principal"]
         officer["roic"] += payment["roic"]
-        monthly[payment["date"].strftime("%Y-%m")]["payments"] += 1
+        monthly[payment["date"].strftime("%Y-%m")]["payments"] += payment.get('_count', 1)
         monthly[payment["date"].strftime("%Y-%m")]["collected"] += payment["amount"]
         monthly[payment["date"].strftime("%Y-%m")]["customer_credit"] += payment["customer_credit"]
     for loan in book["loans"]:

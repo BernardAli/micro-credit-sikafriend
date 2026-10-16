@@ -4,7 +4,7 @@ These manuals describe the system as configured in the standalone SikaFriend Mic
 
 ## Client handover edition
 
-Share **[SikaFriend Client User Manual (PDF)](SikaFriend_Client_User_Manual.pdf)** with the client. This edition contains **120 pages and 82 screenshots**, with 26 operating chapters and two practical appendices. It covers management, operations, officers, finance and borrower self-service using menu-based instructions and the project brand colors.
+Share **[SikaFriend Client User Manual (PDF)](SikaFriend_Client_User_Manual.pdf)** with the client. This edition contains **121 pages and 82 screenshots**, with 26 operating chapters and two practical appendices. It covers management, operations, officers, finance and borrower self-service using menu-based instructions and the project brand colors, including authenticator enrollment and recovery.
 
 The client edition omits implementation references, routes, schema tables, installation/deployment commands, credential exposure history and project-specific repair/loan-review details. It keeps the operational approval/reversal rules, payment verification guidance, financial examples and privacy instructions users need.
 

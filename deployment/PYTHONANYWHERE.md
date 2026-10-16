@@ -2,6 +2,8 @@
 
 This guide deploys the standalone Django application using PythonAnywhere MySQL, a virtual environment, WSGI, and platform static/media mappings.
 
+Apply the [latest security and performance release instructions](SECURITY_PERFORMANCE_UPDATE.md), including independent MFA encryption keys, staff enrollment, new migrations and hosted verification.
+
 ## Account requirement
 
 PythonAnywhere's current official documentation states that MySQL works for paid accounts and for qualifying older free accounts. New free accounts created after the January 2026 cutoff may not have MySQL. Confirm the **Databases/MySQL** tab is available before deployment.

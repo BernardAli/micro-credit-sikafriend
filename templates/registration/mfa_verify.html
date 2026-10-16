@@ -1,0 +1,16 @@
+{% extends "registration/auth_base_tenant.html" %}
+{% block page_title %}Verify Sign In{% endblock %}
+{% block brand_heading %}One more step to protect your account.{% endblock %}
+{% block brand_body %}Your password and authenticator work together to protect customer records, financial approvals and reports.{% endblock %}
+{% block form_title %}Verify your sign-in{% endblock %}
+{% block form_intro %}Enter a fresh authenticator code or one of your unused recovery codes.{% endblock %}
+{% block form_content %}
+  {% if error %}<div class="message-card" role="alert">{{ error }}</div>{% endif %}
+  <form method="post">
+    {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+    <div class="field"><label for="code">Authenticator or recovery code</label><input id="code" name="code" autocomplete="one-time-code" maxlength="64" required autofocus></div>
+    <button type="submit" class="btn-submit">Verify and continue</button>
+  </form>
+  <p>If your device and recovery codes are unavailable, contact your system administrator for account recovery.</p>
+  <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="text-link">Sign out</button></form>
+{% endblock %}

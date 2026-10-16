@@ -226,12 +226,9 @@ def main():
 <section class="contents"><h1>Contents</h1><p>Click a chapter title to open it. PDF bookmarks provide a second navigation panel. Page numbers refer to this complete handbook.</p>{toc}</section>{content}</body></html>'''
     html_path = HERE / "SikaFriend_Complete_Project_Manual.html"
     html_path.write_text(document, encoding="utf-8")
-    from weasyprint import HTML, default_url_fetcher
-
-    def embedded_only(url):
-        if not url.startswith("data:"):
-            raise ValueError("Manual resources must be embedded; external fetching is disabled.")
-        return default_url_fetcher(url)
+    from weasyprint import HTML
+    from weasyprint.urls import URLFetcher
+    embedded_only = URLFetcher(allowed_protocols={"data"}, allow_redirects=False)
 
     rendered = HTML(string=document, url_fetcher=embedded_only).render()
     pdf_path = HERE / PDF_NAME

@@ -94,12 +94,9 @@ def main():
 <p class="eyebrow">SIKAFRIEND MICRO-CREDIT ENTERPRISE</p><h1>Operations &amp;<br>User Guide</h1><p class="cover-subtitle">Lending · Repayments · Statements<br>Approvals · Reporting · Administration</p><div class="cover-rule"></div><p class="cover-edition">Client edition · October 2026</p><p class="cover-caption">A practical guide for management, finance,<br>portfolio officers, administrators and borrowers.</p></section>
 <section class="contents"><h1>Contents</h1><p>Select a chapter to open it. The PDF bookmarks provide quick access to individual topics.</p>{toc}</section>{content}</body></html>'''
     (HERE / f"{STEM}.html").write_text(document)
-    from weasyprint import HTML, default_url_fetcher
-
-    def embedded_only(url):
-        if not url.startswith("data:"):
-            raise ValueError("Client manual resources must be embedded.")
-        return default_url_fetcher(url)
+    from weasyprint import HTML
+    from weasyprint.urls import URLFetcher
+    embedded_only = URLFetcher(allowed_protocols={"data"}, allow_redirects=False)
 
     rendered = HTML(string=document, url_fetcher=embedded_only).render()
     path = HERE / f"{STEM}.pdf"

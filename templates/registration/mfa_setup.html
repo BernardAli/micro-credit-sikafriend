@@ -1,0 +1,42 @@
+{% extends "registration/auth_base_tenant.html" %}
+{% block page_title %}Set Up Authenticator{% endblock %}
+{% block brand_heading %}Protect access to your lending workspace.{% endblock %}
+{% block brand_body %}Use an authenticator app to confirm your identity when signing in. Keep the recovery codes in a safe place for use if you lose your device.{% endblock %}
+{% block form_title %}Set up your authenticator{% endblock %}
+{% block form_intro %}{% if enrolling %}Add your SikaFriend account in your phone's authenticator app, then enter the six-digit code it displays.{% else %}Confirm your current password to start secure setup. Have Google Authenticator or another authenticator app ready on your phone.{% endif %}{% endblock %}
+{% block form_content %}
+  {% if error %}<div class="message-card" role="alert">{{ error }}</div>{% endif %}
+  {% if enrolling %}
+    <ol style="padding-left:20px;line-height:1.65;">
+      <li>In Google Authenticator on your phone, tap <strong>+</strong>, then <strong>Scan a QR code</strong>.</li>
+      <li>Scan the QR below from your computer screen.</li>
+      <li>Find <strong>SikaFriend: {{ request.user.username }}</strong> in the app and enter its six-digit code below. The code changes every 30 seconds.</li>
+    </ol>
+    <img src="data:image/png;base64,{{ qr }}" alt="Authenticator setup QR code" width="{{ qr_size }}" height="{{ qr_size }}" style="display:block;max-width:100%;height:auto;margin:16px auto;image-rendering:pixelated;background:#fff;">
+    <div class="status-card">
+      <h3>QR code won't scan? Enter the key instead.</h3>
+      <p>In Google Authenticator, tap <strong>+</strong>, then <strong>Enter a setup key</strong>. Use these details:</p>
+      <p style="margin-top:10px;"><strong>Account name:</strong> SikaFriend: {{ request.user.username }}</p>
+      <div class="field" style="margin:10px 0;">
+        <label for="setup-key">Manual setup key</label>
+        <input id="setup-key" type="text" value="{{ secret }}" readonly autocomplete="off" spellcheck="false" style="font-family:monospace;" aria-describedby="setup-key-help">
+      </div>
+      <p id="setup-key-help"><strong>Type of key:</strong> Time based. Tap <strong>Add</strong>, then use the six-digit code displayed in the app.</p>
+      <p style="margin-top:10px;">Your phone does not need to open this website to generate codes. If you begin setup again, use the new QR code or setup key.</p>
+    </div>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+    <div class="field">
+      {% if enrolling %}
+        <label for="code">Authenticator code</label>
+        <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required autofocus>
+      {% else %}
+        <label for="password">Current password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+      {% endif %}
+    </div>
+    <button type="submit" class="btn-submit">{% if enrolling %}Confirm authenticator{% else %}Begin setup{% endif %}</button>
+  </form>
+  <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="text-link">Sign out</button></form>
+{% endblock %}

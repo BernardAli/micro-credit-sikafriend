@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.utils import timezone
 from PIL import Image
 from django.core.files.base import ContentFile
-from weasyprint import default_url_fetcher
+from .statement_views import _inline_resource
 
 from apps.accounts.models import Agent, PayrollLine, PayrollRun
 from apps.company.models import CompanyProfile
@@ -124,12 +124,13 @@ class StatementTests(TestCase):
         company = CompanyProfile.get_solo()
         company.logo.save('statement-logo.png', ContentFile(image.getvalue()), save=True)
         for url in self.routes(pdf=True):
-            with self.subTest(url=url), patch('apps.loans.statement_views.default_url_fetcher', wraps=default_url_fetcher) as fetch:
+            with self.subTest(url=url), patch.object(_inline_resource, 'fetch', wraps=_inline_resource.fetch) as fetch:
                 response = self.client.get(url, {'download':'1'})
             self.assertEqual(response.status_code, 200)
             self.assertTrue(response.content.startswith(b'%PDF'))
             self.assertIn('attachment', response['Content-Disposition'])
-            self.assertEqual(response['Cache-Control'], 'private, no-store')
+            self.assertIn('private', response['Cache-Control'].split(', '))
+            self.assertIn('no-store', response['Cache-Control'].split(', '))
             self.assertTrue(fetch.called)
             self.assertTrue(all(call.args[0].startswith('data:') for call in fetch.call_args_list))
 

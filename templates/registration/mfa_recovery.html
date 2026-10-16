@@ -1,0 +1,11 @@
+{% extends "registration/auth_base_tenant.html" %}
+{% block page_title %}Recovery Codes{% endblock %}
+{% block brand_heading %}Keep a secure way back into your account.{% endblock %}
+{% block brand_body %}Each recovery code can be used once after your password. Keep these codes privately, separate from your authenticator device.{% endblock %}
+{% block form_title %}Save your recovery codes{% endblock %}
+{% block form_intro %}These codes are shown once. Store them securely before continuing.{% endblock %}
+{% block form_content %}
+  <ul>{% for code in codes %}<li><code>{{ code }}</code></li>{% endfor %}</ul>
+  <p>You can generate a replacement set from Account Security using your password and a fresh authenticator code.</p>
+  <a href="{{ next }}" class="btn-submit">I have saved my codes — continue</a>
+{% endblock %}

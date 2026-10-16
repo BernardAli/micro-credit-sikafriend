@@ -12,9 +12,11 @@ from django.utils import timezone
 from apps.accounts.models import Agent
 from apps.core.roles import admin_required, agent_or_admin_required, get_user_role
 from apps.core.pagination import paginate_items
+from apps.core.export_limits import export_limit_response
 from .models import Borrower, Loan, Portfolio, PortfolioAssignment
 from .portfolios import assign_customer, set_portfolio_agents
-from .portfolio_analytics import PortfolioPeriodForm, visible_portfolios, portfolio_snapshot
+from .portfolio_analytics import PortfolioPeriodForm, visible_portfolios, portfolio_snapshot, breakdowns
+from .portfolio_registers import payment_register, payment_row, collection_register, collection_row, identity_register, identity_row
 from .portfolio_exports import export_report, make_report, summary_row
 
 
@@ -47,6 +49,8 @@ class PortfolioForm(forms.ModelForm):
 
 @agent_or_admin_required
 def portfolio_list(request):
+    if request.GET.get('export') and (limited := export_limit_response(request)) is not None:
+        return limited
     form = _period_form(request)
     if not form.is_valid():
         return render(request, "loans/portfolios/list.html", {"period_form": form, "title": "Loan Portfolios", "invalid_filters": True}, status=400)
@@ -99,10 +103,13 @@ def _export(snapshot, request, book=None):
 @agent_or_admin_required
 def portfolio_detail(request, pk):
     portfolio = get_object_or_404(visible_portfolios(request.user), pk=pk)
+    if request.GET.get('export') and (limited := export_limit_response(request)) is not None:
+        return limited
     form = _period_form(request)
     if not form.is_valid():
         return render(request, "loans/portfolios/detail.html", {"period_form": form, "portfolio": portfolio, "invalid_filters": True, "title": str(portfolio)}, status=400)
-    snapshot = portfolio_snapshot(visible_portfolios(request.user).filter(pk=pk), form.cleaned_data["date_from"], form.cleaned_data["date_to"], include_private_history=get_user_role(request.user) == "admin")
+    is_export = bool(request.GET.get('export'))
+    snapshot = portfolio_snapshot(visible_portfolios(request.user).filter(pk=pk), form.cleaned_data["date_from"], form.cleaned_data["date_to"], include_private_history=get_user_role(request.user) == "admin", summary_only=not is_export)
     book = snapshot["books"][pk]
     q = (request.GET.get("q") or "").strip()
     status = request.GET.get("loan_status", "")
@@ -125,15 +132,29 @@ def portfolio_detail(request, pk):
     tab = request.GET.get("tab", "overview")
     if tab not in {"overview", "customers", "loans", "payments", "risk", "deposits", "collections", "officers", "ids"}:
         tab = "overview"
+    start, end = form.cleaned_data['date_from'], form.cleaned_data['date_to']
+    if tab in {'overview', 'risk'}:
+        period_payments = payment_register(portfolio, start, end)
+        book['analytics'] = breakdowns(book, start, end, payment_queryset=period_payments if tab == 'overview' else None)
+    if tab == 'officers':
+        book['assignments'] = list(PortfolioAssignment.objects.filter(portfolio=portfolio).select_related('agent','assigned_by').order_by('-started_at','-pk'))
     register = {"customers": customer_rows, "loans": loan_rows, "payments": payment_rows, "deposits": book["deposits"], "collections": book["collections"], "ids": book["issuance"]}.get(tab, [])
     pagination = paginate_items(request, register, per_page=25)
+    if tab in {'payments', 'collections', 'ids'}:
+        queryset = {'payments':lambda:payment_register(portfolio,start,end,q),
+                    'collections':lambda:collection_register(portfolio,start,end),
+                    'ids':lambda:identity_register(portfolio)}[tab]()
+        pagination = paginate_items(request, queryset, per_page=25)
+        serializer = {'payments':payment_row, 'collections':collection_row,
+                      'ids':lambda row:identity_row(row,private_history=get_user_role(request.user)=='admin')}[tab]
+        pagination['page_obj'].object_list = [serializer(row) for row in pagination['page_obj'].object_list]
     tab_params = request.GET.copy()
     for key in ("tab", "page", "export", "section"):
         tab_params.pop(key, None)
     return render(request, "loans/portfolios/detail.html", {
         "portfolio": portfolio, "book": book, "metrics": book["metrics"], "snapshot": snapshot,
         "period_form": form, "tab": tab, "tab_params": tab_params.urlencode(), "export_params": _export_params(request),
-        "q": q, "loan_status": status, "register_count": len(register), **pagination,
+        "q": q, "loan_status": status, "register_count": pagination['page_obj'].paginator.count, **pagination,
         "top_customers": sorted(book["customers"], key=lambda row: row["outstanding"], reverse=True)[:10],
         "is_admin": get_user_role(request.user) == "admin", "title": str(portfolio),
     })

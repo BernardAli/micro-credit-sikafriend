@@ -4,13 +4,13 @@ import csv
 import io
 import zipfile
 from collections import defaultdict
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone as datetime_timezone
 from decimal import Decimal
 from uuid import UUID
 
 from django.apps import apps
 from django.core import serializers
-from django.db import connections, router
+from django.db import connections, router, transaction
 from django.utils import timezone
 from openpyxl import Workbook
 
@@ -135,6 +135,18 @@ def build_backup_filename(using: str, extension: str) -> str:
 
 
 def export_database_backup(using: str, fmt: str):
+    if not any(item['slug'] == fmt for item in BACKUP_FORMATS):
+        raise ValueError(f"Unsupported backup format: {fmt}")
+    connection = connections[using]
+    if connection.vendor == "mysql" and not connection.in_atomic_block:
+        with connection.cursor() as cursor:
+            cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+            cursor.execute("SET TRANSACTION READ ONLY")
+    with transaction.atomic(using=using):
+        return _export_database_backup(using, fmt)
+
+
+def _export_database_backup(using: str, fmt: str):
     format_config = next((item for item in BACKUP_FORMATS if item["slug"] == fmt), None)
     if not format_config:
         raise ValueError(f"Unsupported backup format: {fmt}")
@@ -291,6 +303,8 @@ def _export_sql_dump(using: str) -> bytes:
     output.write(f"-- Engine: {connection.settings_dict.get('ENGINE', '')}\n\n")
 
     if vendor == "mysql":
+        output.write("SET @SF_BACKUP_SQL_MODE=@@SQL_MODE;\n")
+        output.write("SET SQL_MODE=REPLACE(@@SQL_MODE,'NO_BACKSLASH_ESCAPES','');\n")
         output.write("SET FOREIGN_KEY_CHECKS=0;\n")
     elif vendor == "sqlite":
         output.write("PRAGMA foreign_keys=OFF;\n")
@@ -313,7 +327,7 @@ def _export_sql_dump(using: str) -> bytes:
 
                 output.write(f"-- Data for {table_name}\n")
                 for row in rows:
-                    values_sql = ", ".join(_sql_literal(value) for value in row)
+                    values_sql = ", ".join(_sql_literal(value, vendor=vendor) for value in row)
                     columns_sql = ", ".join(quote_name(column) for column in columns)
                     output.write(
                         f"INSERT INTO {quote_name(table_name)} ({columns_sql}) VALUES ({values_sql});\n"
@@ -322,6 +336,7 @@ def _export_sql_dump(using: str) -> bytes:
 
     if vendor == "mysql":
         output.write("SET FOREIGN_KEY_CHECKS=1;\n")
+        output.write("SET SQL_MODE=@SF_BACKUP_SQL_MODE;\n")
     elif vendor == "sqlite":
         output.write("PRAGMA foreign_keys=ON;\n")
 
@@ -348,7 +363,7 @@ def _get_create_table_statement(connection, cursor, table_name: str) -> str:
     return f"-- Schema extraction for vendor '{vendor}' is not implemented; table name: {table_name}"
 
 
-def _sql_literal(value):
+def _sql_literal(value, *, vendor="mysql"):
     if value is None:
         return "NULL"
     if isinstance(value, bool):
@@ -357,8 +372,8 @@ def _sql_literal(value):
         return str(value)
     if isinstance(value, datetime):
         if timezone.is_aware(value):
-            value = timezone.localtime(value)
-        return "'" + value.strftime("%Y-%m-%d %H:%M:%S") + "'"
+            value = timezone.make_naive(value, datetime_timezone.utc)
+        return "'" + value.isoformat(sep=" ", timespec="microseconds") + "'"
     if isinstance(value, date):
         return "'" + value.isoformat() + "'"
     if isinstance(value, time):
@@ -368,5 +383,7 @@ def _sql_literal(value):
     if isinstance(value, (bytes, bytearray, memoryview)):
         return "X'" + bytes(value).hex() + "'"
 
-    text = str(value).replace("\\", "\\\\").replace("'", "''")
+    text = str(value).replace("'", "''")
+    if vendor == "mysql":
+        text = text.replace("\\", "\\\\")
     return f"'{text}'"

@@ -159,3 +159,10 @@
             {% endfor %}
           {% endif %}
 
+          {% if user.is_authenticated %}
+            <div class="nav-section-label">Account Security</div>
+            <a href="{% url 'account_security' %}" class="nav-link" data-nav>
+              <span class="nav-link-inner"><span class="nav-link-icon">🔐</span><span>Authenticator &amp; Recovery</span></span>
+            </a>
+          {% endif %}
+

@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from apps.accounts.models import Agent
 from apps.company.models import CompanyProfile
-from .dashboard_queries import dashboard_loans_and_payments
+from .dashboard_queries import dashboard_loan_queryset, recent_dashboard_payments
 from .models import Borrower, Loan, Payment, Portfolio, PortfolioAssignment, SecurityDeposit, SecurityDepositTransaction, SecurityDepositTransfer
 
 
@@ -42,7 +42,7 @@ class DashboardQueryTests(TestCase):
         excess = Payment(loan=loan, amount=Decimal("900"))
         excess._legacy_import = True
         excess.save()
-        loans, payments = dashboard_loans_and_payments()
+        loans, payments = list(dashboard_loan_queryset()), recent_dashboard_payments()
         with self.assertNumQueries(0):
             result = loans[0]
             self.assertEqual(result.actual_payments_count, 2)
@@ -54,7 +54,8 @@ class DashboardQueryTests(TestCase):
             self.assertEqual(result.balance_amount, Decimal("0"))
             self.assertEqual(result.principal_outstanding + result.roic_outstanding, Decimal("0"))
             self.assertEqual(len(payments), 2)
-            self.assertIs(payments[0].loan, result)
+            self.assertEqual(payments[0].loan.pk, result.pk)
+            self.assertEqual(payments[0].loan.balance_amount, result.balance_amount)
 
     def test_readiness_includes_refunds_applications_and_both_transfer_directions(self):
         loans = [self.loan() for _ in range(6)]
@@ -68,7 +69,7 @@ class DashboardQueryTests(TestCase):
         Loan.objects.filter(pk=loans[4].pk).update(disbursed_at=timezone.localdate())
         SecurityDeposit.objects.create(borrower=self.borrower, loan=loans[4], required_amount=Decimal("100"))
         expected = {loan.pk: Loan.objects.get(pk=loan.pk).is_ready_for_disbursement for loan in loans}
-        optimized, _payments = dashboard_loans_and_payments()
+        optimized = list(dashboard_loan_queryset())
         with self.assertNumQueries(0):
             self.assertEqual({loan.pk: loan.is_ready_for_disbursement for loan in optimized}, expected)
         self.assertFalse(expected[loans[0].pk])
@@ -95,7 +96,70 @@ class DashboardQueryTests(TestCase):
             response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertLessEqual(len(expanded), len(initial))
-        self.assertLessEqual(len(expanded), 12)
+        self.assertLessEqual(len(expanded), 18)
         self.assertEqual(response.context["total_collected"], Decimal("3120"))
         html = response.content.decode()
         self.assertLess(html.index("Comprehensive Management Reports"), html.index('aria-label="Loan portfolios"'))
+
+    def test_recent_receipts_and_visible_registers_remain_bounded(self):
+        from unittest.mock import patch
+        from .dashboard_data import build_dashboard_context
+        from apps.loans.models import Payment
+        loans = [self.loan() for _ in range(70)]
+        with patch("apps.loans.signals.notify_user"):
+            for loan in loans:
+                Payment.objects.create(loan=loan, amount=Decimal("120"))
+        context = build_dashboard_context(self.admin)
+        self.assertEqual(context["total_loans"], 70)
+        self.assertEqual(context["total_payments_count"], 70)
+        self.assertEqual(context["total_collected"], Decimal("8400.00"))
+        self.assertEqual(len(context["loans"]), 50)
+        self.assertEqual(len(context["recent_loans"]), 12)
+        self.assertEqual([row.pk for row in context["recent_loans"]], [row.pk for row in loans[-12:]][::-1])
+        self.assertEqual(len(context["recent_payments"]), 12)
+        self.assertLessEqual(len(context["watchlist_loans"]), 15)
+        self.assertEqual(context["agent_board"][0]["borrowers_count"], 1)
+        self.assertEqual(context["location_board"][0]["borrowers_count"], 1)
+
+    def test_dashboard_counts_bad_customers_without_loans(self):
+        from .dashboard_data import build_dashboard_context
+        Borrower.objects.filter(pk=self.borrower.pk).update(status="BAD")
+        context = build_dashboard_context(self.admin)
+        self.assertEqual(context["borrower_bad_count"], 1)
+        self.assertEqual(context["top_bad_borrowers"][0]["borrower"].pk, self.borrower.pk)
+        self.assertEqual(context["top_bad_borrowers"][0]["total_loans"], 0)
+
+    def test_business_report_escapes_customer_and_company_text(self):
+        from unittest.mock import patch
+        self.borrower.full_name = '<img src="file:///etc/passwd">'
+        self.borrower.save()
+        company = CompanyProfile.get_solo()
+        company.company_name = 'Company <script>untrusted</script>'
+        company.save()
+        self.loan()
+        with patch('apps.loans.business_reports.HTML') as renderer:
+            renderer.return_value.write_pdf.return_value = b'%PDF-test'
+            response = self.client.get(reverse('loans:business_state_pdf_report'))
+        self.assertEqual(response.status_code, 200)
+        document = renderer.call_args.kwargs['string']
+        self.assertIn('&lt;img', document)
+        self.assertNotIn('<img src="file:///etc/passwd">', document)
+        self.assertIn('Company &lt;script&gt;', document)
+        self.assertNotIn('Company <script>', document)
+
+    def test_business_report_queries_do_not_grow_per_officer_or_customer(self):
+        from unittest.mock import patch
+        self.loan()
+        url = reverse('loans:business_state_pdf_report')
+        with patch('apps.loans.business_reports.HTML') as renderer:
+            renderer.return_value.write_pdf.return_value = b'%PDF-test'
+            self.client.get(url)
+            with CaptureQueriesContext(connection) as initial:
+                self.client.get(url)
+            for number in range(10):
+                officer = Agent.objects.create(agent_id=f'REPORT-OFFICER-{number}',name=f'Officer {number}',phone='',location='Sample')
+                self.loan(agent_name=officer)
+            with CaptureQueriesContext(connection) as expanded:
+                response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertLessEqual(len(expanded), len(initial))

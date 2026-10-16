@@ -13,11 +13,13 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.views.decorators.http import require_GET
-from weasyprint import HTML, default_url_fetcher
+from weasyprint import HTML
+from weasyprint.urls import URLFetcher
 
 from apps.accounts.models import Agent
 from apps.company.models import CompanyProfile
 from apps.core.roles import get_agent_for_user, get_user_role
+from apps.core.export_limits import export_limit_response
 from .models import Borrower, Loan, Portfolio
 from .portfolios import agent_can_access, agent_portfolio_ids
 from .statements import account_statement
@@ -68,15 +70,14 @@ def _document(request, context, *, pdf, pdf_url, back_url, filename):
     return response
 
 
-def _inline_resource(url):
-    if not url.startswith("data:"):
-        raise ValueError("Statement resources must be embedded in the document.")
-    return default_url_fetcher(url)
+_inline_resource = URLFetcher(allowed_protocols={"data"}, allow_redirects=False)
 
 
 def _loan_document(request, loan_id, pdf):
     loan = get_object_or_404(Loan.objects.select_related("borrower", "portfolio"), pk=loan_id)
     role = _customer_access(request, loan, loan.borrower)
+    if pdf and (limited := export_limit_response(request)) is not None:
+        return limited
     data = account_statement(Loan.objects.filter(pk=loan.pk))
     context = {**data, "kind": "loan", "title": "Loan Repayment Statement", "subject_name": loan.borrower.full_name,
                "subject_id": str(loan.pk), "borrower": loan.borrower, "loan": data["loans"][0]["loan"], "subtitle": f"Loan #{loan.pk} · {loan.borrower.borrower_id}"}
@@ -99,6 +100,8 @@ def loan_statement_pdf(request, loan_id):
 def _borrower_document(request, pk, pdf):
     borrower = get_object_or_404(Borrower.objects.select_related("portfolio"), pk=pk)
     role = _customer_access(request, borrower, borrower)
+    if pdf and (limited := export_limit_response(request)) is not None:
+        return limited
     loans = Loan.objects.filter(borrower=borrower)
     if role=="agent":
         loans = loans.filter(portfolio_id__in=agent_portfolio_ids(get_agent_for_user(request.user)))
@@ -125,6 +128,8 @@ def _agent_document(request, pk, pdf):
     if role != "admin" and not (role=="agent" and get_agent_for_user(request.user).pk==pk):
         raise Http404
     agent = get_object_or_404(Agent.objects.select_related("supervisor"), pk=pk)
+    if pdf and (limited := export_limit_response(request)) is not None:
+        return limited
     portfolios = list(Portfolio.objects.filter(pk__in=agent_portfolio_ids(agent)))
     data = account_statement(Loan.objects.filter(portfolio_id__in=[portfolio.pk for portfolio in portfolios]))
     payroll = list(agent.payroll_lines.select_related("run__reversal__approved_by").order_by("run__period_start", "pk"))

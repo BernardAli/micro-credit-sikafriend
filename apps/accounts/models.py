@@ -4,6 +4,25 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from decimal import Decimal
 from apps.core.private_media import private_upload_storage
 from apps.core.models import ReversibleTransaction
+import uuid
+
+
+class Authenticator(models.Model):
+    """Encrypted authenticator material; recovery tokens are stored only as hashes."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="authenticator")
+    secret_ciphertext = models.TextField(editable=False)
+    confirmed_at = models.DateTimeField(null=True, editable=False)
+    last_step = models.BigIntegerField(default=-1, editable=False)
+    recovery_hashes = models.JSONField(default=list, editable=False)
+    revision = models.UUIDField(default=uuid.uuid4, editable=False)
+
+
+class AuthenticationThrottle(models.Model):
+    """Shared, atomic attempt budgets; identifiers and client addresses are HMACs."""
+    key = models.CharField(max_length=64, primary_key=True)
+    attempts = models.PositiveIntegerField(default=0)
+    expires_at = models.DateTimeField(db_index=True)
+
 
 
 

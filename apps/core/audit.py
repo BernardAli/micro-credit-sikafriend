@@ -4,6 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from .models import ActivityLog
+from .security import client_ip
 
 
 def _json_safe(value):
@@ -32,8 +33,7 @@ def log_activity(
 ):
     ip_address = None
     if request is not None:
-        forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
-        ip_address = (forwarded.split(",")[0].strip() if forwarded else request.META.get("REMOTE_ADDR")) or None
+        ip_address = client_ip(request)
 
     return ActivityLog.objects.create(
         category=category,
